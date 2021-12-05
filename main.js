@@ -1,7 +1,5 @@
-const init = () => {
+const handler = (/*event, context*/) => {
     console.log("running");
 };
 
-if (!process.env.JEST_WORKER_ID) {
-    init();
-}
+exports.handler = handler;
