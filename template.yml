@@ -39,7 +39,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotFunction
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt ScheduledRule.Arn
+      SourceArn: !GetAtt AocBotRule.Arn
 
   AocBotRule:
     Type: AWS::Events::Rule
