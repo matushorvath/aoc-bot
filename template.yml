@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: AoC Telegram Bot
+
+Parameters:
+  Bucket:
+    Type: String
+    Description: Package bucket name
+  Package:
+    Type: String
+    Description: Package file name
+  Version:
+    Type: String
+    Description: Package version
+
+Resources:
+  AocBotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}_AocBot
+      Description: !Ref Version
+      CodeUri:
+        Bucket: !Ref Bucket
+        Key: !Ref Package
+      Handler: main.handler
+      Runtime: nodejs14.x
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSXrayWriteOnlyAccess
+      Environment:
+        Variables:
+          AWS_SDK_LOAD_CONFIG: 1
+
+  AocBotPerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - AocBotFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AocBotFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduledRule.Arn
+
+  AocBotRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(15 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AocBotFunction.Arn
+          Id: AocBotRuleTarget

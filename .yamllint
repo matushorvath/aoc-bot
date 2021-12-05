@@ -1,0 +1,9 @@
+extends: relaxed
+
+ignore: |
+  coverage/
+  node_modules/
+
+rules:
+  indentation:
+    level: error
