@@ -16,6 +16,8 @@ Parameters:
 Resources:
   AocBotFunction:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - AocBotTable
     Properties:
       FunctionName: !Sub ${AWS::StackName}_AocBot
       Description: !Ref Version
@@ -27,6 +29,8 @@ Resources:
       Policies:
         - AWSLambdaVPCAccessExecutionRole
         - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AocBotTable
       Environment:
         Variables:
           AWS_SDK_LOAD_CONFIG: 1
@@ -49,3 +53,15 @@ Resources:
       Targets:
         - Arn: !GetAtt AocBotFunction.Arn
           Id: AocBotRuleTarget
+
+  AocBotTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TableName: aoc-bot

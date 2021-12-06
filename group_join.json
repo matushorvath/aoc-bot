@@ -1,0 +1,63 @@
+{
+  "ok": true,
+  "result": [
+    {
+      "update_id": 542173313,
+      "my_chat_member": {
+        "chat": {
+          "id": -632612918,
+          "title": "Test AoC 2021 Day 1",
+          "type": "group",
+          "all_members_are_administrators": true
+        },
+        "from": {
+          "id": 81174104,
+          "is_bot": false,
+          "first_name": "Matúš",
+          "last_name": "Horváth",
+          "username": "matushorvath"
+        },
+        "date": 1638735565,
+        "old_chat_member": {
+          "user": {
+            "id": 5071613978,
+            "is_bot": true,
+            "first_name": "AocBot",
+            "username": "AocElfBot"
+          },
+          "status": "left"
+        },
+        "new_chat_member": {
+          "user": {
+            "id": 5071613978,
+            "is_bot": true,
+            "first_name": "AocBot",
+            "username": "AocElfBot"
+          },
+          "status": "member"
+        }
+      }
+    },
+    {
+      "update_id": 542173314,
+      "message": {
+        "message_id": 1,
+        "from": {
+          "id": 81174104,
+          "is_bot": false,
+          "first_name": "Matúš",
+          "last_name": "Horváth",
+          "username": "matushorvath"
+        },
+        "chat": {
+          "id": -632612918,
+          "title": "Test AoC 2021 Day 1",
+          "type": "group",
+          "all_members_are_administrators": true
+        },
+        "date": 1638735565,
+        "group_chat_created": true
+      }
+    }
+  ]
+}
