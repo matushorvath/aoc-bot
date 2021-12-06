@@ -120,26 +120,40 @@ const getChats = async (days) => {
 
 const findChanges = async (chats) => {
     // Filter out users who are already in the chat
-    const conditions = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
-        try {
-            const member = await telegram('getChatMember', { chat_id: chat, user_id: telegramUser });
-            return !member.ok;
-        } catch (error) {
-            if (error.isAxiosError && error.response?.data?.error_code === 400) {
-                return true;
-            }
-            throw error;
-        }
+    const isInChat = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
+        const member = await telegram('getChatMember', { chat_id: chat, user_id: telegramUser });
+        return member.ok && member.result.status !== 'left';
     }));
 
-    return chats.filter((_, index) => !/*TODO remove inverted condition!*/conditions[index]);
+    return chats.filter((_, index) => !isInChat[index]);
 };
 
 const sendInvites = async (changes) => {
-    // for (const [name, chat] of changes) {
-    //     const invite = await telegram('createChatInviteLink', {
-    //         chat_id: chat,
-    //         name: `AoC Day ${}
+    for (const { telegramUser, aocUser, chat, day } of changes) {
+        const invite = await telegram('createChatInviteLink', {
+            chat_id: chat,
+            name: `AoC ${YEAR} Day ${day}`,
+            member_limit: 1,
+            creates_join_request: false
+        });
+
+        if (invite.ok) {
+            try {
+                await telegram('sendMessage', {
+                    chat_id: telegramUser,
+                    parse_mode: 'MarkdownV2',
+                    text: `[${invite.result.name}](${invite.result.invite_link})`
+                });
+                console.log(`Sent invite: ${aocUser} (${telegramUser}, day ${day}`);
+            } catch (error) {
+                if (error.isAxiosError && error.response?.data?.error_code === 400) {
+                    console.log(`Not allowed to message: ${aocUser} (${telegramUser}, day ${day})`);
+                    continue;
+                }
+                throw error;
+            }
+        }
+    }
 };
 
 const main = async () => {
