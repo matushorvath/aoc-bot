@@ -1,5 +1,4 @@
 const fs = require('fs');
-const fsp = require('fs/promises');
 const axios = require('axios');
 const yaml = require('js-yaml');
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
@@ -22,7 +21,7 @@ const telegram = async (api, params = {}) => {
 const onMyChatMember = async (my_chat_member) => {
     // Only do something if we were made an admin in a group
     if (my_chat_member.new_chat_member?.status !== 'administrator'
-        || my_chat_member.chat.type !== 'group' || my_chat_member.chat.title) {
+        || my_chat_member.chat.type !== 'group' || !my_chat_member.chat.title) {
         return;
     }
 
@@ -52,13 +51,92 @@ const onMyChatMember = async (my_chat_member) => {
     console.log('Admin data stored in db');
 
     // Initialize the telegram group
-    telegram('sendMessage', {
+    // TODO bot name should be clickable and open chat with the bot
+    await telegram('sendMessage', {
         chat_id: my_chat_member.chat.id,
-        text: `Aoc Bot is online, ${year}/${day.toString().padStart(2, '0')}`,
+        text: `Aoc Bot is online, AoC ${year} Day ${day.toString().padStart(2, '0')}`,
         disable_notification: true
     });
 
     console.log('Admin processing done');
+};
+
+const onMessage = async (message) => {
+    // Only handle private messages
+    if (message.chat.type !== 'private' || !message.text || !message.from) {
+        return;
+    }
+
+    // TODO support unreg command
+    let m = message.text.match(/^\s*\/(reg|start|help)(?:\s+(.+))?\s*$/)
+    if (!m) {
+        return;
+    }
+
+    const command = m[1];
+    const params = m[2];
+
+    if (command === 'reg' && params) {
+        await onCommandReg(message.chat.id, params.trim(), message.from.id);
+    } else if (command === 'start' || command === 'help') {
+        await onCommandHelp(message.chat.id);
+    } else {
+        await telegram('sendMessage', {
+            chat_id: message.chat.id,
+            text: `Sorry, I don't understand that command`
+        });
+    }
+};
+
+const onCommandReg = async (chat, aocUser, telegramUser) => {
+    console.log(`Map user AoC '${aocUser}' Telegram '${telegramUser}'`);
+
+    // Store user mapping in db
+    const aocParams = {
+        Item: {
+            id: { S: `aoc_user:${aocUser}` },
+            aoc_user: { S: aocUser },
+            telegram_user: { N: String(telegramUser) }
+        },
+        TableName: DB_TABLE
+    };
+    await db.putItem(aocParams);
+
+    const telegramParams = {
+        Item: {
+            id: { S: `telegram_user:${telegramUser}` },
+            aoc_user: { S: aocUser },
+            telegram_user: { N: String(telegramUser) }
+        },
+        TableName: DB_TABLE
+    };
+    await db.putItem(telegramParams);
+
+    console.log('Map user stored in db');
+
+    // Confirm the registration
+    await telegram('sendMessage', {
+        chat_id: chat,
+        text: `You are now registered as AoC user '${aocUser}'`
+    });
+
+    console.log('Map user processing done');
+};
+
+const onCommandHelp = async (chat) => {
+    const help =
+`I can register your Advent of Code name, and then automatically invite you into the daily chat rooms once you solve each daily problem\\.
+
+Supported commands:
+/reg \\<aocname\\> – Register your Advent of Code name\\. Format your name exactly as it is visible in our [leaderboard](https://adventofcode\\.com/2021/leaderboard/private/view/380635) \\(without the AoC\\+\\+ suffix\\)\\.
+/help – Show this message\\.
+`;
+
+    await telegram('sendMessage', {
+        chat_id: chat,
+        parse_mode: 'MarkdownV2',
+        text: help
+    });
 };
 
 const getLeaderboard = async () => {
@@ -77,6 +155,46 @@ const getCompletedDays = (leaderboard) => {
             // make a [name, day] pair for each
             .map(([day, ]) => ({ aocUser: member.name, day: Number(day) }))
     );
+};
+
+const getChats = async (days) => {
+    // Transform a list of of of [AoC user, day] pairs into a list of [Telegram user, channel] pairs
+    const uniqueAocUsers = [...new Set(days.map(({ aocUser }) => aocUser))];
+    const userMap = await mapUsers(uniqueAocUsers);
+
+    const uniqueDays = [...new Set(days.map(({ day }) => day))];
+    const dayMap = await mapDaysToChats(YEAR, uniqueDays);
+
+    return days
+        .map(({ aocUser, day }) => ({ aocUser, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
+        .filter(({ telegramUser, chat }) => telegramUser !== undefined && chat !== undefined);
+};
+
+const mapUsers = async (aocUsers) => {
+    const map = {};
+
+    const WINDOW = 100;
+    for (let i = 0; i < aocUsers.length; i += WINDOW) {
+        const keys = aocUsers
+            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .map(aocUser => ({ id: { S: `aoc_user:${aocUser}` } }));
+
+        const params = {
+            RequestItems: {
+                [DB_TABLE]: {
+                    Keys: keys,
+                    ProjectionExpression: 'aoc_user, telegram_user'
+                }
+            }
+        };
+        const data = await db.batchGetItem(params);
+
+        for (const item of data.Responses[DB_TABLE]) {
+            map[item.aoc_user.S] = Number(item.telegram_user.N);
+        }
+    }
+
+    return map;
 };
 
 const mapDaysToChats = async (year, days) => {
@@ -106,26 +224,22 @@ const mapDaysToChats = async (year, days) => {
     return map;
 };
 
-const getChats = async (days) => {
-    // Transform a list of of of [AoC user, day] pairs into a list of [Telegram user, channel] pairs
-    const userMap = yaml.load(await fsp.readFile('users.yaml', 'utf8'));
-
-    const uniqueDays = [...new Set(days.map(({ day }) => day))];
-    const dayMap = await mapDaysToChats(YEAR, uniqueDays);
-
-    return days
-        .map(({ aocUser, day }) => ({ aocUser, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
-        .filter(({ telegramUser, chat }) => telegramUser !== undefined && chat !== undefined);
-};
-
 const findChanges = async (chats) => {
     // Filter out users who are already in the chat
-    const isInChat = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
-        const member = await telegram('getChatMember', { chat_id: chat, user_id: telegramUser });
-        return member.ok && member.result.status !== 'left';
+    const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
+        try {
+            const member = await telegram('getChatMember', { chat_id: chat, user_id: telegramUser });
+            return !member.ok || member.result.status === 'left';
+        } catch (error) {
+            if (error.isAxiosError && error.response?.data?.error_code === 400) {
+                console.log(`Find changes: user not found ${telegramUser}`);
+                return false;
+            }
+            throw error;
+        }
     }));
 
-    return chats.filter((_, index) => !isInChat[index]);
+    return chats.filter((_, index) => needsAdding[index]);
 };
 
 const sendInvites = async (changes) => {
@@ -166,6 +280,8 @@ const main = async () => {
     for (const update of data.result) {
         if (update.my_chat_member) {
             await onMyChatMember(update.my_chat_member);
+        } else if (update.message) {
+            await onMessage(update.message);
         }
     }
 
