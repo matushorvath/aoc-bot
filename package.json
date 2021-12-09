@@ -23,6 +23,7 @@
     "files": [
         "schedule.js",
         "secrets.js",
+        "telegram.js",
         "webhook.js",
         "template.yml"
     ],

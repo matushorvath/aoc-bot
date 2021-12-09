@@ -1,6 +1,7 @@
 'use strict';
 
 const { getTelegramSecret } = require('./secrets');
+const { onTelegramUpdate } = require('./telegram');
 
 class ResultError extends Error {
     constructor(status, message) {
@@ -23,6 +24,9 @@ const postTelegram = async (event) => {
         console.log('postTelegram: Invalid secret');
         throw new ResultError(401, 'Unauthorized');
     }
+
+    const update = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
+    await onTelegramUpdate(update);
 
     console.debug(`telegram: Done processing`);
 
