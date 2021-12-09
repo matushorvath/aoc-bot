@@ -3,7 +3,7 @@
 const { getTelegramSecret } = require('./secrets');
 const axios = require('axios');
 
-const telegram = async (api, params = {}) => {
+const telegramSend = async (api, params = {}) => {
     console.debug(`telegram: Called with api '${api}' params '${JSON.stringify(params)}'`);
 
     const secret = await getTelegramSecret();
@@ -15,4 +15,4 @@ const telegram = async (api, params = {}) => {
     return response.data;
 };
 
-exports.telegram = telegram;
+exports.telegramSend = telegramSend;

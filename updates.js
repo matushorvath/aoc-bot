@@ -1,6 +1,6 @@
 'use strict';
 
-const { telegram } = require('./telegram');
+const { telegramSend } = require('./telegram');
 const { updateLeaderboard } = require('./leaderboard');
 
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
@@ -41,9 +41,9 @@ const onMyChatMember = async (my_chat_member) => {
 
     console.log('onMyChatMember: Admin data stored in db');
 
-    // Initialize the telegram group
+    // Initialize the group
     // TODO bot name should be clickable and open chat with the bot
-    await telegram('sendMessage', {
+    await telegramSend('sendMessage', {
         chat_id: my_chat_member.chat.id,
         text: `@AocElfBot is online, AoC ${year} Day ${day}`,
         disable_notification: true
@@ -98,7 +98,7 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
     console.log('onCommandReg: Map user stored in db');
 
     // Confirm the registration
-    await telegram('sendMessage', {
+    await telegramSend('sendMessage', {
         chat_id: chat,
         text: `You are now registered as AoC user '${aocUser}'`,
         disable_notification: true
@@ -122,7 +122,7 @@ const onCommandUpdate = async (chat) => {
         info = '(no changes)\n';
     }
 
-    await telegram('sendMessage', {
+    await telegramSend('sendMessage', {
         chat_id: chat,
         text: `Leaderboard updated\n${info}`,
         disable_notification: true
@@ -148,7 +148,7 @@ Leaderboard is updated automatically every 15 minutes\\. This command is only ne
 const onCommandHelp = async (chat) => {
     console.log(`onCommandHelp: Display help`);
 
-    await telegram('sendMessage', {
+    await telegramSend('sendMessage', {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
         disable_notification: true,
@@ -157,7 +157,7 @@ const onCommandHelp = async (chat) => {
 };
 
 const onCommandUnknown = async (chat) => {
-    await telegram('sendMessage', {
+    await telegramSend('sendMessage', {
         chat_id: chat,
         text: `Sorry, I don't understand that command`,
         disable_notification: true
