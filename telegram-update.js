@@ -59,7 +59,7 @@ const onMessage = async (message) => {
     }
 
     // TODO support unreg command
-    let m = message.text.match(/^\s*\/(reg|update|start|help)(?:\s+(.+))?\s*$/)
+    let m = message.text.match(/^\s*\/(reg|unreg|update|start|help)(?:\s+(.+))?\s*$/)
     if (!m) {
         console.log(`onMessage: Text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -71,6 +71,8 @@ const onMessage = async (message) => {
 
     if (command === 'reg' && params) {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
+    } else if (command === 'unreg') {
+        await onCommandUnreg(message.chat.id, message.from.id);
     } else if (command === 'update') {
         await onCommandUpdate(message.chat.id);
     } else if (command === 'start' || command === 'help') {
@@ -84,8 +86,11 @@ const onMessage = async (message) => {
 const onCommandReg = async (chat, aocUser, telegramUser) => {
     console.log(`onCommandReg: Map user, AoC '${aocUser}' Telegram '${telegramUser}'`);
 
+    // Delete existing registration, if any
+    await deleteUserData(telegramUser);
+
     // Store user mapping in db
-    const params = {
+    const aocParams = {
         Item: {
             id: { S: `aoc_user:${aocUser}` },
             aoc_user: { S: aocUser },
@@ -93,7 +98,17 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
         },
         TableName: DB_TABLE
     };
-    await db.putItem(params);
+    await db.putItem(aocParams);
+
+    const telegramParams = {
+        Item: {
+            id: { S: `telegram_user:${telegramUser}` },
+            aoc_user: { S: aocUser },
+            telegram_user: { N: String(telegramUser) }
+        },
+        TableName: DB_TABLE
+    };
+    await db.putItem(telegramParams);
 
     console.log('onCommandReg: Map user stored in db');
 
@@ -104,7 +119,72 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
         disable_notification: true
     });
 
-    console.log('onCommandReg: Map user processing done');
+    console.log('onCommandReg: Processing done');
+};
+
+const onCommandUnreg = async (chat, telegramUser) => {
+    console.log(`onCommandUnreg: Remove user, Telegram '${telegramUser}'`);
+
+    const aocUser = await deleteUserData(telegramUser);
+    if (aocUser) {
+        await telegramSend('sendMessage', {
+            chat_id: chat,
+            text: `You are no longer registered (your AoC name was '${aocUser}')`,
+            disable_notification: true
+        });
+    } else {
+        await telegramSend('sendMessage', {
+            chat_id: chat,
+            text: 'You are not registered',
+            disable_notification: true
+        });
+    }
+
+    console.log('onCommandUnreg: Processing done');
+};
+
+const deleteUserData = async (telegramUser) => {
+    // Find AoC record in database
+    const getParams = {
+        TableName: DB_TABLE,
+        Key: { id: { S: `telegram_user:${telegramUser}` } },
+        ProjectionExpression: 'aoc_user, telegram_user'
+    };
+
+    console.log(JSON.stringify(getParams));
+
+    const getData = await db.getItem(getParams);
+    if (!getData.Item) {
+        console.log(`deleteUserData: No records to delete`);
+        return undefined;
+    }
+
+    const aocUser = getData.Item.aoc_user.S;
+    console.log(`deleteUserData: Found AoC user '${aocUser}'`);
+
+    // Delete all user records
+    const writeParams = {
+        RequestItems: {
+            [DB_TABLE]: [{
+                DeleteRequest: {
+                    Key: { id: { S: `aoc_user:${aocUser}` } }
+                }
+            }, {
+                DeleteRequest: {
+                    Key: { id: { S: `telegram_user:${telegramUser}` } }
+                }
+            }]
+        }
+    };
+    console.log(JSON.stringify(writeParams));
+    const writeData = await db.batchWriteItem(writeParams);
+
+    if (Object.keys(writeData.UnprocessedItems).length > 0) {
+        console.log(`deleteUserData: Some records were not deleted: ${JSON.stringify(writeData.UnprocessedItems)}`);
+    }
+
+    console.log('deleteUserData: Map user stored in db');
+    return aocUser;
 };
 
 const onCommandUpdate = async (chat) => {
@@ -139,7 +219,9 @@ Supported commands:
 /reg \\<aocname\\> – Register your Advent of Code name\\.
 Format your name exactly as it is visible in our [leaderboard](https://adventofcode\\.com/2021/leaderboard/private/view/380635) \\(without the \`(AoC\\+\\+)\` suffix\\)\\.
 
-/update – Update leaderboard\\.
+/unreg  – Unregister from the bot\\.
+
+/update – Update the leaderboard\\.
 Leaderboard is updated automatically every 15 minutes\\. This command is only needed if you want to trigger the update immediately\\.
 
 /help – Show this message\\.
