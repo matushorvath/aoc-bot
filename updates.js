@@ -70,9 +70,9 @@ const onMessage = async (message) => {
     const params = m[2];
 
     if (command === 'reg' && params) {
-        await onCommandReg(message.chat.id, params.trim(), message.from.id);
+        await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'update') {
-        await onCommandUpdate(message.chat.id, params.trim(), message.from.id);
+        await onCommandUpdate(message.chat.id);
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
     } else {
@@ -116,7 +116,7 @@ const onCommandUpdate = async (chat) => {
 
     let info = '';
     for (const { aocUser, day } of changes) {
-        info += `- ${aocUser} added to day ${day}\n`;
+        info += `• ${aocUser} invited to day ${day}\n`;
     }
     if (info === '') {
         info = '(no changes)\n';
