@@ -98,47 +98,26 @@ Resources:
       - AocBotWebhookFunction
     Type: AWS::Serverless::Api
     Properties:
+      StageName: Prod
       DefinitionBody:
         openapi: "3.0.1"
         info:
           title: !Sub "${AWS::StackName}_AocBot"
           version: !Ref Version
         paths:
-          /:
-            x-amazon-apigateway-any-method:
+          /telegram:
+            post:
+              security:
+                - CustomAuthorizer: []
               x-amazon-apigateway-integration:
                 uri: !Sub
                   "arn:aws:apigateway:${AWS::Region}:lambda:path\
                   /2015-03-31/functions/${AocBotWebhookFunction.Arn}/invocations"
-                responses:
-                  default:
-                    statusCode: "200"
-                passthroughBehavior: "when_no_match"
-                httpMethod: "POST"
-                contentHandling: "CONVERT_TO_TEXT"
-                type: "aws_proxy"
-          /{proxy+}:
-            x-amazon-apigateway-any-method:
-              parameters:
-                - name: "proxy"
-                  in: "path"
-                  required: true
-                  schema:
-                    type: "string"
-              x-amazon-apigateway-integration:
-                uri: !Sub
-                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
-                  /2015-03-31/functions/${AocBotWebhookFunction.Arn}/invocations"
-                responses:
-                  default:
-                    statusCode: "200"
-                passthroughBehavior: "when_no_match"
-                httpMethod: "POST"
-                contentHandling: "CONVERT_TO_TEXT"
-                type: "aws_proxy"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
         x-amazon-apigateway-binary-media-types:
           - "*/*"
-      StageName: Prod
 
   # Permission that allows API Gateway to call AocBotWebhookFunction
   AocBotIntegrationPerms:
