@@ -1,7 +1,11 @@
 'use strict';
 
-const handler = (/*event, context*/) => {
-    console.log("schedule running");
+const { processLeaderboard } = require('./leaderboard');
+
+const handler = async () => {
+    console.log("handler: schedule running");
+
+    await processLeaderboard();
 };
 
 exports.handler = handler;
