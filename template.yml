@@ -33,9 +33,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref AocBotTable
         - SSMParameterReadPolicy:
-            ParameterName: /aoc-bot/advent-of-code-secret
+            ParameterName: aoc-bot/advent-of-code-secret
         - SSMParameterReadPolicy:
-            ParameterName: /aoc-bot/telegram-secret
+            ParameterName: aoc-bot/telegram-secret
       Environment:
         Variables:
           AWS_SDK_LOAD_CONFIG: 1
@@ -59,7 +59,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref AocBotTable
         - SSMParameterReadPolicy:
-            ParameterName: /aoc-bot/telegram-secret
+            ParameterName: aoc-bot/advent-of-code-secret
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/telegram-secret
       Environment:
         Variables:
           AWS_SDK_LOAD_CONFIG: 1
