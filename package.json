@@ -24,8 +24,8 @@
         "leaderboard.js",
         "schedule.js",
         "secrets.js",
-        "telegram.js",
-        "updates.js",
+        "telegram-send.js",
+        "telegram-update.js",
         "webhook.js",
         "template.yml"
     ],

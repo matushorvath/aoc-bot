@@ -1,7 +1,7 @@
 'use strict';
 
 const { getAdventOfCodeSecret } = require('./secrets');
-const { telegramSend } = require('./telegram');
+const { telegramSend } = require('./telegram-send');
 
 const axios = require('axios');
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
