@@ -21,8 +21,8 @@ const getSecrets = async () => {
         throw new Error(`getSecrets: Invalid parameters: ${JSON.stringify(result.InvalidParameters)}`);
     }
 
-    adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret');
-    telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret');
+    adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret').Value;
+    telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret').Value;
 
     console.log("getSecrets: Finished");
 };

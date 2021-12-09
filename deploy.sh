@@ -12,16 +12,16 @@ bucket=cf.009116496185.eu-central-1
 # Store secrets passed from GitHub Actions
 aws ssm put-parameter \
     --region $region \
-    --name /aoc-bot/advent-of-code-secret
-    --type SecureString
-    --value $ADVENT_OF_CODE_SECRET
+    --name /aoc-bot/advent-of-code-secret \
+    --type SecureString \
+    --value "$ADVENT_OF_CODE_SECRET" \
     --overwrite
 
 aws ssm put-parameter \
     --region $region \
-    --name /aoc-bot/telegram-secret
-    --type SecureString
-    --value $TELEGRAM_SECRET
+    --name /aoc-bot/telegram-secret \
+    --type SecureString \
+    --value "$TELEGRAM_SECRET" \
     --overwrite
 
 # Upload and deploy the package

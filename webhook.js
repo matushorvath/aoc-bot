@@ -19,7 +19,7 @@ const postTelegram = async (event) => {
     const url = `https://api.telegram.org/bot${secret}/GetMe`;
     const response = await axios.post(url);
 
-    console.debug(`telegram: Done processing ${response.data}`);
+    console.debug(`telegram: Done processing ${JSON.stringify(response.data)}`);
 
     return { status: 201, body: { m: 'OK' } };
 };
