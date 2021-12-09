@@ -85,7 +85,7 @@ Resources:
   AocBotPerms:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - AocBotFunction
+      - AocBotScheduleFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotScheduleFunction

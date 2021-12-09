@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "Advent of Code Telegram Bot",
     "scripts": {
-        "eslint": "eslint --format codeframe .",
-        "eslint-fix": "eslint --fix --format codeframe .",
+        "eslint": "eslint .",
+        "eslint-fix": "eslint --fix .",
         "yamllint": "yamllint .",
         "lint": "npm run eslint && npm run yamllint",
         "jest": "jest",
@@ -36,8 +36,8 @@
         "js-yaml": "^4.1.0"
     },
     "devDependencies": {
-        "eslint": "^7.32.0",
-        "eslint-plugin-jest": "^25.0.1",
-        "jest": "^27.2.5"
+        "eslint": "^8.4.1",
+        "eslint-plugin-jest": "^25.3.0",
+        "jest": "^27.4.3"
     }
 }
