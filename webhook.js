@@ -2,6 +2,7 @@
 
 const { getTelegramSecret } = require('./secrets');
 const { onTelegramUpdate } = require('./telegram');
+const { processLeaderboard } = require('./leaderboard');
 
 class ResultError extends Error {
     constructor(status, message) {
@@ -12,21 +13,35 @@ class ResultError extends Error {
     }
 }
 
-const postTelegram = async (event) => {
-    console.log('postTelegram: POST /telegram start');
-
-    // Validate the secret
+const validateSecret = async (event) => {
     const secret = await getTelegramSecret();
 
     if (event.queryStringParameters[secret] !== '') {
         console.log('postTelegram: Invalid secret');
         throw new ResultError(401, 'Unauthorized');
     }
+};
+
+const postTelegram = async (event) => {
+    console.log('postTelegram: POST /telegram start');
+
+    await validateSecret(event);
 
     const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
     await onTelegramUpdate(JSON.parse(body));
 
     console.debug(`postTelegram: Done processing`);
+
+    return { status: 201 };
+};
+
+const postLeaderboard = async (event) => {
+    console.log('postLeaderboard: POST /leaderboard start');
+
+    await validateSecret(event);
+    await processLeaderboard();
+
+    console.debug(`postLeaderboard: Done processing`);
 
     return { status: 201 };
 };
@@ -53,10 +68,14 @@ const processEvent = async (event) => {
         if (event.httpMethod === 'POST') {
             return postTelegram(event);
         }
-
         throw new ResultError(405, 'Method Not Allowed');
     }
-
+    else if (event.resource === '/leaderboard') {
+        if (event.httpMethod === 'POST') {
+            return postLeaderboard(event);
+        }
+        throw new ResultError(405, 'Method Not Allowed');
+    }
     throw new ResultError(403, 'Forbidden');
 };
 
