@@ -1,5 +1,8 @@
 'use strict';
 
+const { getTelegramSecret } = require('./secrets');
+const axios = require('axios');
+
 class ResultError extends Error {
     constructor(status, message) {
         super(message);
@@ -11,6 +14,12 @@ class ResultError extends Error {
 
 const postTelegram = async (event) => {
     console.log("postTelegram: POST /telegram start", event);
+
+    const secret = await getTelegramSecret();
+    const url = `https://api.telegram.org/bot${secret}/GetMe`;
+    const response = await axios.post(url);
+
+    console.debug(`telegram: Done processing ${response.data}`);
 
     return { status: 201, body: { m: 'OK' } };
 };

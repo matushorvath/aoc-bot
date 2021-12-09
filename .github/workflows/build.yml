@@ -51,3 +51,5 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          ADVENT_OF_CODE_SECRET: ${{ secrets.ADVENT_OF_CODE_SECRET }}
+          TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
