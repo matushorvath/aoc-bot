@@ -1,8 +1,8 @@
 'use strict';
 
 const { getTelegramSecret } = require('./secrets');
-const { onTelegramUpdate } = require('./telegram');
-const { processLeaderboard } = require('./leaderboard');
+const { onTelegramUpdate } = require('./updates');
+const { updateLeaderboard } = require('./leaderboard');
 
 class ResultError extends Error {
     constructor(status, message) {
@@ -39,7 +39,7 @@ const postLeaderboard = async (event) => {
     console.log('postLeaderboard: POST /leaderboard start');
 
     await validateSecret(event);
-    await processLeaderboard();
+    await updateLeaderboard();
 
     console.debug(`postLeaderboard: Done processing`);
 
@@ -81,18 +81,18 @@ const processEvent = async (event) => {
 
 const handler = async (event) => {
     try {
-        console.debug(`handler: Start processing`);
+        console.debug('handler: Start processing');
         const result = await processEvent(event);
-        console.debug(`handler: Data response ${JSON.stringify(result)}`);
+        console.debug('handler: Data response', result);
 
         return makeResponse(result);
     } catch (error) {
         if (error instanceof ResultError) {
-            console.log(`handler: Error response ${JSON.stringify(error)}`);
+            console.log('handler: Error response', error);
             return makeResponse(error);
         }
 
-        console.log(`handler: Internal server error  ${JSON.stringify(error)}`);
+        console.log('handler: Internal server error', error);
         return makeResponse(new ResultError(500, 'Internal Server Error'));
     }
 };

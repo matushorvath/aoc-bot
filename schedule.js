@@ -1,11 +1,11 @@
 'use strict';
 
-const { processLeaderboard } = require('./leaderboard');
+const { updateLeaderboard } = require('./leaderboard');
 
 const handler = async () => {
     console.log("handler: schedule running");
 
-    await processLeaderboard();
+    await updateLeaderboard();
 };
 
 exports.handler = handler;

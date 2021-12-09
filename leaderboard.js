@@ -145,7 +145,7 @@ const sendInvites = async (changes) => {
                 await telegram('sendMessage', {
                     chat_id: telegramUser,
                     parse_mode: 'MarkdownV2',
-                    text: `[${invite.result.name}](${invite.result.invite_link})`
+                    text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room.`
                 });
                 console.log(`sendInvites: Sent to AoC '${aocUser}' Telegram '${telegramUser}' Day ${day}`);
             } catch (error) {
@@ -159,7 +159,7 @@ const sendInvites = async (changes) => {
     }
 };
 
-const processLeaderboard = async () => {
+const updateLeaderboard = async () => {
     // Load the leaderboard
     const leaderboard = await getLeaderboard();
     const days = getCompletedDays(leaderboard);
@@ -172,6 +172,8 @@ const processLeaderboard = async () => {
 
     // Create invites for all missing cases
     await sendInvites(changes);
+
+    return changes;
 };
 
-exports.processLeaderboard = processLeaderboard;
+exports.updateLeaderboard = updateLeaderboard;
