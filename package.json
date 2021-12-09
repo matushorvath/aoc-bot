@@ -21,6 +21,7 @@
         "node": "^14"
     },
     "files": [
+        "leaderboard.js",
         "schedule.js",
         "secrets.js",
         "telegram.js",
