@@ -1,7 +1,7 @@
 'use strict';
 
 const { getAdventOfCodeSecret } = require('./secrets');
-const { telegram } = require('./telegram');
+const { telegramSend } = require('./telegram');
 
 const axios = require('axios');
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
@@ -117,7 +117,7 @@ const findChanges = async (chats) => {
     // Filter out users who are already in the chat
     const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
         try {
-            const member = await telegram('getChatMember', { chat_id: chat, user_id: telegramUser });
+            const member = await telegramSend('getChatMember', { chat_id: chat, user_id: telegramUser });
             return !member.ok || member.result.status === 'left';
         } catch (error) {
             if (error.isAxiosError && error.response?.data?.error_code === 400) {
@@ -133,7 +133,7 @@ const findChanges = async (chats) => {
 
 const sendInvites = async (changes) => {
     for (const { telegramUser, aocUser, chat, day } of changes) {
-        const invite = await telegram('createChatInviteLink', {
+        const invite = await telegramSend('createChatInviteLink', {
             chat_id: chat,
             name: `AoC ${YEAR} Day ${day}`,
             member_limit: 1,
@@ -142,7 +142,7 @@ const sendInvites = async (changes) => {
 
         if (invite.ok) {
             try {
-                await telegram('sendMessage', {
+                await telegramSend('sendMessage', {
                     chat_id: telegramUser,
                     parse_mode: 'MarkdownV2',
                     text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room.`
