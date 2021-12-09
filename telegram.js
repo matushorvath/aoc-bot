@@ -1,15 +1,16 @@
 'use strict';
 
-const fs = require('fs');
 const axios = require('axios');
-const yaml = require('js-yaml');
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 
 // TODO process leaderboards from multiple years
 const YEAR = 2021;
 const LEADERBOARD_ID = 380635;
 
-const SECRETS = yaml.load(fs.readFileSync('/home/horvathm/aoc/secrets.yaml', 'utf8'));
+const SECRETS = {
+    adventofcode: process.env.ADVENT_OF_CODE_SECRET,
+    telegram: process.env.TELEGRAM_SECRET
+};
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -296,7 +297,7 @@ const sendInvites = async (changes) => {
     }
 };
 
-const main = async () => {
+const main = async () => { // eslint-disable-line no-unused-vars
     // Process telegram updates received since last time
     const updates = await telegram('getUpdates');
     if (!updates.ok) {
@@ -331,4 +332,11 @@ const main = async () => {
     }
 };
 
-main().catch(e => console.error(e));
+//main().catch(e => console.error(e));
+
+const webhook = async () => {
+    const url = 'https://7b79gj2si4.execute-api.eu-central-1.amazonaws.com/Prod/telegram?<token>';
+    await telegram('setWebhook', { url });
+};
+
+webhook().catch(e => console.error(e));
