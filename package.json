@@ -22,6 +22,7 @@
     },
     "files": [
         "schedule.js",
+        "secrets.js",
         "webhook.js",
         "template.yml"
     ],
@@ -32,6 +33,7 @@
     ],
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.44.0",
+        "@aws-sdk/client-ssm": "^3.44.0",
         "axios": "^0.24.0",
         "js-yaml": "^4.1.0"
     },
