@@ -151,8 +151,6 @@ const deleteUserData = async (telegramUser) => {
         ProjectionExpression: 'aoc_user, telegram_user'
     };
 
-    console.log(JSON.stringify(getParams));
-
     const getData = await db.getItem(getParams);
     if (!getData.Item) {
         console.log(`deleteUserData: No records to delete`);
@@ -176,7 +174,6 @@ const deleteUserData = async (telegramUser) => {
             }]
         }
     };
-    console.log(JSON.stringify(writeParams));
     const writeData = await db.batchWriteItem(writeParams);
 
     if (Object.keys(writeData.UnprocessedItems).length > 0) {

@@ -47,7 +47,7 @@ const getChats = async (days) => {
     const dayMap = await mapDaysToChats(YEAR, uniqueDays);
 
     return days
-        .map(({ aocUser, day }) => ({ aocUser, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
+        .map(({ aocUser, day }) => ({ aocUser, year: YEAR, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
         .filter(({ telegramUser, chat }) => telegramUser !== undefined && chat !== undefined);
 };
 
@@ -131,11 +131,46 @@ const findChanges = async (chats) => {
     return chats.filter((_, index) => needsAdding[index]);
 };
 
+const filterSent = async (chats) => {
+    // Filter out users who already got an invite
+    const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
+        const getParams = {
+            TableName: DB_TABLE,
+            Key: { id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } },
+            ProjectionExpression: 'id'
+        };
+
+        const getData = await db.getItem(getParams);
+        if (getData.Item !== undefined) {
+            console.log(`filterSent: Skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
+            return false;
+        }
+        return true;
+    }));
+
+    return chats.filter((_, index) => needsSending[index]);
+};
+
+const markAsSent = async (telegramUser, year, day, chat) => {
+    const params = {
+        Item: {
+            id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` },
+            y: { N: String(year) },
+            d: { N: String(day) },
+            chat: { N: String(chat) }
+        },
+        TableName: DB_TABLE
+    };
+    await db.putItem(params);
+
+    console.log(`markAsSent: Marked as sent ${telegramUser} ${chat} ${year} ${day}`);
+};
+
 const sendInvites = async (changes) => {
-    for (const { telegramUser, aocUser, chat, day } of changes) {
+    for (const { telegramUser, aocUser, chat, year, day } of changes) {
         const invite = await telegramSend('createChatInviteLink', {
             chat_id: chat,
-            name: `AoC ${YEAR} Day ${day}`,
+            name: `AoC ${year} Day ${day}`,
             member_limit: 1,
             creates_join_request: false
         });
@@ -145,16 +180,18 @@ const sendInvites = async (changes) => {
                 await telegramSend('sendMessage', {
                     chat_id: telegramUser,
                     parse_mode: 'MarkdownV2',
-                    text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room.`
+                    text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room`
                 });
-                console.log(`sendInvites: Sent to AoC '${aocUser}' Telegram '${telegramUser}' Day ${day}`);
+                console.log(`sendInvites: Sent to AoC '${aocUser}' Telegram '${telegramUser}' Year ${year} Day ${day}`);
             } catch (error) {
                 if (error.isAxiosError && error.response?.data?.error_code === 400) {
-                    console.log(`sendInvites: Not allowed AoC '${aocUser}' Telegram '${telegramUser}' Day ${day}`);
+                    console.log(`sendInvites: Not allowed AoC '${aocUser}' Telegram '${telegramUser}' Year ${year} Day ${day}`);
                     continue;
                 }
                 throw error;
             }
+
+            await markAsSent(telegramUser, year, day, chat);
         }
     }
 };
@@ -167,13 +204,14 @@ const updateLeaderboard = async () => {
     // Get list of chats each user should be in
     const chats = await getChats(days);
     const changes = await findChanges(chats);
+    const invites = await filterSent(changes);
 
-    console.log(`Changes: ${JSON.stringify(changes)}`);
+    console.log(`Invites to send: ${JSON.stringify(invites)}`);
 
     // Create invites for all missing cases
-    await sendInvites(changes);
+    await sendInvites(invites);
 
-    return changes;
+    return invites;
 };
 
 exports.updateLeaderboard = updateLeaderboard;
