@@ -59,7 +59,7 @@ const onMessage = async (message) => {
     }
 
     // TODO support unreg command
-    let m = message.text.match(/^\s*\/(reg|unreg|update|start|help)(?:\s+(.+))?\s*$/)
+    let m = message.text.match(/^\s*\/(reg|unreg|status|update|start|help)(?:\s+(.+))?\s*$/)
     if (!m) {
         console.log(`onMessage: Text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -73,6 +73,8 @@ const onMessage = async (message) => {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'unreg') {
         await onCommandUnreg(message.chat.id, message.from.id);
+    } else if (command === 'status') {
+        await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
         await onCommandUpdate(message.chat.id);
     } else if (command === 'start' || command === 'help') {
@@ -148,7 +150,7 @@ const deleteUserData = async (telegramUser) => {
     const getParams = {
         TableName: DB_TABLE,
         Key: { id: { S: `telegram_user:${telegramUser}` } },
-        ProjectionExpression: 'aoc_user, telegram_user'
+        ProjectionExpression: 'aoc_user'
     };
 
     const getData = await db.getItem(getParams);
@@ -184,6 +186,36 @@ const deleteUserData = async (telegramUser) => {
     return aocUser;
 };
 
+const onCommandStatus = async (chat, telegramUser) => {
+    console.log(`onCommandStatus: User status, Telegram '${telegramUser}'`);
+
+    // Find AoC record in database
+    const getParams = {
+        TableName: DB_TABLE,
+        Key: { id: { S: `telegram_user:${telegramUser}` } },
+        ProjectionExpression: 'aoc_user'
+    };
+
+    const getData = await db.getItem(getParams);
+    const aocUser = getData.Item?.aoc_user.S;
+
+    if (aocUser) {
+        await telegramSend('sendMessage', {
+            chat_id: chat,
+            text: `You are registered as AoC user '${aocUser}'`,
+            disable_notification: true
+        });
+    } else {
+        await telegramSend('sendMessage', {
+            chat_id: chat,
+            text: 'You are not registered',
+            disable_notification: true
+        });
+    }
+
+    console.log('onCommandStatus: Processing done');
+};
+
 const onCommandUpdate = async (chat) => {
     console.log(`onCommandUpdate: Start`);
 
@@ -216,7 +248,9 @@ Supported commands:
 /reg \\<aocname\\> – Register your Advent of Code name\\.
 Format your name exactly as it is visible in our [leaderboard](https://adventofcode\\.com/2021/leaderboard/private/view/380635) \\(without the \`(AoC\\+\\+)\` suffix\\)\\.
 
-/unreg  – Unregister from the bot\\.
+/unreg – Unregister from the bot\\.
+
+/status – Display your registration status\\.
 
 /update – Update the leaderboard\\.
 Leaderboard is updated automatically every 15 minutes\\. This command is only needed if you want to trigger the update immediately\\.
