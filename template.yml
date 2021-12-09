@@ -82,7 +82,7 @@ Resources:
           Id: AocBotRuleTarget
 
   # Permission that allows Events to call AocBotScheduleFunction
-  AocBotPerms:
+  AocBotSchedulePerms:
     Type: AWS::Lambda::Permission
     DependsOn:
       - AocBotScheduleFunction
@@ -120,7 +120,7 @@ Resources:
           - "*/*"
 
   # Permission that allows API Gateway to call AocBotWebhookFunction
-  AocBotIntegrationPerms:
+  AocBotWebhookPerms:
     Type: AWS::Lambda::Permission
     DependsOn:
       - AocBotWebhookFunction

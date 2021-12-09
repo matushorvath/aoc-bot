@@ -22,7 +22,8 @@
         "node": "^14"
     },
     "files": [
-        "main.js",
+        "schedule.js",
+        "webhook.js",
         "template.yml"
     ],
     "deployFiles": [
