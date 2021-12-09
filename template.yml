@@ -102,9 +102,9 @@ Resources:
 
   # API Gateway to handle Telegram webhooks
   AocBotApi:
+    Type: AWS::Serverless::Api
     DependsOn:
       - AocBotWebhookFunction
-    Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
       DefinitionBody:

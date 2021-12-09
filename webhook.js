@@ -15,8 +15,6 @@ class ResultError extends Error {
 const postTelegram = async (event) => {
     console.log('postTelegram: POST /telegram start');
 
-    console.debug('postTelegram: event', event);
-
     // Validate the secret
     const secret = await getTelegramSecret();
 
@@ -25,10 +23,10 @@ const postTelegram = async (event) => {
         throw new ResultError(401, 'Unauthorized');
     }
 
-    const update = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
-    await onTelegramUpdate(update);
+    const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
+    await onTelegramUpdate(JSON.parse(body));
 
-    console.debug(`telegram: Done processing`);
+    console.debug(`postTelegram: Done processing`);
 
     return { status: 201 };
 };
