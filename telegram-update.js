@@ -1,6 +1,6 @@
 'use strict';
 
-const { telegramSend } = require('./telegram');
+const { telegramSend } = require('./telegram-send');
 const { updateLeaderboard } = require('./leaderboard');
 
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
