@@ -14,17 +14,18 @@ Parameters:
     Description: Package version
 
 Resources:
-  AocBotFunction:
+  # Scheduled function that regularly processes the leaderboard
+  AocBotScheduleFunction:
     Type: AWS::Serverless::Function
     DependsOn:
       - AocBotTable
     Properties:
-      FunctionName: !Sub ${AWS::StackName}_AocBot
+      FunctionName: !Sub ${AWS::StackName}_AocBotSchedule
       Description: !Ref Version
       CodeUri:
         Bucket: !Ref Bucket
         Key: !Ref Package
-      Handler: main.handler
+      Handler: schedule.handler
       Runtime: nodejs14.x
       Policies:
         - AWSLambdaVPCAccessExecutionRole
@@ -35,25 +36,29 @@ Resources:
         Variables:
           AWS_SDK_LOAD_CONFIG: 1
 
-  AocBotPerms:
-    Type: AWS::Lambda::Permission
+  # Webhook function to process Telegram updates
+  AocBotWebhookFunction:
+    Type: AWS::Serverless::Function
     DependsOn:
-      - AocBotFunction
+      - AocBotTable
     Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref AocBotFunction
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt AocBotRule.Arn
+      FunctionName: !Sub ${AWS::StackName}_AocBotWebhook
+      Description: !Ref Version
+      CodeUri:
+        Bucket: !Ref Bucket
+        Key: !Ref Package
+      Handler: webhook.handler
+      Runtime: nodejs14.x
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AocBotTable
+      Environment:
+        Variables:
+          AWS_SDK_LOAD_CONFIG: 1
 
-  AocBotRule:
-    Type: AWS::Events::Rule
-    Properties:
-      ScheduleExpression: rate(15 minutes)
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt AocBotFunction.Arn
-          Id: AocBotRuleTarget
-
+  # Dynamo DB table to store all data
   AocBotTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -65,3 +70,62 @@ Resources:
         - AttributeName: id
           KeyType: HASH
       TableName: aoc-bot
+
+  # Rule to regularly trigger AocBotScheduleFunction
+  AocBotRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(15 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AocBotScheduleFunction.Arn
+          Id: AocBotRuleTarget
+
+  # Permission that allows Events to call AocBotScheduleFunction
+  AocBotSchedulePerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - AocBotScheduleFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AocBotScheduleFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AocBotRule.Arn
+
+  # API Gateway to handle Telegram webhooks
+  AocBotApi:
+    DependsOn:
+      - AocBotWebhookFunction
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: !Sub "${AWS::StackName}_AocBot"
+          version: !Ref Version
+        paths:
+          /telegram:
+            post:
+              security:
+                - CustomAuthorizer: []
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
+                  /2015-03-31/functions/${AocBotWebhookFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+        x-amazon-apigateway-binary-media-types:
+          - "*/*"
+
+  # Permission that allows API Gateway to call AocBotWebhookFunction
+  AocBotWebhookPerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - AocBotWebhookFunction
+      - AocBotApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AocBotWebhookFunction
+      Principal: apigateway.amazonaws.com

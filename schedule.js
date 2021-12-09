@@ -1,5 +1,7 @@
+'use strict';
+
 const handler = (/*event, context*/) => {
-    console.log("running");
+    console.log("schedule running");
 };
 
 exports.handler = handler;
