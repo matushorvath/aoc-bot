@@ -1,3 +1,5 @@
+'use strict';
+
 class ResultError extends Error {
     constructor(status, message) {
         super(message);

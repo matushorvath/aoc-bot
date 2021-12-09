@@ -1,3 +1,5 @@
+'use strict';
+
 const handler = (/*event, context*/) => {
     console.log("schedule running");
 };
