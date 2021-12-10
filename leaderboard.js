@@ -227,7 +227,7 @@ const updateLeaderboard = async () => {
     console.debug(`updateLeaderboard: sent invites: ${JSON.stringify(sent)}`);
     console.debug(`updateLeaderboard: failed invites: ${JSON.stringify(failed)}`);
 
-    return invites;
+    return { sent, failed };
 };
 
 exports.updateLeaderboard = updateLeaderboard;

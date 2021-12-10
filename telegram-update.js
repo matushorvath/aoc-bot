@@ -226,10 +226,10 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const changes = await updateLeaderboard();
+    const { sent } = await updateLeaderboard();
 
     let info = '';
-    for (const { aocUser, day } of changes) {
+    for (const { aocUser, day } of sent) {
         info += `• ${aocUser} invited to day ${day}\n`;
     }
     if (info === '') {
