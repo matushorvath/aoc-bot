@@ -1,7 +1,7 @@
 'use strict';
 
 const { getLeaderboard, sendTelegram } = require('./network');
-const { DynamoDB } = require("@aws-sdk/client-dynamodb");
+const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
 // TODO process leaderboards from multiple years
 const YEAR = 2021;
@@ -14,7 +14,7 @@ const getCompletedDays = (leaderboard) => {
     return Object.values(leaderboard.members).flatMap(member =>
         Object.entries(member.completion_day_level)
             // Take days with both parts completed
-            .filter(([, parts]) => parts["1"] && parts["2"])
+            .filter(([, parts]) => parts['1'] && parts['2'])
             // Make a [name, day] pair for each
             .map(([day, ]) => ({ aocUser: member.name, day: Number(day) }))
     );

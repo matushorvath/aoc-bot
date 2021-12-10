@@ -3,7 +3,7 @@
 const { sendTelegram } = require('./network');
 const { updateLeaderboard } = require('./leaderboard');
 
-const { DynamoDB } = require("@aws-sdk/client-dynamodb");
+const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
