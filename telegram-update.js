@@ -11,7 +11,8 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 const onMyChatMember = async (my_chat_member) => {
     // Only do something if we were made an admin in a group
     if (my_chat_member.new_chat_member?.status !== 'administrator'
-        || my_chat_member.chat.type !== 'group' || !my_chat_member.chat.title) {
+        || (my_chat_member.chat.type !== 'group' && my_chat_member.chat.type !== 'supergroup')
+        || !my_chat_member.chat.title) {
         return;
     }
 
@@ -278,6 +279,8 @@ const onCommandUnknown = async (chat) => {
 };
 
 const onTelegramUpdate = async (update) => {
+    console.debug(`onTelegramUpdate: update ${JSON.stringify(update)}`);
+
     if (update.my_chat_member) {
         await onMyChatMember(update.my_chat_member);
     } else if (update.message) {
