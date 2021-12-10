@@ -27,6 +27,7 @@ Resources:
         Key: !Ref Package
       Handler: schedule.handler
       Runtime: nodejs14.x
+      Timeout: 300
       Policies:
         - AWSLambdaVPCAccessExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -53,6 +54,7 @@ Resources:
         Key: !Ref Package
       Handler: webhook.handler
       Runtime: nodejs14.x
+      Timeout: 300
       Policies:
         - AWSLambdaVPCAccessExecutionRole
         - AWSXrayWriteOnlyAccess
