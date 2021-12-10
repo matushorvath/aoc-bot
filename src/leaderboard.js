@@ -1,31 +1,13 @@
 'use strict';
 
-const { getAdventOfCodeSecret } = require('./secrets');
-const { telegramSend } = require('./telegram-send');
-
-const axios = require('axios');
+const { getLeaderboard, sendTelegram } = require('./network');
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 
 // TODO process leaderboards from multiple years
 const YEAR = 2021;
-const LEADERBOARD_ID = 380635;
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
-
-const getLeaderboard = async () => {
-    console.log(`getLeaderboard: start`);
-
-    const secret = await getAdventOfCodeSecret();
-
-    const url = `https://adventofcode.com/${YEAR}/leaderboard/private/view/${LEADERBOARD_ID}.json`;
-    const options = { headers: { Cookie: `session=${secret}` } };
-    const response = await axios.get(url, options);
-
-    console.log(`getLeaderboard: done`);
-
-    return response.data;
-};
 
 const getCompletedDays = (leaderboard) => {
     // Get list of completed problems from the leaderboard
@@ -38,16 +20,16 @@ const getCompletedDays = (leaderboard) => {
     );
 };
 
-const getChats = async (days) => {
+const getChats = async (year, days) => {
     // Transform a list of of of [AoC user, day] pairs into a list of [Telegram user, channel] pairs
     const uniqueAocUsers = [...new Set(days.map(({ aocUser }) => aocUser))];
     const userMap = await mapUsers(uniqueAocUsers);
 
     const uniqueDays = [...new Set(days.map(({ day }) => day))];
-    const dayMap = await mapDaysToChats(YEAR, uniqueDays);
+    const dayMap = await mapDaysToChats(year, uniqueDays);
 
     return days
-        .map(({ aocUser, day }) => ({ aocUser, year: YEAR, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
+        .map(({ aocUser, day }) => ({ aocUser, year, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
         .filter(({ telegramUser, chat }) => telegramUser !== undefined && chat !== undefined);
 };
 
@@ -117,7 +99,7 @@ const findChanges = async (chats) => {
     // Filter out users who are already in the chat
     const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
         try {
-            const member = await telegramSend('getChatMember', { chat_id: chat, user_id: telegramUser });
+            const member = await sendTelegram('getChatMember', { chat_id: chat, user_id: telegramUser });
             return !member.ok || member.result.status === 'left';
         } catch (error) {
             if (error.isAxiosError && error.response?.data?.error_code === 400) {
@@ -173,7 +155,7 @@ const sendInvites = async (changes) => {
     for (const change of changes) {
         const { telegramUser, aocUser, chat, year, day } = change;
 
-        const invite = await telegramSend('createChatInviteLink', {
+        const invite = await sendTelegram('createChatInviteLink', {
             chat_id: chat,
             name: `AoC ${year} Day ${day}`,
             member_limit: 1,
@@ -184,7 +166,7 @@ const sendInvites = async (changes) => {
 
         if (invite.ok) {
             try {
-                await telegramSend('sendMessage', {
+                await sendTelegram('sendMessage', {
                     chat_id: telegramUser,
                     parse_mode: 'MarkdownV2',
                     text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room`
@@ -213,11 +195,11 @@ const sendInvites = async (changes) => {
 
 const updateLeaderboard = async () => {
     // Load the leaderboard
-    const leaderboard = await getLeaderboard();
+    const leaderboard = await getLeaderboard(YEAR);
     const days = getCompletedDays(leaderboard);
 
     // Get list of chats each user should be in
-    const chats = await getChats(days);
+    const chats = await getChats(YEAR, days);
     const changes = await findChanges(chats);
     const invites = await filterSent(changes);
 
