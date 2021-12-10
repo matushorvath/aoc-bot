@@ -3,7 +3,7 @@
 const { updateLeaderboard } = require('./leaderboard');
 
 const handler = async () => {
-    console.log("handler: schedule running");
+    console.log("handler: start");
 
     await updateLeaderboard();
 };
