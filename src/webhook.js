@@ -1,7 +1,7 @@
 'use strict';
 
 const { getTelegramSecret } = require('./secrets');
-const { onTelegramUpdate } = require('./telegram-update');
+const { onTelegramUpdate } = require('./telegram');
 
 class ResultError extends Error {
     constructor(status, message) {

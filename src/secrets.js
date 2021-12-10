@@ -1,6 +1,6 @@
 'use strict';
 
-const { SSMClient, GetParametersCommand } = require("@aws-sdk/client-ssm");
+const { SSMClient, GetParametersCommand } = require('@aws-sdk/client-ssm');
 
 const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 
@@ -41,5 +41,10 @@ const getTelegramSecret = async () => {
     return telegramSecret;
 };
 
+const resetCache = () => {
+    adventOfCodeSecret = telegramSecret = undefined;
+};
+
 exports.getAdventOfCodeSecret = getAdventOfCodeSecret;
 exports.getTelegramSecret = getTelegramSecret;
+exports.resetCache = resetCache;
