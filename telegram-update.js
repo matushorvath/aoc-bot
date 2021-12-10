@@ -220,6 +220,12 @@ const onCommandStatus = async (chat, telegramUser) => {
 const onCommandUpdate = async (chat) => {
     console.log(`onCommandUpdate: Start`);
 
+    await telegramSend('sendMessage', {
+        chat_id: chat,
+        text: `Updating leaderboard, this might take a few seconds`,
+        disable_notification: true
+    });
+
     const changes = await updateLeaderboard();
 
     console.log('onCommandUpdate: Leaderboard updated');
