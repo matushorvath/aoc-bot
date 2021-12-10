@@ -17,31 +17,31 @@ const validateSecret = async (event) => {
     const secret = await getTelegramSecret();
 
     if (event.queryStringParameters[secret] !== '') {
-        console.log('postTelegram: Invalid secret');
+        console.error('validateSecret: invalid secret');
         throw new ResultError(401, 'Unauthorized');
     }
 };
 
 const postTelegram = async (event) => {
-    console.log('postTelegram: POST /telegram start');
+    console.log('postTelegram: start');
 
     await validateSecret(event);
 
     const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
     await onTelegramUpdate(JSON.parse(body));
 
-    console.debug(`postTelegram: Done processing`);
+    console.log(`postTelegram: done`);
 
     return { status: 201 };
 };
 
 const postLeaderboard = async (event) => {
-    console.log('postLeaderboard: POST /leaderboard start');
+    console.log('postLeaderboard: start');
 
     await validateSecret(event);
     await updateLeaderboard();
 
-    console.debug(`postLeaderboard: Done processing`);
+    console.log(`postLeaderboard: done`);
 
     return { status: 201 };
 };
@@ -81,18 +81,18 @@ const processEvent = async (event) => {
 
 const handler = async (event) => {
     try {
-        console.debug('handler: Start processing');
+        console.log('handler: start');
         const result = await processEvent(event);
-        console.debug('handler: Data response', result);
+        console.log('handler: data response', result);
 
         return makeResponse(result);
     } catch (error) {
         if (error instanceof ResultError) {
-            console.log('handler: Error response', error);
+            console.log('handler: error response', error);
             return makeResponse(error);
         }
 
-        console.log('handler: Internal server error', error);
+        console.log('handler: internal server error', error);
         return makeResponse(new ResultError(500, 'Internal Server Error'));
     }
 };
