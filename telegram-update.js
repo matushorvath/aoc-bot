@@ -19,14 +19,14 @@ const onMyChatMember = async (my_chat_member) => {
     // Guess AoC day based on group title
     const m = my_chat_member.chat.title.match(/AoC ([0-9]{4}) Day ([0-9]{1,2})/);
     if (!m) {
-        console.warn(`onMyChatMember: Chat title '${my_chat_member.chat.title}' did not match`);
+        console.warn(`onMyChatMember: chat title '${my_chat_member.chat.title}' did not match`);
         return;
     }
 
     const year = Number(m[1]);
     const day = Number(m[2]);
 
-    console.log(`onMyChatMember: Admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
+    console.log(`onMyChatMember: admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
 
     // Store the group info in db
     const params = {
@@ -40,7 +40,7 @@ const onMyChatMember = async (my_chat_member) => {
     };
     await db.putItem(params);
 
-    console.log('onMyChatMember: Admin data stored in db');
+    console.log('onMyChatMember: admin data stored in db');
 
     // Initialize the group
     // TODO bot name should be clickable and open chat with the bot
@@ -50,7 +50,7 @@ const onMyChatMember = async (my_chat_member) => {
         disable_notification: true
     });
 
-    console.log('onMyChatMember: Admin processing done');
+    console.log('onMyChatMember: done');
 };
 
 const onMessage = async (message) => {
@@ -62,7 +62,7 @@ const onMessage = async (message) => {
     // TODO support unreg command
     let m = message.text.match(/^\s*\/(reg|unreg|status|update|start|help)(?:\s+(.+))?\s*$/)
     if (!m) {
-        console.log(`onMessage: Text '${message.text}' did not match`);
+        console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
         return;
     }
@@ -81,13 +81,13 @@ const onMessage = async (message) => {
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
     } else {
-        console.log(`onMessage: Unknown command '${message.text}'`);
+        console.log(`onMessage: unknown command '${message.text}'`);
         await onCommandUnknown(message.chat.id, message.text);
     }
 };
 
 const onCommandReg = async (chat, aocUser, telegramUser) => {
-    console.log(`onCommandReg: Map user, AoC '${aocUser}' Telegram '${telegramUser}'`);
+    console.log(`onCommandReg: start, aocUser ${aocUser} telegramUser ${telegramUser}`);
 
     // Delete existing registration, if any
     await deleteUserData(telegramUser);
@@ -113,7 +113,7 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
     };
     await db.putItem(telegramParams);
 
-    console.log('onCommandReg: Map user stored in db');
+    console.log('onCommandReg: user stored in db');
 
     // Confirm the registration
     await telegramSend('sendMessage', {
@@ -122,11 +122,11 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
         disable_notification: true
     });
 
-    console.log('onCommandReg: Processing done');
+    console.log('onCommandReg: done');
 };
 
 const onCommandUnreg = async (chat, telegramUser) => {
-    console.log(`onCommandUnreg: Remove user, Telegram '${telegramUser}'`);
+    console.log(`onCommandUnreg: start, telegramUser '${telegramUser}'`);
 
     const aocUser = await deleteUserData(telegramUser);
     if (aocUser) {
@@ -143,7 +143,7 @@ const onCommandUnreg = async (chat, telegramUser) => {
         });
     }
 
-    console.log('onCommandUnreg: Processing done');
+    console.log('onCommandUnreg: done');
 };
 
 const deleteUserData = async (telegramUser) => {
@@ -156,12 +156,12 @@ const deleteUserData = async (telegramUser) => {
 
     const getData = await db.getItem(getParams);
     if (!getData.Item) {
-        console.log(`deleteUserData: No records to delete`);
+        console.log(`deleteUserData: no records to delete`);
         return undefined;
     }
 
     const aocUser = getData.Item.aoc_user.S;
-    console.log(`deleteUserData: Found AoC user '${aocUser}'`);
+    console.log(`deleteUserData: found aocUser ${aocUser}`);
 
     // Delete all user records
     const writeParams = {
@@ -180,15 +180,15 @@ const deleteUserData = async (telegramUser) => {
     const writeData = await db.batchWriteItem(writeParams);
 
     if (Object.keys(writeData.UnprocessedItems).length > 0) {
-        console.log(`deleteUserData: Some records were not deleted: ${JSON.stringify(writeData.UnprocessedItems)}`);
+        console.warn(`deleteUserData: some records not deleted: ${JSON.stringify(writeData.UnprocessedItems)}`);
     }
 
-    console.log('deleteUserData: Map user stored in db');
+    console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
     return aocUser;
 };
 
 const onCommandStatus = async (chat, telegramUser) => {
-    console.log(`onCommandStatus: User status, Telegram '${telegramUser}'`);
+    console.log(`onCommandStatus: start telegramUser ${telegramUser}`);
 
     // Find AoC record in database
     const getParams = {
@@ -214,11 +214,11 @@ const onCommandStatus = async (chat, telegramUser) => {
         });
     }
 
-    console.log('onCommandStatus: Processing done');
+    console.log('onCommandStatus: done');
 };
 
 const onCommandUpdate = async (chat) => {
-    console.log(`onCommandUpdate: Start`);
+    console.log(`onCommandUpdate: start`);
 
     await telegramSend('sendMessage', {
         chat_id: chat,
@@ -226,12 +226,10 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const changes = await updateLeaderboard();
-
-    console.log('onCommandUpdate: Leaderboard updated');
+    const { sent } = await updateLeaderboard();
 
     let info = '';
-    for (const { aocUser, day } of changes) {
+    for (const { aocUser, day } of sent) {
         info += `• ${aocUser} invited to day ${day}\n`;
     }
     if (info === '') {
@@ -244,7 +242,7 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    console.log('onCommandUpdate: Done');
+    console.log('onCommandUpdate: done');
 };
 
 const HELP_TEXT =
@@ -266,7 +264,7 @@ Leaderboard is updated automatically every 15 minutes\\. This command is only ne
 `;
 
 const onCommandHelp = async (chat) => {
-    console.log(`onCommandHelp: Display help`);
+    console.log(`onCommandHelp: start`);
 
     await telegramSend('sendMessage', {
         chat_id: chat,
@@ -285,7 +283,7 @@ const onCommandUnknown = async (chat) => {
 };
 
 const onTelegramUpdate = async (update) => {
-    console.debug(`onTelegramUpdate: update ${JSON.stringify(update)}`);
+    console.debug(`onTelegramUpdate: start, update ${JSON.stringify(update)}`);
 
     if (update.my_chat_member) {
         await onMyChatMember(update.my_chat_member);

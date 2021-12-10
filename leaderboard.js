@@ -14,7 +14,7 @@ const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 const getLeaderboard = async () => {
-    console.log(`getLeaderboard: Going to download leaderboard`);
+    console.log(`getLeaderboard: start`);
 
     const secret = await getAdventOfCodeSecret();
 
@@ -22,7 +22,7 @@ const getLeaderboard = async () => {
     const options = { headers: { Cookie: `session=${secret}` } };
     const response = await axios.get(url, options);
 
-    console.log(`getLeaderboard: Finished downloading`);
+    console.log(`getLeaderboard: done`);
 
     return response.data;
 };
@@ -52,9 +52,9 @@ const getChats = async (days) => {
 };
 
 const mapUsers = async (aocUsers) => {
-    const map = {};
+    console.log(`mapUsers: start`);
 
-    console.log(`mapUsers: Going to query users from db`);
+    const map = {};
 
     const WINDOW = 100;
     for (let i = 0; i < aocUsers.length; i += WINDOW) {
@@ -77,15 +77,15 @@ const mapUsers = async (aocUsers) => {
         }
     }
 
-    console.log(`mapUsers: Finished querying`);
+    console.log(`mapUsers: done`);
 
     return map;
 };
 
 const mapDaysToChats = async (year, days) => {
-    const map = {};
+    console.log(`mapDaysToChats: start`);
 
-    console.log(`mapDaysToChats: Going to query chats from db`);
+    const map = {};
 
     const WINDOW = 100;
     for (let i = 0; i < days.length; i += WINDOW) {
@@ -108,7 +108,7 @@ const mapDaysToChats = async (year, days) => {
         }
     }
 
-    console.log(`mapDaysToChats: Finished querying`);
+    console.log(`mapDaysToChats: done`);
 
     return map;
 };
@@ -121,7 +121,7 @@ const findChanges = async (chats) => {
             return !member.ok || member.result.status === 'left';
         } catch (error) {
             if (error.isAxiosError && error.response?.data?.error_code === 400) {
-                console.log(`findChanges: User not found ${telegramUser}`);
+                console.warn(`findChanges: user not found ${telegramUser}`);
                 return false;
             }
             throw error;
@@ -142,7 +142,7 @@ const filterSent = async (chats) => {
 
         const getData = await db.getItem(getParams);
         if (getData.Item !== undefined) {
-            console.log(`filterSent: Skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
+            console.log(`filterSent: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
             return false;
         }
         return true;
@@ -163,17 +163,24 @@ const markAsSent = async (telegramUser, year, day, chat) => {
     };
     await db.putItem(params);
 
-    console.log(`markAsSent: Marked as sent ${telegramUser} ${chat} ${year} ${day}`);
+    console.log(`markAsSent: marked as sent ${telegramUser} ${chat} ${year} ${day}`);
 };
 
 const sendInvites = async (changes) => {
-    for (const { telegramUser, aocUser, chat, year, day } of changes) {
+    const sent = [];
+    const failed = [];
+
+    for (const change of changes) {
+        const { telegramUser, aocUser, chat, year, day } = change;
+
         const invite = await telegramSend('createChatInviteLink', {
             chat_id: chat,
             name: `AoC ${year} Day ${day}`,
             member_limit: 1,
             creates_join_request: false
         });
+
+        let success = false;
 
         if (invite.ok) {
             try {
@@ -182,18 +189,26 @@ const sendInvites = async (changes) => {
                     parse_mode: 'MarkdownV2',
                     text: `You are invited to the [${invite.result.name}](${invite.result.invite_link}) chat room`
                 });
-                console.log(`sendInvites: Sent to AoC '${aocUser}' Telegram '${telegramUser}' Year ${year} Day ${day}`);
+
+                success = true;
+                console.log(`sendInvites: sent to aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
             } catch (error) {
                 if (error.isAxiosError && error.response?.data?.error_code === 400) {
-                    console.log(`sendInvites: Not allowed AoC '${aocUser}' Telegram '${telegramUser}' Year ${year} Day ${day}`);
+                    // This often means we are not allowed to contact the user
+                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
                     continue;
                 }
+
                 throw error;
             }
 
             await markAsSent(telegramUser, year, day, chat);
         }
+
+        (success ? sent : failed).push(change);
     }
+
+    return { sent, failed };
 };
 
 const updateLeaderboard = async () => {
@@ -206,12 +221,13 @@ const updateLeaderboard = async () => {
     const changes = await findChanges(chats);
     const invites = await filterSent(changes);
 
-    console.log(`Invites to send: ${JSON.stringify(invites)}`);
-
     // Create invites for all missing cases
-    await sendInvites(invites);
+    const { sent, failed } = await sendInvites(invites);
 
-    return invites;
+    console.debug(`updateLeaderboard: sent invites: ${JSON.stringify(sent)}`);
+    console.debug(`updateLeaderboard: failed invites: ${JSON.stringify(failed)}`);
+
+    return { sent, failed };
 };
 
 exports.updateLeaderboard = updateLeaderboard;

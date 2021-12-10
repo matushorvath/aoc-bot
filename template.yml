@@ -126,17 +126,6 @@ Resources:
                 passthroughBehavior: when_no_match
                 httpMethod: POST
                 type: aws_proxy
-          /leaderboard:
-            post:
-              security:
-                - CustomAuthorizer: []
-              x-amazon-apigateway-integration:
-                uri: !Sub
-                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
-                  /2015-03-31/functions/${AocBotWebhookFunction.Arn}/invocations"
-                passthroughBehavior: when_no_match
-                httpMethod: POST
-                type: aws_proxy
         x-amazon-apigateway-binary-media-types:
           - "*/*"
 
