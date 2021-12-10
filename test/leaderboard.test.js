@@ -80,7 +80,7 @@ describe('updateLeaderboard', () => {
 
         // TODO missing chat for a day
 
-        // findChanges
+        // filterUsersInChat
         const member = { ok: true, result: { status: 'left' } };
         for (let i = 0; i < 4; i++) {
             network.sendTelegram.mockResolvedValueOnce(member);
@@ -157,7 +157,7 @@ describe('updateLeaderboard', () => {
             }
         });
 
-        // findChanges
+        // filterUsersInChat
         expect(network.sendTelegram).toHaveBeenCalledTimes(4 + 8);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'getChatMember', { chat_id: 50505, user_id: 4242 });
         // { chat_id: 70707, user_id: 4242 } is missing, because part 2 was not solved
