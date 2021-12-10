@@ -2,7 +2,6 @@
 
 const { getTelegramSecret } = require('./secrets');
 const { onTelegramUpdate } = require('./telegram-update');
-const { updateLeaderboard } = require('./leaderboard');
 
 class ResultError extends Error {
     constructor(status, message) {
@@ -35,17 +34,6 @@ const postTelegram = async (event) => {
     return { status: 201 };
 };
 
-const postLeaderboard = async (event) => {
-    console.log('postLeaderboard: start');
-
-    await validateSecret(event);
-    await updateLeaderboard();
-
-    console.log(`postLeaderboard: done`);
-
-    return { status: 201 };
-};
-
 const makeResponse = (result) => {
     const contentTypeHeaders = result.body === undefined ? undefined : { 'Content-Type': 'application/json' };
 
@@ -67,12 +55,6 @@ const processEvent = async (event) => {
     if (event.resource === '/telegram') {
         if (event.httpMethod === 'POST') {
             return postTelegram(event);
-        }
-        throw new ResultError(405, 'Method Not Allowed');
-    }
-    else if (event.resource === '/leaderboard') {
-        if (event.httpMethod === 'POST') {
-            return postLeaderboard(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
     }
