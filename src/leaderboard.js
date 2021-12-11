@@ -100,7 +100,7 @@ const filterUsersInChat = async (chats) => {
     const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
         try {
             const member = await sendTelegram('getChatMember', { chat_id: chat, user_id: telegramUser });
-            return !member.ok || member.result.status === 'left';
+            return member.ok && member.result.status === 'left';
         } catch (error) {
             if (error.isAxiosError && error.response?.data?.error_code === 400) {
                 console.warn(`filterUsersInChat: user not found ${telegramUser}`);
