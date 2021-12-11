@@ -21,7 +21,7 @@ const getCompletedDays = (leaderboard) => {
 };
 
 const getChats = async (year, days) => {
-    // Transform a list of of of [AoC user, day] pairs into a list of [Telegram user, channel] pairs
+    // Add telegram information into the list of [AoC user, day] pairs
     const uniqueAocUsers = [...new Set(days.map(({ aocUser }) => aocUser))];
     const userMap = await mapUsers(uniqueAocUsers);
 
@@ -95,7 +95,7 @@ const mapDaysToChats = async (year, days) => {
     return map;
 };
 
-const findChanges = async (chats) => {
+const filterUsersInChat = async (chats) => {
     // Filter out users who are already in the chat
     const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
         try {
@@ -103,7 +103,7 @@ const findChanges = async (chats) => {
             return !member.ok || member.result.status === 'left';
         } catch (error) {
             if (error.isAxiosError && error.response?.data?.error_code === 400) {
-                console.warn(`findChanges: user not found ${telegramUser}`);
+                console.warn(`filterUsersInChat: user not found ${telegramUser}`);
                 return false;
             }
             throw error;
@@ -113,7 +113,7 @@ const findChanges = async (chats) => {
     return chats.filter((_, index) => needsAdding[index]);
 };
 
-const filterSent = async (chats) => {
+const filterSentInvites = async (chats) => {
     // Filter out users who already got an invite
     const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
         const getParams = {
@@ -124,7 +124,7 @@ const filterSent = async (chats) => {
 
         const getData = await db.getItem(getParams);
         if (getData.Item !== undefined) {
-            console.log(`filterSent: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
+            console.log(`filterSentInvites: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
             return false;
         }
         return true;
@@ -200,8 +200,8 @@ const updateLeaderboard = async () => {
 
     // Get list of chats each user should be in
     const chats = await getChats(YEAR, days);
-    const changes = await findChanges(chats);
-    const invites = await filterSent(changes);
+    const changes = await filterUsersInChat(chats);
+    const invites = await filterSentInvites(changes);
 
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);

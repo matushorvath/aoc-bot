@@ -80,7 +80,7 @@ describe('updateLeaderboard', () => {
 
         // TODO missing chat for a day
 
-        // findChanges
+        // filterUsersInChat
         const member = { ok: true, result: { status: 'left' } };
         for (let i = 0; i < 4; i++) {
             network.sendTelegram.mockResolvedValueOnce(member);
@@ -89,7 +89,7 @@ describe('updateLeaderboard', () => {
         // TODO member.ok === false (add??? or error), member.result.status === 'left' (add),
         // TODO member.result.status === 'member' (no add), 404 (no add)
 
-        // filterSent
+        // filterSentInvites
         for (let i = 0; i < 4; i++) {
             dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
         }
@@ -157,7 +157,7 @@ describe('updateLeaderboard', () => {
             }
         });
 
-        // findChanges
+        // filterUsersInChat
         expect(network.sendTelegram).toHaveBeenCalledTimes(4 + 8);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'getChatMember', { chat_id: 50505, user_id: 4242 });
         // { chat_id: 70707, user_id: 4242 } is missing, because part 2 was not solved
@@ -166,7 +166,7 @@ describe('updateLeaderboard', () => {
         expect(network.sendTelegram).toHaveBeenNthCalledWith(4, 'getChatMember', { chat_id: 131313, user_id: 6969 });
         // { chat_id: 171717, user_id: 6969 } is missing, because part 2 was not solved
 
-        // filterSent
+        // filterSentInvites
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledTimes(4);
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(1, {
             TableName: 'aoc-bot',
