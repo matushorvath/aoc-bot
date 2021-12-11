@@ -113,7 +113,7 @@ const filterUsersInChat = async (chats) => {
     return chats.filter((_, index) => needsAdding[index]);
 };
 
-const filterSent = async (chats) => {
+const filterSentInvites = async (chats) => {
     // Filter out users who already got an invite
     const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
         const getParams = {
@@ -124,7 +124,7 @@ const filterSent = async (chats) => {
 
         const getData = await db.getItem(getParams);
         if (getData.Item !== undefined) {
-            console.log(`filterSent: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
+            console.log(`filterSentInvites: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
             return false;
         }
         return true;
@@ -201,7 +201,7 @@ const updateLeaderboard = async () => {
     // Get list of chats each user should be in
     const chats = await getChats(YEAR, days);
     const changes = await filterUsersInChat(chats);
-    const invites = await filterSent(changes);
+    const invites = await filterSentInvites(changes);
 
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);
