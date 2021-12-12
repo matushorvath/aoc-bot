@@ -6,7 +6,7 @@ const leaderboard = require('../src/leaderboard');
 jest.mock('../src/leaderboard');
 
 describe('schedule.handler', () => {
-    test('succeds updating the leaderboard', async () => {
+    test('succeeds updating the leaderboard', async () => {
         await expect(handler()).resolves.toBeUndefined();
         expect(leaderboard.updateLeaderboard).toHaveBeenCalledWith();
     });
