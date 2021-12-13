@@ -26,8 +26,9 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
         `ofic. part 1 a 2 (cas na p2) neoficialne (cisty cas na p2)`;
 
-    return [header, ...results.map(result => formatOneLine(
+    const board = [header, ...results.map(result => formatOneLine(
         result, startTs, startTimes?.[year][day][result.name]))].join('\n');
+    return escapeForTelegram(board);
 };
 
 const formatOneLine = (result, startTs, dayStartTimes) => {
@@ -76,6 +77,10 @@ const formatDuration = (duration) => {
     } else {
         return `${dh.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
+};
+
+const escapeForTelegram = (text) => {
+    return text.replace(/[-_*[\]()~`>#+=|{}.!]/g, '\\$&');
 };
 
 exports.formatBoard = formatBoard;

@@ -198,7 +198,7 @@ const onCommandBoard = async (chat, dayStr) => {
         console.log(`onCommandBoard: day is invalid: ${day}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: `I don't understand which day you mean by '${dayStr}; numbers 1 to 25 are fine'`,
+            text: `I don't understand which day you mean by '${dayStr}'; numbers 1 to 25 are fine`,
             disable_notification: true
         });
     }
@@ -209,6 +209,7 @@ const onCommandBoard = async (chat, dayStr) => {
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
+        parse_mode: 'MarkdownV2',
         text: `\`\`\`${board}\`\`\``,
         disable_notification: true
     });
