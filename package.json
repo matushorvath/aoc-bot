@@ -21,12 +21,7 @@
         "node": "^14"
     },
     "files": [
-        "src/leaderboard.js",
-        "src/network.js",
-        "src/schedule.js",
-        "src/secrets.js",
-        "src/telegram.js",
-        "src/webhook.js",
+        "src/*.js",
         "template.yml"
     ],
     "deployFiles": [
