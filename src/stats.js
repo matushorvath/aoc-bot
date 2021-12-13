@@ -23,7 +23,8 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
 
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
-    const header = `Day ${day} @${elapsed}  ofic. part 1 a 2 (cas na p2) neoficialne (cisty cas na p2)`;
+    const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
+        `ofic. part 1 a 2 (cas na p2) neoficialne (cisty cas na p2)`;
 
     return [header, ...results.map(result => formatOneLine(
         result, startTs, startTimes?.[year][day][result.name]))].join('\n');
