@@ -210,7 +210,7 @@ const onCommandBoard = async (chat, dayStr) => {
     await sendTelegram('sendMessage', {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
-        text: `\`\`\`${board}\`\`\``,
+        text: `\`\`\`\n${board}\n\`\`\``,
         disable_notification: true
     });
 
