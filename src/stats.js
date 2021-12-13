@@ -2,7 +2,7 @@
 
 const LOCALE = 'sk';
 
-const formatStats = (year, day, leaderboard, startTimes) => {
+const formatBoard = (year, day, leaderboard, startTimes) => {
     const results = Object.values(leaderboard.members)
         .filter(member => member.completion_day_level[day])
         .map(member => ({
@@ -77,4 +77,4 @@ const formatDuration = (duration) => {
     }
 };
 
-exports.formatStats = formatStats;
+exports.formatBoard = formatBoard;

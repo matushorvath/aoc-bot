@@ -1,7 +1,8 @@
 'use strict';
 
-const { sendTelegram } = require('./network');
+const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
 const { updateLeaderboard } = require('./leaderboard');
+const { formatBoard } = require('./stats');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
@@ -60,7 +61,7 @@ const onMessage = async (message) => {
     }
 
     // TODO support unreg command
-    let m = message.text.match(/^\s*\/(reg|unreg|status|update|start|help)(?:\s+(.+))?\s*$/)
+    let m = message.text.match(/^\s*\/(reg|unreg|status|update|board|start|help)(?:\s+(.+))?\s*$/)
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -78,6 +79,8 @@ const onMessage = async (message) => {
         await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
         await onCommandUpdate(message.chat.id);
+    } else if (command === 'board' && params) {
+        await onCommandBoard(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
     } else {
@@ -185,6 +188,32 @@ const deleteUserData = async (telegramUser) => {
 
     console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
     return aocUser;
+};
+
+const onCommandBoard = async (chat, dayStr) => {
+    console.log(`onCommandBoard: start, day ${dayStr}`);
+
+    const day = parseInt(dayStr, 10);
+    if (isNaN(day) || day < 1 || day > 25) {
+        console.log(`onCommandBoard: day is invalid: ${day}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `I don't understand which day you mean by '${dayStr}; numbers 1 to 25 are fine'`,
+            disable_notification: true
+        });
+    }
+
+    const leaderboard = await getLeaderboard(2021, day);
+    const startTimes = await getStartTimes();
+    const board = formatBoard(2021, day, leaderboard, startTimes);
+
+    await sendTelegram('sendMessage', {
+        chat_id: chat,
+        text: board,
+        disable_notification: true
+    });
+
+    console.log('onCommandBoard: done');
 };
 
 const onCommandStatus = async (chat, telegramUser) => {
