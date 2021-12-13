@@ -73,7 +73,7 @@ const formatDuration = (duration) => {
     } else if (dh > 99) {
         return `${d.toString().padStart(3)}d ${h.toString().padStart(2)}h`;
     } else {
-        return `${dh.toString().padStart(2)}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        return `${dh.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 };
 

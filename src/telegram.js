@@ -209,7 +209,7 @@ const onCommandBoard = async (chat, dayStr) => {
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: board,
+        text: `\`\`\`${board}\`\`\``,
         disable_notification: true
     });
 
