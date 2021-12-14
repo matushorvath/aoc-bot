@@ -201,6 +201,7 @@ const onCommandBoard = async (chat, params) => {
             text: `I need two parameters, \`/board <year> <day>\``,
             disable_notification: true
         });
+        return;
     }
 
     const [year, day] = params.split(' ').map(Number);
