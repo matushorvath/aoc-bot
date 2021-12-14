@@ -3,9 +3,6 @@
 const { getLeaderboard, sendTelegram } = require('./network');
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
-// TODO process leaderboards from multiple years
-const YEAR = 2021;
-
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
@@ -193,23 +190,34 @@ const sendInvites = async (changes) => {
     return { sent, failed };
 };
 
-const updateLeaderboard = async () => {
+const updateOneLeaderboard = async (year) => {
     // Load the leaderboard
-    const leaderboard = await getLeaderboard(YEAR);
+    const leaderboard = await getLeaderboard(year);
     const days = getCompletedDays(leaderboard);
 
     // Get list of chats each user should be in
-    const chats = await getChats(YEAR, days);
+    const chats = await getChats(year, days);
     const changes = await filterUsersInChat(chats);
     const invites = await filterSentInvites(changes);
 
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);
 
-    console.debug(`updateLeaderboard: sent invites: ${JSON.stringify(sent)}`);
-    console.debug(`updateLeaderboard: failed invites: ${JSON.stringify(failed)}`);
+    console.debug(`updateOneLeaderboard: sent invites: ${JSON.stringify(sent)}`);
+    console.debug(`updateOneLeaderboard: failed invites: ${JSON.stringify(failed)}`);
 
-    return { sent, failed };
+    return [sent, failed];
 };
 
-exports.updateLeaderboard = updateLeaderboard;
+const updateLeaderboards = async () => {
+    // TODO find which chats are we subscribed to, and get those years only
+    const [sent2021, failed2021] = await updateOneLeaderboard(2021);
+    const [sent2020, failed2020] = await updateOneLeaderboard(2020);
+
+    return [
+        [...sent2021, ...sent2020],
+        [...failed2021, ...failed2020]
+    ];
+};
+
+exports.updateLeaderboards = updateLeaderboards;

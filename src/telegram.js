@@ -1,7 +1,7 @@
 'use strict';
 
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
-const { updateLeaderboard } = require('./leaderboard');
+const { updateLeaderboards } = require('./leaderboard');
 const { formatBoard } = require('./stats');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
@@ -190,22 +190,24 @@ const deleteUserData = async (telegramUser) => {
     return aocUser;
 };
 
-const onCommandBoard = async (chat, dayStr) => {
-    console.log(`onCommandBoard: start, day ${dayStr}`);
+const onCommandBoard = async (chat, params) => {
+    console.log(`onCommandBoard: start, day ${params}`);
 
-    const day = parseInt(dayStr, 10);
-    if (isNaN(day) || day < 1 || day > 25) {
-        console.log(`onCommandBoard: day is invalid: ${day}`);
+    const m = params.match(/([0-9]{4})\s+([0-9]{1,2})/);
+    if (!m) {
+        console.log(`onCommandBoard: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: `I don't understand which day you mean by '${dayStr}'; numbers 1 to 25 are fine`,
+            text: `I need two parameters, \`/board <year> <day>\``,
             disable_notification: true
         });
     }
 
-    const leaderboard = await getLeaderboard(2021, day);
+    const [year, day] = params.split(' ').map(Number);
+
+    const leaderboard = await getLeaderboard(year, day);
     const startTimes = await getStartTimes();
-    const board = formatBoard(2021, day, leaderboard, startTimes);
+    const board = formatBoard(year, day, leaderboard, startTimes);
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
@@ -256,7 +258,7 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const { sent } = await updateLeaderboard();
+    const [sent] = await updateLeaderboards();
 
     let info = '';
     for (const { aocUser, day } of sent) {
