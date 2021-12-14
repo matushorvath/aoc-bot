@@ -1,6 +1,6 @@
 'use strict';
 
-const { getLeaderboard, sendTelegram } = require('./network');
+const { sendTelegram } = require('./network');
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
 const DB_TABLE = 'aoc-bot';
@@ -190,9 +190,9 @@ const sendInvites = async (changes) => {
     return { sent, failed };
 };
 
-const updateOneLeaderboard = async (year) => {
-    // Load the leaderboard
-    const leaderboard = await getLeaderboard(year);
+const processInvites = async (leaderboard) => {
+    // Parse the leaderboard
+    const year = Number(leaderboard.event);
     const days = getCompletedDays(leaderboard);
 
     // Get list of chats each user should be in
@@ -203,21 +203,10 @@ const updateOneLeaderboard = async (year) => {
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);
 
-    console.debug(`updateOneLeaderboard: sent invites: ${JSON.stringify(sent)}`);
-    console.debug(`updateOneLeaderboard: failed invites: ${JSON.stringify(failed)}`);
+    console.debug(`processInvites: sent invites: ${JSON.stringify(sent)}`);
+    console.debug(`processInvites: failed invites: ${JSON.stringify(failed)}`);
 
-    return [sent, failed];
+    return { sent, failed };
 };
 
-const updateLeaderboards = async () => {
-    // TODO find which chats are we subscribed to, and get those years only
-    const [sent2021, failed2021] = await updateOneLeaderboard(2021);
-    const [sent2020, failed2020] = await updateOneLeaderboard(2020);
-
-    return [
-        [...sent2021, ...sent2020],
-        [...failed2021, ...failed2020]
-    ];
-};
-
-exports.updateLeaderboards = updateLeaderboards;
+exports.processInvites = processInvites;

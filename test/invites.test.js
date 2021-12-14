@@ -1,6 +1,6 @@
 'use strict';
 
-const { updateLeaderboards } = require('../src/leaderboard');
+const { processInvites } = require('../src/invites');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
@@ -12,9 +12,10 @@ beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
 });
 
-describe('updateLeaderboards', () => {
+describe('processInvites', () => {
     test('sends invites', async () => {
-        network.getLeaderboard.mockResolvedValueOnce({
+        const leaderboard = {
+            event: '2021',
             members: {
                 '42': {
                     name: 'nAmE42',
@@ -73,10 +74,9 @@ describe('updateLeaderboards', () => {
                     },
                 }
             }
-        });
-        network.getLeaderboard.mockResolvedValueOnce({ members: {} });
+        };
 
-        // TODO error from getLeaderboard, invalid json from getLeaderboard
+        // TODO invalid leaderboard json
 
         // mapUsers
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
@@ -178,25 +178,18 @@ describe('updateLeaderboards', () => {
         network.sendTelegram.mockRejectedValueOnce(
             { isAxiosError: true, response: { data: { error_code: 400 } } });
 
-        await expect(updateLeaderboards()).resolves.toEqual([
-            [
-                {
-                    aocUser: 'nAmE42', chat: 50505, day: 5, telegramUser: 4242, year: 2021
-                }, {
-                    aocUser: 'nAmE42', chat: 111111, day: 11, telegramUser: 4242, year: 2021
-                }, {
-                    aocUser: 'nAmE69', chat: 70707, day: 7, telegramUser: 6969, year: 2021
-                }
-            ], [
-                {
-                    aocUser: 'nAmE95', chat: 50505, day: 5, telegramUser: 9595, year: 2021
-                }
-            ]
-        ]);
-
-        expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
-        expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
-        expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
+        await expect(processInvites(leaderboard)).resolves.toEqual({
+            sent: [{
+                aocUser: 'nAmE42', chat: 50505, day: 5, telegramUser: 4242, year: 2021
+            }, {
+                aocUser: 'nAmE42', chat: 111111, day: 11, telegramUser: 4242, year: 2021
+            }, {
+                aocUser: 'nAmE69', chat: 70707, day: 7, telegramUser: 6969, year: 2021
+            }],
+            failed: [{
+                aocUser: 'nAmE95', chat: 50505, day: 5, telegramUser: 9595, year: 2021
+            }]
+        });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(2);
 

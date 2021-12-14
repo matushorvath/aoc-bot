@@ -1,7 +1,7 @@
 'use strict';
 
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
-const { updateLeaderboards } = require('./leaderboard');
+const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./stats');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
