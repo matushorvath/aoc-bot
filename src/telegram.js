@@ -2,7 +2,7 @@
 
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
 const { updateLeaderboards } = require('./schedule');
-const { formatBoard } = require('./stats');
+const { formatBoard } = require('./board-format');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
