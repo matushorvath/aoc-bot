@@ -87,7 +87,7 @@ const mapDaysToChats = async (year, days) => {
         }
     }
 
-    console.log(`mapDaysToChats: done ${JSON.stringify(map)}`);
+    console.log(`mapDaysToChats: done ${year} ${Object.keys(map)}`);
 
     return map;
 };

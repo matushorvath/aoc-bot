@@ -31,7 +31,7 @@ const getStartTimes = async () => {
 };
 
 const sendTelegram = async (api, params = {}) => {
-    console.debug(`sendTelegram: api ${api} params ${JSON.stringify(params)}`);
+    // console.debug(`sendTelegram: api ${api} params ${JSON.stringify(params)}`);
 
     const secret = await getTelegramSecret();
     const url = `https://api.telegram.org/bot${secret}/${api}`;
