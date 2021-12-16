@@ -8,9 +8,13 @@ jest.mock('../src/invites');
 const network = require('../src/network');
 jest.mock('../src/network');
 
+const boardPublish = require('../src/board-publish');
+jest.mock('../src/board-publish');
+
 beforeEach(() => {
     network.getLeaderboard.mockReset();
     invites.processInvites.mockReset();
+    boardPublish.publishBoards.mockReset();
 });
 
 describe('schedule.handler', () => {

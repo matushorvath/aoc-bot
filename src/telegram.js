@@ -206,7 +206,7 @@ const onCommandBoard = async (chat, params) => {
 
     const [year, day] = params.split(' ').map(Number);
 
-    const leaderboard = await getLeaderboard(year, day);
+    const leaderboard = await getLeaderboard(year);
     const startTimes = await getStartTimes();
     const board = formatBoard(year, day, leaderboard, startTimes);
 
@@ -259,7 +259,7 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const [sent] = await updateLeaderboards();
+    const { sent }  = await updateLeaderboards();
 
     let info = '';
     for (const { aocUser, day } of sent) {

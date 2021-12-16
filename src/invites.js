@@ -62,7 +62,7 @@ const mapUsers = async (aocUsers) => {
 };
 
 const mapDaysToChats = async (year, days) => {
-    console.log(`mapDaysToChats: start`);
+    console.log(`mapDaysToChats: start ${year} ${days}`);
 
     const map = {};
 
@@ -87,7 +87,7 @@ const mapDaysToChats = async (year, days) => {
         }
     }
 
-    console.log(`mapDaysToChats: done`);
+    console.log(`mapDaysToChats: done ${JSON.stringify(map)}`);
 
     return map;
 };
@@ -209,4 +209,5 @@ const processInvites = async (leaderboard) => {
     return { sent, failed };
 };
 
+exports.mapDaysToChats = mapDaysToChats;
 exports.processInvites = processInvites;
