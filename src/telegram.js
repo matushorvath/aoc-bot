@@ -293,7 +293,7 @@ Format your name exactly as it is visible in our [leaderboard](https://adventofc
 /update – Update the leaderboard\\.
 Leaderboard is updated automatically every 15 minutes\\. This command is only needed if you want to trigger the update immediately\\.
 
-/board \\<year\\> \\<day\>> – Display a board for given year and day\\.
+/board \\<year\\> \\<day\\> – Display a board for given year and day\\.
 
 /help – Show this message\\.
 `;

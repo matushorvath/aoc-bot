@@ -1,6 +1,6 @@
 'use strict';
 
-const { getLeaderboard, sendTelegram } = require('../src/network');
+const { getLeaderboard, getStartTimes, sendTelegram } = require('../src/network');
 
 const axios = require('axios');
 jest.mock('axios');
@@ -46,6 +46,28 @@ describe('getLeaderboard', () => {
         expect(axios.get).toHaveBeenCalledWith(
             'https://adventofcode.com/1492/leaderboard/private/view/380635.json',
             { headers: { Cookie: 'session=aOcSeCrEt' } }
+        );
+    });
+});
+
+describe('getStartTimes', () => {
+    test('downloads start times', async () => {
+        axios.get.mockResolvedValueOnce({ data: { fAkEaOcDaTa: true } });
+
+        await expect(getStartTimes()).resolves.toEqual({ fAkEaOcDaTa: true });
+
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://rb5ncgzaxj.execute-api.eu-central-1.amazonaws.com/Prod/data'
+        );
+    });
+
+    test('fails on HTTP error', async () => {
+        axios.get.mockRejectedValueOnce(new Error('aXiOsErRoR'));
+
+        await expect(getStartTimes()).rejects.toThrow('aXiOsErRoR');
+
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://rb5ncgzaxj.execute-api.eu-central-1.amazonaws.com/Prod/data'
         );
     });
 });

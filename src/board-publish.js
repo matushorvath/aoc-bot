@@ -14,10 +14,6 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
     console.log(`publishOneBoard: start ${day}`);
 
     const year = Number(leaderboard.event);
-
-    // TODO remove limit
-    if (year !== 2020 || day !== 20) return;
-
     const board = formatBoard(year, day, leaderboard, startTimes);
 
     // Telegram does not allow us to update messages with exactly the same text,
