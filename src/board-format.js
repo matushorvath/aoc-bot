@@ -7,17 +7,17 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
         .filter(member => member.completion_day_level[day])
         .map(member => ({
             name: member.name,
-            ts1: member.completion_day_level[day][1]?.get_star_ts,
-            ts2: member.completion_day_level[day][2]?.get_star_ts
+            ts1: member.completion_day_level[day][1]?.get_star_ts ?? Infinity,
+            ts2: member.completion_day_level[day][2]?.get_star_ts ?? Infinity
         }))
         .sort((a, b) => {
             if (a.ts2 === b.ts2) {
                 if (a.ts1 === b.ts1) {
                     return a.name.localeCompare(b.name, LOCALE);
                 }
-                return a.ts1 - b.ts1 || Infinity;
+                return a.ts1 - b.ts1;
             }
-            return a.ts2 - b.ts2 || Infinity;
+            return a.ts2 - b.ts2;
         });
 
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
@@ -58,7 +58,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
 };
 
 const formatDuration = (duration) => {
-    if (isNaN(duration) || duration < 0) {
+    if (duration === Infinity || duration < 0) {
         return "--:--:--";
     }
 

@@ -17,8 +17,8 @@ describe('formatBoard', () => {
         test('day 1: person one part1, person two part2', async () => {
             expect(formatBoard(2021, 1, leaderboard)).toEqual(`\
 Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
-      Person One 00:00:03 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)
-      Person Two 95:59:59    1234d \\(   1230d\\)`);
+      Person Two 95:59:59    1234d \\(   1230d\\)
+      Person One 00:00:03 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)`);
         });
 
         test('day 2: person one part2, person two part1', async () => {
@@ -59,6 +59,35 @@ Day  6 @  7d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na
 Day 11 @55:00:00 ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
       Person Two 00:07:42 00:31:16 \\(00:23:34\\)
       Person One 00:07:43 00:31:16 \\(00:23:33\\)`);
+        });
+
+        test('bug: ordering of missing ts2', async () => {
+            const leaderboard = {
+                members: {
+                    '111': {
+                        name: 'Person One',
+                        completion_day_level: {
+                            '1': {
+                                '1': { get_star_ts: 1638354469 }
+                            }
+                        }
+                    },
+                    '222': {
+                        name: 'Person Two',
+                        completion_day_level: {
+                            '1': {
+                                '1': { get_star_ts: 1638354469 },
+                                '2': { get_star_ts: 1638355040 }
+                            }
+                        }
+                    }
+                }
+            };
+
+            expect(formatBoard(2021, 1, leaderboard)).toEqual(`\
+Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
+      Person Two 05:27:49 05:37:20 \\(00:09:31\\)
+      Person One 05:27:49 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)`);
         });
     });
 });
