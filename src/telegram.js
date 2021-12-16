@@ -1,8 +1,8 @@
 'use strict';
 
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
-const { updateLeaderboards } = require('./leaderboard');
-const { formatBoard } = require('./stats');
+const { updateLeaderboards } = require('./schedule');
+const { formatBoard } = require('./board-format');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
@@ -206,7 +206,7 @@ const onCommandBoard = async (chat, params) => {
 
     const [year, day] = params.split(' ').map(Number);
 
-    const leaderboard = await getLeaderboard(year, day);
+    const leaderboard = await getLeaderboard(year);
     const startTimes = await getStartTimes();
     const board = formatBoard(year, day, leaderboard, startTimes);
 
@@ -259,7 +259,7 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const [sent] = await updateLeaderboards();
+    const { sent }  = await updateLeaderboards();
 
     let info = '';
     for (const { aocUser, day } of sent) {
@@ -292,6 +292,8 @@ Format your name exactly as it is visible in our [leaderboard](https://adventofc
 
 /update – Update the leaderboard\\.
 Leaderboard is updated automatically every 15 minutes\\. This command is only needed if you want to trigger the update immediately\\.
+
+/board \\<year\\> \\<day\\> – Display a board for given year and day\\.
 
 /help – Show this message\\.
 `;

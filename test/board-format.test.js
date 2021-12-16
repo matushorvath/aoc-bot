@@ -1,6 +1,6 @@
 'use strict';
 
-const { formatBoard } = require('../src/stats');
+const { formatBoard } = require('../src/board-format');
 const fsp = require('fs/promises');
 
 jest.useFakeTimers();
@@ -10,7 +10,7 @@ describe('formatBoard', () => {
     let leaderboard;
 
     beforeAll(async () => {
-        leaderboard = JSON.parse(await fsp.readFile('./test/stats-leaderboard.json', 'utf8'));
+        leaderboard = JSON.parse(await fsp.readFile('./test/board-format.json', 'utf8'));
     });
 
     describe('leaderboard, no start times', () => {
