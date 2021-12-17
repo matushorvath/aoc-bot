@@ -31,7 +31,7 @@ const getChats = async (year, days) => {
 };
 
 const mapUsers = async (aocUsers) => {
-    console.log(`mapUsers: start`);
+    console.log('mapUsers: start');
 
     const map = {};
 
@@ -56,7 +56,7 @@ const mapUsers = async (aocUsers) => {
         }
     }
 
-    console.log(`mapUsers: done`);
+    console.log('mapUsers: done');
 
     return map;
 };
@@ -93,6 +93,8 @@ const mapDaysToChats = async (year, days) => {
 };
 
 const filterUsersInChat = async (chats) => {
+    console.log('filterUsersInChat: start');
+
     // Filter out users who are already in the chat
     const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
         try {
@@ -107,10 +109,13 @@ const filterUsersInChat = async (chats) => {
         }
     }));
 
+    console.log('filterUsersInChat: done');
     return chats.filter((_, index) => needsAdding[index]);
 };
 
 const filterSentInvites = async (chats) => {
+    console.log('filterSentInvites: start');
+
     // Filter out users who already got an invite
     const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
         const getParams = {
@@ -127,6 +132,7 @@ const filterSentInvites = async (chats) => {
         return true;
     }));
 
+    console.log('filterSentInvites: done');
     return chats.filter((_, index) => needsSending[index]);
 };
 

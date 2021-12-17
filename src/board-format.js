@@ -10,7 +10,7 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
 
     const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
-        `ofic. part 1 a 2 (cas na p2)  neoficialne (cisty cas na p2)`;
+        'ofic. part 1 a 2 (cas na p2)  neoficialne (cisty cas na p2)';
 
     const board = [header, ...results.map(result => formatOneLine(
         result, startTs, startTimes?.[year][day][result.name]))].join('\n');
@@ -75,7 +75,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
 
 const formatDuration = (duration) => {
     if (duration === Infinity || isNaN (duration) || duration < 0) {
-        return "--:--:--";
+        return '--:--:--';
     }
 
     const d = Math.floor(duration / 86400);
