@@ -138,23 +138,6 @@ describe('processInvites', () => {
                 'aoc-bot': [{
                     id: { S: 'invite:9494:2021:5:50505' }
                 }]
-            },
-            UnprocessedKeys: {
-                'aoc-bot': {
-                    Keys: [
-                        { id: { S: 'invite:4242:2021:5:50505' } },
-                        { id: { S: 'invite:4242:2021:11:111111' } },
-                        { id: { S: 'invite:6969:2021:7:70707' } },
-                        { id: { S: 'invite:6969:2021:13:131313' } },
-                        // invite:9191:2021:5:50505 is missing, user nAmE91 has no telegram account in db
-                        { id: { S: 'invite:9292:2021:5:50505' } },
-                        { id: { S: 'invite:9393:2021:5:50505' } },
-                        // invite:9494:2021:5:50505 is missing, user nAmE94 already has an invite
-                        { id: { S: 'invite:9595:2021:5:50505' } },
-                        { id: { S: 'invite:9696:2021:5:50505' } }
-                    ],
-                    ProjectionExpression: 'id'
-                }
             }
         });
 
@@ -333,4 +316,7 @@ describe('processInvites', () => {
             }
         });
     });
+
+    // TODO get more than 100 invites (test windowing in dynamodb)
+    // TODO test when no users have invites pending (filterSentInvites with empty UnprocessedKeys)
 });

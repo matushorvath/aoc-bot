@@ -38,7 +38,7 @@ const mapUsers = async (aocUsers) => {
     const WINDOW = 100;
     for (let i = 0; i < aocUsers.length; i += WINDOW) {
         const keys = aocUsers
-            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .slice(i, i + WINDOW)
             .map(aocUser => ({ id: { S: `aoc_user:${aocUser}` } }));
 
         const params = {
@@ -69,7 +69,7 @@ const mapDaysToChats = async (year, days) => {
     const WINDOW = 100;
     for (let i = 0; i < days.length; i += WINDOW) {
         const keys = days
-            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .slice(i, i + WINDOW)
             .map(day => ({ id: { S: `chat:${year}:${day}` } }));
 
         const params = {
@@ -96,36 +96,34 @@ const filterSentInvites = async (chats) => {
     console.log('filterSentInvites: start');
 
     // Filter out users who already got an invite
-    const needsSendingKeys = {};
+    const sentInvites = new Set();
 
     const WINDOW = 100;
     for (let i = 0; i < chats.length; i += WINDOW) {
         const keys = chats
-            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .slice(i, i + WINDOW)
             .map(({ telegramUser, chat, year, day }) =>
                 ({ id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } }));
 
-        const params = {
-            RequestItems: {
-                [DB_TABLE]: {
-                    Keys: keys,
-                    ProjectionExpression: 'id'
+        if (keys.length > 0) {
+            const params = {
+                RequestItems: {
+                    [DB_TABLE]: {
+                        Keys: keys,
+                        ProjectionExpression: 'id'
+                    }
                 }
+            };
+            const data = await db.batchGetItem(params);
+
+            for (const item of data.Responses[DB_TABLE]) {
+                sentInvites.add(item.id.S);
             }
-        };
-        const data = await db.batchGetItem(params);
-
-        for (const item of data.Responses[DB_TABLE]) {
-            console.log(`filterSentInvites: skipping invite, already exists ${item.id.S}`);
-        }
-
-        for (const item of data.UnprocessedKeys[DB_TABLE]?.Keys ?? []) {
-            needsSendingKeys[item.id.S] = true;
         }
     }
 
     const output = chats.filter(({ telegramUser, chat, year, day }) =>
-        needsSendingKeys[`invite:${telegramUser}:${year}:${day}:${chat}`]);
+        !sentInvites.has(`invite:${telegramUser}:${year}:${day}:${chat}`));
 
     console.log('filterSentInvites: done');
     return output;
