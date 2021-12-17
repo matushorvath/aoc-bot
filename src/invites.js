@@ -92,6 +92,45 @@ const mapDaysToChats = async (year, days) => {
     return map;
 };
 
+const filterSentInvites = async (chats) => {
+    console.log('filterSentInvites: start');
+
+    // Filter out users who already got an invite
+    const needsSendingKeys = {};
+
+    const WINDOW = 100;
+    for (let i = 0; i < chats.length; i += WINDOW) {
+        const keys = chats
+            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .map(({ telegramUser, chat, year, day }) =>
+                ({ id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } }));
+
+        const params = {
+            RequestItems: {
+                [DB_TABLE]: {
+                    Keys: keys,
+                    ProjectionExpression: 'id'
+                }
+            }
+        };
+        const data = await db.batchGetItem(params);
+
+        for (const item of data.Responses[DB_TABLE]) {
+            console.log(`filterSentInvites: skipping invite, already exists ${item.id.S}`);
+        }
+
+        for (const item of data.UnprocessedKeys[DB_TABLE]?.Keys ?? []) {
+            needsSendingKeys[item.id.S] = true;
+        }
+    }
+
+    const output = chats.filter(({ telegramUser, chat, year, day }) =>
+        needsSendingKeys[`invite:${telegramUser}:${year}:${day}:${chat}`]);
+
+    console.log('filterSentInvites: done');
+    return output;
+};
+
 const filterUsersInChat = async (chats) => {
     console.log('filterUsersInChat: start');
 
@@ -109,31 +148,10 @@ const filterUsersInChat = async (chats) => {
         }
     }));
 
+    const output = chats.filter((_, index) => needsAdding[index]);
+
     console.log('filterUsersInChat: done');
-    return chats.filter((_, index) => needsAdding[index]);
-};
-
-const filterSentInvites = async (chats) => {
-    console.log('filterSentInvites: start');
-
-    // Filter out users who already got an invite
-    const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
-        const getParams = {
-            TableName: DB_TABLE,
-            Key: { id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } },
-            ProjectionExpression: 'id'
-        };
-
-        const getData = await db.getItem(getParams);
-        if (getData.Item !== undefined) {
-            console.log(`filterSentInvites: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
-            return false;
-        }
-        return true;
-    }));
-
-    console.log('filterSentInvites: done');
-    return chats.filter((_, index) => needsSending[index]);
+    return output;
 };
 
 const markAsSent = async (telegramUser, year, day, chat) => {
