@@ -61,7 +61,7 @@ Day 11 @55:00:00 ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na
       Person One 00:07:43 00:31:16 \\(00:23:33\\)`);
         });
 
-        test('bug: ordering of missing ts2', async () => {
+        test('ordering of missing ts2', async () => {
             const leaderboard = {
                 members: {
                     '111': {
@@ -90,4 +90,35 @@ Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na
       Person One 05:27:49 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)`);
         });
     });
+
+    test('adds results from startTimes', async () => {
+        const leaderboard = {
+            members: {
+                '222': {
+                    name: 'Person One',
+                    completion_day_level: {
+                        '5': { '1': { get_star_ts: 1638684500 } }
+                    }
+                }
+            }
+        };
+
+        const startTimes = {
+            '2021': {
+                '5': {
+                    'Person One': { '1': [1638683500] },
+                    'Still Working 2': { '1': [1638685500], '2': [1638686500] },
+                    'Still Working 1': { '1': [1638687500] }
+                }
+            }
+        };
+
+        expect(formatBoard(2021, 5, leaderboard, startTimes)).toEqual(`\
+Day  5 @  8d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
+      Person One 01:08:20 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[00:16:40 \\-\\-:\\-\\-:\\-\\-\\]
+ Still Working 1 \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[\\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\-\\]
+ Still Working 2 \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[\\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)\\]`);
+    });
+
+    // TODO start times that exist but don't include current year
 });
