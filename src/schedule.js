@@ -10,24 +10,30 @@ const updateLeaderboards = async () => {
     // TODO find which chats are we subscribed to, and get those years only
     const years = [2021, 2020];
 
-    const startTimes = await getStartTimes();
+    // Download start times and leaderboards in parallel
+    const [startTimes, ...leaderboards] = await Promise.all([
+        getStartTimes(),
+        ...years.map(async (year) => await getLeaderboard(year))
+    ]);
 
     const sent = [];
     const failed = [];
     const created = [];
     const updated = [];
 
-    await Promise.all(years.map(async (year) => {
-        const leaderboard = await getLeaderboard(year);
-
-        const invites = await processInvites(leaderboard);
-        sent.push(...invites.sent);
-        failed.push(...invites.failed);
-
-        const boards = await publishBoards(leaderboard, startTimes);
-        created.push(...boards.created);
-        updated.push(...boards.updated);
-    }));
+    // Process invites and publish boards in parallel
+    await Promise.all([
+        ...leaderboards.map(async (leaderboard) => {
+            const invites = await processInvites(leaderboard);
+            sent.push(...invites.sent);
+            failed.push(...invites.failed);
+        }),
+        ...leaderboards.map(async (leaderboard) => {
+            const boards = await publishBoards(leaderboard, startTimes);
+            created.push(...boards.created);
+            updated.push(...boards.updated);
+        })
+    ]);
 
     console.log('updateLeaderboards: done');
     return { sent, failed, created, updated };

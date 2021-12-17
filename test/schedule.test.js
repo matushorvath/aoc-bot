@@ -54,19 +54,16 @@ describe('schedule.handler', () => {
 
         expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
+        expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
+        expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
+
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
     });
 
     test('fails loading the leaderboard', async () => {
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true })
         network.getLeaderboard.mockRejectedValueOnce(new Error('nEtWoRkErRoR'));
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true })
-
-        invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
-
-        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
 
         await expect(handler()).rejects.toThrow('nEtWoRkErRoR');
 
@@ -76,11 +73,8 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
 
-        expect(invites.processInvites).toHaveBeenCalledTimes(1);
-        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true });
-
-        expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(invites.processInvites).not.toHaveBeenCalled();
+        expect(boardPublish.publishBoards).not.toHaveBeenCalled();
     });
 
     test('fails processing invites', async () => {
@@ -91,6 +85,7 @@ describe('schedule.handler', () => {
         invites.processInvites.mockRejectedValueOnce(new Error('pRoCeSsErRoR'));
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
 
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
         boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
 
         await expect(handler()).rejects.toThrow('pRoCeSsErRoR');
@@ -105,8 +100,9 @@ describe('schedule.handler', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true });
         expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true });
 
-        expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
     });
 
     test('fails publishing boards', async () => {
