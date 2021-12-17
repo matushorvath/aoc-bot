@@ -34,7 +34,7 @@ const updateLeaderboards = async () => {
 };
 
 const handler = async () => {
-    console.log("handler: start");
+    console.log('handler: start');
 
     await updateLeaderboards();
 };

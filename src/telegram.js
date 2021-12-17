@@ -159,7 +159,7 @@ const deleteUserData = async (telegramUser) => {
 
     const getData = await db.getItem(getParams);
     if (!getData.Item) {
-        console.log(`deleteUserData: no records to delete`);
+        console.log('deleteUserData: no records to delete');
         return undefined;
     }
 
@@ -251,11 +251,11 @@ const onCommandStatus = async (chat, telegramUser) => {
 };
 
 const onCommandUpdate = async (chat) => {
-    console.log(`onCommandUpdate: start`);
+    console.log('onCommandUpdate: start');
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: `Updating leaderboard, this might take a few seconds`,
+        text: 'Updating leaderboard, this might take a few seconds',
         disable_notification: true
     });
 
@@ -305,7 +305,7 @@ Leaderboard is updated automatically every 15 minutes\\. This command is only ne
 `;
 
 const onCommandHelp = async (chat) => {
-    console.log(`onCommandHelp: start`);
+    console.log('onCommandHelp: start');
 
     await sendTelegram('sendMessage', {
         chat_id: chat,

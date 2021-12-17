@@ -174,7 +174,7 @@ describe('processInvites', () => {
 
         // aoc_user nAmE96, could not send an invite
         network.sendTelegram.mockResolvedValueOnce(
-            { ok: true, result: { name: `iNvItE96`, invite_link: `InViTeLiNk96` } });
+            { ok: true, result: { name: 'iNvItE96', invite_link: 'InViTeLiNk96' } });
         network.sendTelegram.mockRejectedValueOnce(
             { isAxiosError: true, response: { data: { error_code: 400 } } });
 
@@ -247,32 +247,32 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledTimes(6);
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(1, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:4242:2021:5:50505` } },
+            Key: { id: { S: 'invite:4242:2021:5:50505' } },
             ProjectionExpression: 'id'
         });
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:4242:2021:11:111111` } },
+            Key: { id: { S: 'invite:4242:2021:11:111111' } },
             ProjectionExpression: 'id'
         });
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(3, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:6969:2021:7:70707` } },
+            Key: { id: { S: 'invite:6969:2021:7:70707' } },
             ProjectionExpression: 'id'
         });
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(4, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:9494:2021:5:50505` } },
+            Key: { id: { S: 'invite:9494:2021:5:50505' } },
             ProjectionExpression: 'id'
         });
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(5, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:9595:2021:5:50505` } },
+            Key: { id: { S: 'invite:9595:2021:5:50505' } },
             ProjectionExpression: 'id'
         });
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(6, {
             TableName: 'aoc-bot',
-            Key: { id: { S: `invite:9696:2021:5:50505` } },
+            Key: { id: { S: 'invite:9696:2021:5:50505' } },
             ProjectionExpression: 'id'
         });
 

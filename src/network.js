@@ -6,7 +6,7 @@ const axios = require('axios');
 const LEADERBOARD_ID = 380635;
 
 const getLeaderboard = async (year) => {
-    console.log(`getLeaderboard: start`);
+    console.log('getLeaderboard: start');
 
     const secret = await getAdventOfCodeSecret();
 
@@ -14,18 +14,18 @@ const getLeaderboard = async (year) => {
     const options = { headers: { Cookie: `session=${secret}` } };
     const response = await axios.get(url, options);
 
-    console.log(`getLeaderboard: done`);
+    console.log('getLeaderboard: done');
 
     return response.data;
 };
 
 const getStartTimes = async () => {
-    console.log(`getStartTimes: start`);
+    console.log('getStartTimes: start');
 
     const url = 'https://rb5ncgzaxj.execute-api.eu-central-1.amazonaws.com/Prod/data';
     const response = await axios.get(url);
 
-    console.log(`getStartTimes: done`);
+    console.log('getStartTimes: done');
 
     return response.data;
 };

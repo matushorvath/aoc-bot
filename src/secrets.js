@@ -8,7 +8,7 @@ let adventOfCodeSecret;
 let telegramSecret;
 
 const getSecrets = async () => {
-    console.log("getSecrets: start");
+    console.log('getSecrets: start');
 
     const params = {
         Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret'],
@@ -24,7 +24,7 @@ const getSecrets = async () => {
     adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret').Value;
     telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret').Value;
 
-    console.log("getSecrets: done");
+    console.log('getSecrets: done');
 };
 
 const getAdventOfCodeSecret = async () => {

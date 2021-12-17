@@ -29,7 +29,7 @@ const postTelegram = async (event) => {
     const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
     await onTelegramUpdate(JSON.parse(body));
 
-    console.log(`postTelegram: done`);
+    console.log('postTelegram: done');
 
     return { status: 201 };
 };

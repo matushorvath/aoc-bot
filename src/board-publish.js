@@ -40,9 +40,9 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
             await saveBoardMessage(chat, messageId, textHash);
             updated.push({ year, day });
 
-            console.log(`publishOneBoard: message updated`);
+            console.log('publishOneBoard: message updated');
         } else {
-            console.log(`publishOneBoard: same text hash, message not updated`);
+            console.log('publishOneBoard: same text hash, message not updated');
         }
     } else {
         // Send new message
@@ -63,7 +63,7 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
         await saveBoardMessage(chat, message.result.message_id, textHash);
         created.push({ year, day });
 
-        console.log(`publishOneBoard: message created`);
+        console.log('publishOneBoard: message created');
     }
 
     console.log(`publishOneBoard: done ${day}`);
@@ -81,7 +81,7 @@ const findBoardMessage = async (chat) => {
 
     const data = await db.getItem(params);
     if (!data.Item) {
-        console.log(`findBoardMessage: no board message found`);
+        console.log('findBoardMessage: no board message found');
         return [];
     }
 
