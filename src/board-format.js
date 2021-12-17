@@ -3,13 +3,39 @@
 const LOCALE = 'sk';
 
 const formatBoard = (year, day, leaderboard, startTimes) => {
-    const results = Object.values(leaderboard.members)
+    // Make an array of results for this day: [[name, ts1, ts2], ...]
+    const results = getResults(year, day, leaderboard, startTimes);
+
+    const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
+    const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
+
+    const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
+        `ofic. part 1 a 2 (cas na p2)  neoficialne (cisty cas na p2)`;
+
+    const board = [header, ...results.map(result => formatOneLine(
+        result, startTs, startTimes?.[year][day][result.name]))].join('\n');
+    return escapeForTelegram(board);
+};
+
+const getResults = (year, day, leaderboard, startTimes) => {
+    // Results from AoC leaderboard
+    const leaderboardResults = Object.values(leaderboard.members)
         .filter(member => member.completion_day_level[day])
         .map(member => ({
             name: member.name,
             ts1: member.completion_day_level[day][1]?.get_star_ts ?? Infinity,
             ts2: member.completion_day_level[day][2]?.get_star_ts ?? Infinity
-        }))
+        }));
+
+    // Add an entries from startTimes for all names not yet in AoC leaderboard
+    const leaderboardNames = new Set(leaderboardResults.map(({ name }) => name));
+
+    const startedResults = Object.keys(startTimes?.[year]?.[day] ?? {})
+        .filter(name => !leaderboardNames.has(name))
+        .map(name => ({ name, ts1: Infinity, ts2: Infinity }));
+
+    // Merge and sort
+    return [...leaderboardResults, ...startedResults]
         .sort((a, b) => {
             if (a.ts2 === b.ts2) {
                 if (a.ts1 === b.ts1) {
@@ -19,16 +45,6 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
             }
             return a.ts2 - b.ts2;
         });
-
-    const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
-
-    const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
-    const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
-        `ofic. part 1 a 2 (cas na p2)  neoficialne (cisty cas na p2)`;
-
-    const board = [header, ...results.map(result => formatOneLine(
-        result, startTs, startTimes?.[year][day][result.name]))].join('\n');
-    return escapeForTelegram(board);
 };
 
 const formatOneLine = (result, startTs, dayStartTimes) => {
@@ -58,7 +74,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
 };
 
 const formatDuration = (duration) => {
-    if (duration === Infinity || duration < 0) {
+    if (duration === Infinity || isNaN (duration) || duration < 0) {
         return "--:--:--";
     }
 

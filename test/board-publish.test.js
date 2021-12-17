@@ -43,7 +43,8 @@ describe('publishBoards', () => {
                     completion_day_level: {
                         '1': { '1': { get_star_ts: 1638354469 }, },
                         '2': { '1': { get_star_ts: 1638432470 }, '2': { get_star_ts: 1638474143 } },
-                        '4': { '1': { get_star_ts: 1638509099 } }
+                        '4': { '1': { get_star_ts: 1638509099 } },
+                        '6': { '1': { get_star_ts: 1638767262 } },
                     }
                 },
                 '98765': {
@@ -53,10 +54,11 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444 });
+        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444, 6: 666 });
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // '2INkWWDej19GH+0clyxLxE4/vttyHYuRQ+V+E/Fq8kU='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'RgabrYcLKO7hBXKpvA7ejffjxlRNeyS0MTjnAEGIVLg='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'FbplNUZdPUMuEBC6Z2BDOAEVMWVFnpeZ4Xiy1Zp+QMk='
+        boardFormat.formatBoard.mockImplementationOnce(() => { throw new Error('fOrMaTeRrOr666'); });
 
         // No message in db for 111
         dynamodb.DynamoDB.prototype.getItem.mockReturnValueOnce({});
@@ -74,14 +76,18 @@ describe('publishBoards', () => {
         // Return message id of the message created in chat 111
         network.sendTelegram.mockResolvedValueOnce({ result: { message_id: 999999 } });
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toBe(undefined);
+        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
+            created: [{ year: 1918, day: 1 }],
+            updated: [{ year: 1918, day: 4 }]
+        });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 5, 4]);
+        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 5, 4, 6]);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(3);
+        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(4);
         expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: true });
         expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: true });
         expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: true });
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledTimes(3);
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(1, {

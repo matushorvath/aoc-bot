@@ -13,6 +13,9 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
     console.log(`publishOneBoard: start ${day}`);
 
+    const created = [];
+    const updated = [];
+
     const year = Number(leaderboard.event);
     const board = formatBoard(year, day, leaderboard, startTimes);
 
@@ -35,6 +38,7 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
 
             // Update text hash in database
             await saveBoardMessage(chat, messageId, textHash);
+            updated.push({ year, day });
 
             console.log(`publishOneBoard: message updated`);
         } else {
@@ -57,11 +61,13 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
 
         // Store message id for future updates
         await saveBoardMessage(chat, message.result.message_id, textHash);
+        created.push({ year, day });
 
         console.log(`publishOneBoard: message created`);
     }
 
     console.log(`publishOneBoard: done ${day}`);
+    return { created, updated };
 };
 
 const findBoardMessage = async (chat) => {
@@ -114,13 +120,26 @@ const publishBoards = async (leaderboard, startTimes) => {
     const uniqueDays = [...new Set(days)];
     const dayMap = await mapDaysToChats(year, uniqueDays);
 
-    await Promise.all(uniqueDays
+    const results = await Promise.allSettled(uniqueDays
         .map(day => ({ day, chat: dayMap[day] }))
         .filter(({ chat }) => chat !== undefined)
         .map(async ({ day, chat }) => await publishOneBoard(day, chat, leaderboard, startTimes))
     );
 
+    const created = [];
+    const updated = [];
+
+    for (const result of results) {
+        if (result.status === 'rejected') {
+            console.log('publishBoards: error', result.reason);
+        } else {
+            created.push(...result.value.created);
+            updated.push(...result.value.updated);
+        }
+    }
+
     console.log('publishBoards: done');
+    return { created, updated };
 };
 
 exports.publishBoards = publishBoards;
