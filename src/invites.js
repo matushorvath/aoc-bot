@@ -203,8 +203,8 @@ const processInvites = async (leaderboard) => {
 
     // Get list of chats each user should be in
     const chats = await getChats(year, days);
-    const changes = await filterUsersInChat(chats);
-    const invites = await filterSentInvites(changes);
+    const changes = await filterSentInvites(chats);
+    const invites = await filterUsersInChat(changes);
 
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);
