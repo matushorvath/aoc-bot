@@ -9,20 +9,25 @@ package=aoc-bot-$version-$uuid.zip
 region=eu-central-1
 bucket=cf.009116496185.eu-central-1
 
-# Store secrets passed from GitHub Actions
-aws ssm put-parameter \
+missing_params=$(aws ssm get-parameters \
     --region $region \
-    --name /aoc-bot/advent-of-code-secret \
-    --type SecureString \
-    --value "$ADVENT_OF_CODE_SECRET" \
-    --overwrite
+    --names "/aoc-bot/advent-of-code-secret" "/aoc-bot/telegram-secret" \
+    | jq '.InvalidParameters|length')
 
-aws ssm put-parameter \
-    --region $region \
-    --name /aoc-bot/telegram-secret \
-    --type SecureString \
-    --value "$TELEGRAM_SECRET" \
-    --overwrite
+if [ "$missing_params" -ne 0 ] ; then
+    # Store secrets passed from GitHub Actions
+    aws ssm put-parameter \
+        --region $region \
+        --name /aoc-bot/advent-of-code-secret \
+        --type SecureString \
+        --value "$ADVENT_OF_CODE_SECRET"
+
+    aws ssm put-parameter \
+        --region $region \
+        --name /aoc-bot/telegram-secret \
+        --type SecureString \
+        --value "$TELEGRAM_SECRET"
+fi
 
 # Upload and deploy the package
 zip -rq $package $(<package.json jq -re .files[],.deployFiles[])
