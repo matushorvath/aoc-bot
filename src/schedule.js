@@ -14,19 +14,23 @@ const updateLeaderboards = async () => {
 
     const sent = [];
     const failed = [];
+    const created = [];
+    const updated = [];
 
     await Promise.all(years.map(async (year) => {
         const leaderboard = await getLeaderboard(year);
 
-        const result = await processInvites(leaderboard);
-        sent.push(...result.sent);
-        failed.push(...result.failed);
+        const invites = await processInvites(leaderboard);
+        sent.push(...invites.sent);
+        failed.push(...invites.failed);
 
-        await publishBoards(leaderboard, startTimes);
+        const boards = await publishBoards(leaderboard, startTimes);
+        created.push(...boards.created);
+        updated.push(...boards.updated);
     }));
 
     console.log('updateLeaderboards: done');
-    return { sent, failed };
+    return { sent, failed, created, updated };
 };
 
 const handler = async () => {

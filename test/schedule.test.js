@@ -27,6 +27,9 @@ describe('schedule.handler', () => {
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
 
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+
         await expect(handler()).resolves.toBeUndefined();
 
         expect(network.getStartTimes).toHaveBeenCalledTimes(1);
@@ -63,6 +66,8 @@ describe('schedule.handler', () => {
 
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
 
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+
         await expect(handler()).rejects.toThrow('nEtWoRkErRoR');
 
         expect(network.getStartTimes).toHaveBeenCalledTimes(1);
@@ -85,6 +90,8 @@ describe('schedule.handler', () => {
 
         invites.processInvites.mockRejectedValueOnce(new Error('pRoCeSsErRoR'));
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
+
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
 
         await expect(handler()).rejects.toThrow('pRoCeSsErRoR');
 
@@ -110,6 +117,7 @@ describe('schedule.handler', () => {
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
 
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
         boardPublish.publishBoards.mockRejectedValueOnce(new Error('pUbLiShErRoR'));
 
         await expect(handler()).rejects.toThrow('pUbLiShErRoR');

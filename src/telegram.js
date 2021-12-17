@@ -259,11 +259,17 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
-    const { sent }  = await updateLeaderboards();
+    const { sent, created, updated }  = await updateLeaderboards();
 
     let info = '';
-    for (const { aocUser, day } of sent) {
-        info += `• ${aocUser} invited to day ${day}\n`;
+    for (const { aocUser, year, day } of sent) {
+        info += `• invited ${aocUser} to ${year} day ${day}\n`;
+    }
+    for (const { year, day } of created) {
+        info += `• created board for ${year} day ${day}\n`;
+    }
+    for (const { year, day } of updated) {
+        info += `• updated board for ${year} day ${day}\n`;
     }
     if (info === '') {
         info = '(no changes)\n';
