@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
+const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTimes) => {
     console.log(`publishOneBoard: start ${day}`);
 
     const created = [];
@@ -22,29 +22,10 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
     // Telegram does not allow us to update messages with exactly the same text,
     // so we store a hash of the text and only update when it changes
     const text = `\`\`\`\n${board}\n\`\`\``;
-    const textHash = crypto.createHash('sha256').update(text).digest('base64');
-    console.log(`publishOneBoard: new hash ${textHash}`);
+    const newHash = crypto.createHash('sha256').update(text).digest('base64');
+    console.log(`publishOneBoard: new hash ${newHash}`);
 
-    const [messageId, oldTextHash] = await findBoardMessage(chat);
-    if (messageId) {
-        if (textHash !== oldTextHash) {
-            // Update existing message
-            await sendTelegram('editMessageText', {
-                chat_id: chat,
-                message_id: messageId,
-                parse_mode: 'MarkdownV2',
-                text
-            });
-
-            // Update text hash in database
-            await saveBoardMessage(chat, messageId, textHash);
-            updated.push({ year, day });
-
-            console.log('publishOneBoard: message updated');
-        } else {
-            console.log('publishOneBoard: same text hash, message not updated');
-        }
-    } else {
+    if (message === undefined) {
         // Send new message
         const message = await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -60,37 +41,61 @@ const publishOneBoard = async (day, chat, leaderboard, startTimes) => {
         });
 
         // Store message id for future updates
-        await saveBoardMessage(chat, message.result.message_id, textHash);
+        await saveBoardMessage(chat, message.result.message_id, newHash);
         created.push({ year, day });
 
         console.log('publishOneBoard: message created');
+    } else if (newHash !== oldHash) {
+        // Update existing message
+        await sendTelegram('editMessageText', {
+            chat_id: chat,
+            message_id: message,
+            parse_mode: 'MarkdownV2',
+            text
+        });
+
+        // Update text hash in database
+        await saveBoardMessage(chat, message, newHash);
+        updated.push({ year, day });
+
+        console.log('publishOneBoard: message updated');
+    } else {
+        // Existing message is the same as new message
+        console.log('publishOneBoard: same text hash, message not updated');
     }
 
     console.log(`publishOneBoard: done ${day}`);
     return { created, updated };
 };
 
-const findBoardMessage = async (chat) => {
-    console.log(`findBoardMessage: start ${chat}`);
+const mapChatsToMessages = async (chatData) => {
+    console.log('mapChatsToMessages: start');
 
-    const params = {
-        TableName: DB_TABLE,
-        Key: { id: { S: `board:${chat}` } },
-        ProjectionExpression: 'message, sha256'
-    };
+    const map = {};
 
-    const data = await db.getItem(params);
-    if (!data.Item) {
-        console.log('findBoardMessage: no board message found');
-        return [];
+    const WINDOW = 100;
+    for (let i = 0; i < chatData.length; i += WINDOW) {
+        const keys = chatData
+            .slice(i, i + WINDOW)
+            .map(({ chat }) => ({ id: { S: `board:${chat}` } }));
+
+        const params = {
+            RequestItems: {
+                [DB_TABLE]: {
+                    Keys: keys,
+                    ProjectionExpression: 'chat, message, sha256'
+                }
+            }
+        };
+        const data = await db.batchGetItem(params);
+
+        for (const item of data.Responses[DB_TABLE]) {
+            map[Number(item.chat.N)] = { message: Number(item.message.N), sha256: item.sha256.S };
+        }
     }
 
-    const message = Number(data.Item.message.N);
-    const hash = data.Item.sha256.S;
-
-    console.log(`findBoardMessage: found board message ${message} ${hash}`);
-
-    return [message, hash];
+    console.log('mapChatsToMessages: done');
+    return map;
 };
 
 const saveBoardMessage = async (chat, message, hash) => {
@@ -118,12 +123,18 @@ const publishBoards = async (leaderboard, startTimes) => {
         Object.keys(member.completion_day_level).map(Number));
 
     const uniqueDays = [...new Set(days)];
-    const dayMap = await mapDaysToChats(year, uniqueDays);
+    const dayChatMap = await mapDaysToChats(year, uniqueDays);
 
-    const results = await Promise.allSettled(uniqueDays
-        .map(day => ({ day, chat: dayMap[day] }))
-        .filter(({ chat }) => chat !== undefined)
-        .map(async ({ day, chat }) => await publishOneBoard(day, chat, leaderboard, startTimes))
+    const chatData = uniqueDays
+        .map(day => ({ day, chat: dayChatMap[day] }))
+        .filter(({ chat }) => chat !== undefined);
+
+    const chatMessageMap = await mapChatsToMessages(chatData);
+    const messageData = chatData.map(item => ({ ...item, ...chatMessageMap[item.chat] }))
+
+    const results = await Promise.allSettled(messageData
+        .map(async ({ day, chat, message, sha256}) =>
+            await publishOneBoard(day, chat, message, sha256, leaderboard, startTimes))
     );
 
     const created = [];
