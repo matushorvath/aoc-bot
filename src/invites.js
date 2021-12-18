@@ -38,7 +38,7 @@ const mapUsers = async (aocUsers) => {
     const WINDOW = 100;
     for (let i = 0; i < aocUsers.length; i += WINDOW) {
         const keys = aocUsers
-            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .slice(i, i + WINDOW)
             .map(aocUser => ({ id: { S: `aoc_user:${aocUser}` } }));
 
         const params = {
@@ -69,7 +69,7 @@ const mapDaysToChats = async (year, days) => {
     const WINDOW = 100;
     for (let i = 0; i < days.length; i += WINDOW) {
         const keys = days
-            .slice(i * WINDOW, (i + 1) * WINDOW)
+            .slice(i, i + WINDOW)
             .map(day => ({ id: { S: `chat:${year}:${day}` } }));
 
         const params = {
@@ -92,6 +92,43 @@ const mapDaysToChats = async (year, days) => {
     return map;
 };
 
+const filterSentInvites = async (chats) => {
+    console.log('filterSentInvites: start');
+
+    // Filter out users who already got an invite
+    const sentInvites = new Set();
+
+    const WINDOW = 100;
+    for (let i = 0; i < chats.length; i += WINDOW) {
+        const keys = chats
+            .slice(i, i + WINDOW)
+            .map(({ telegramUser, chat, year, day }) =>
+                ({ id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } }));
+
+        if (keys.length > 0) {
+            const params = {
+                RequestItems: {
+                    [DB_TABLE]: {
+                        Keys: keys,
+                        ProjectionExpression: 'id'
+                    }
+                }
+            };
+            const data = await db.batchGetItem(params);
+
+            for (const item of data.Responses[DB_TABLE]) {
+                sentInvites.add(item.id.S);
+            }
+        }
+    }
+
+    const output = chats.filter(({ telegramUser, chat, year, day }) =>
+        !sentInvites.has(`invite:${telegramUser}:${year}:${day}:${chat}`));
+
+    console.log('filterSentInvites: done');
+    return output;
+};
+
 const filterUsersInChat = async (chats) => {
     console.log('filterUsersInChat: start');
 
@@ -109,31 +146,10 @@ const filterUsersInChat = async (chats) => {
         }
     }));
 
+    const output = chats.filter((_, index) => needsAdding[index]);
+
     console.log('filterUsersInChat: done');
-    return chats.filter((_, index) => needsAdding[index]);
-};
-
-const filterSentInvites = async (chats) => {
-    console.log('filterSentInvites: start');
-
-    // Filter out users who already got an invite
-    const needsSending = await Promise.all(chats.map(async ({ telegramUser, chat, year, day }) => {
-        const getParams = {
-            TableName: DB_TABLE,
-            Key: { id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } },
-            ProjectionExpression: 'id'
-        };
-
-        const getData = await db.getItem(getParams);
-        if (getData.Item !== undefined) {
-            console.log(`filterSentInvites: skipping invite for ${telegramUser} ${chat} ${year} ${day}`);
-            return false;
-        }
-        return true;
-    }));
-
-    console.log('filterSentInvites: done');
-    return chats.filter((_, index) => needsSending[index]);
+    return output;
 };
 
 const markAsSent = async (telegramUser, year, day, chat) => {
@@ -203,8 +219,8 @@ const processInvites = async (leaderboard) => {
 
     // Get list of chats each user should be in
     const chats = await getChats(year, days);
-    const changes = await filterUsersInChat(chats);
-    const invites = await filterSentInvites(changes);
+    const changes = await filterSentInvites(chats);
+    const invites = await filterUsersInChat(changes);
 
     // Create invites for all missing cases
     const { sent, failed } = await sendInvites(invites);

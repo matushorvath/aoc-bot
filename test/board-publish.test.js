@@ -24,8 +24,7 @@ describe('publishBoards', () => {
         boardFormat.formatBoard.mockReset();
         network.sendTelegram.mockReset();
 
-        dynamodb.DynamoDB.prototype.getItem.mockReset();
-        dynamodb.DynamoDB.prototype.putItem.mockReset();
+        dynamodb.DynamoDB.mockReset();
     });
 
     test('with a simple board and start times', async () => {
@@ -60,18 +59,23 @@ describe('publishBoards', () => {
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'FbplNUZdPUMuEBC6Z2BDOAEVMWVFnpeZ4Xiy1Zp+QMk='
         boardFormat.formatBoard.mockImplementationOnce(() => { throw new Error('fOrMaTeRrOr666'); });
 
-        // No message in db for 111
-        dynamodb.DynamoDB.prototype.getItem.mockReturnValueOnce({});
-        // Message found in db for 222, same hash
-        dynamodb.DynamoDB.prototype.getItem.mockReturnValueOnce({ Item: {
-            message: { N: '777777' },
-            sha256: { S: 'RgabrYcLKO7hBXKpvA7ejffjxlRNeyS0MTjnAEGIVLg=' }
-        } });
-        // Message found in db for 222, different hash
-        dynamodb.DynamoDB.prototype.getItem.mockReturnValueOnce({ Item: {
-            message: { N: '888888' },
-            sha256: { S: 'dIfFeReNtHaSh' }
-        } });
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: {
+                'aoc-bot': [
+                    // No message in db for 111
+                {
+                    // Message found in db for 222, same hash
+                    chat: { N: '222' },
+                    message: { N: '777777' },
+                    sha256: { S: 'RgabrYcLKO7hBXKpvA7ejffjxlRNeyS0MTjnAEGIVLg=' }
+                }, {
+                    // Message found in db for 444, different hash
+                    chat: { N: '444' },
+                    message: { N: '888888' },
+                    sha256: { S: 'dIfFeReNtHaSh' }
+                }]
+            }
+        });
 
         // Return message id of the message created in chat 111
         network.sendTelegram.mockResolvedValueOnce({ result: { message_id: 999999 } });
@@ -89,21 +93,19 @@ describe('publishBoards', () => {
         expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: true });
         expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: true });
 
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledTimes(3);
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(1, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'board:111' } },
-            ProjectionExpression: 'message, sha256'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(2, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'board:222' } },
-            ProjectionExpression: 'message, sha256'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(3, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'board:444' } },
-            ProjectionExpression: 'message, sha256'
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
+            RequestItems: {
+                'aoc-bot': {
+                    Keys: [
+                        { id: { S: 'board:111' } },
+                        { id: { S: 'board:222' } },
+                        { id: { S: 'board:444' } },
+                        { id: { S: 'board:666' } }
+                    ],
+                    ProjectionExpression: 'chat, message, sha256'
+                }
+            }
         });
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(3);

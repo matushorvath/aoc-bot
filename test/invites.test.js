@@ -132,6 +132,15 @@ describe('processInvites', () => {
 
         // TODO missing chat for a day
 
+        // filterSentInvites
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: {
+                'aoc-bot': [{
+                    id: { S: 'invite:9494:2021:5:50505' }
+                }]
+            }
+        });
+
         // filterUsersInChat
         const leftMember = { ok: true, result: { status: 'left' } };
         for (let i = 0; i < 3; i++) {
@@ -143,20 +152,9 @@ describe('processInvites', () => {
         network.sendTelegram.mockRejectedValueOnce({ isAxiosError: true, response: { data: { error_code: 400 } } });
         // aoc_user nAmE93 returned an error state
         network.sendTelegram.mockResolvedValueOnce({ ok: false });
-        // aoc_users nAmE94 to nAmE96 are not in chat yet
-        for (let i = 0; i < 3; i++) {
-            network.sendTelegram.mockResolvedValueOnce(leftMember);
-        }
-
-        // filterSentInvites
-        for (let i = 0; i < 3; i++) {
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-        }
-        // aoc_user nAmE94 already has an invite
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
-        // aoc_users nAmE95 to nAmE96 do not have an invite yet
+        // aoc_users nAmE95 to nAmE96 are not in chat yet
         for (let i = 0; i < 2; i++) {
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
+            network.sendTelegram.mockResolvedValueOnce(leftMember);
         }
 
         // sendInvites
@@ -191,7 +189,7 @@ describe('processInvites', () => {
             }]
         });
 
-        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(2);
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(3);
 
         // mapUsers
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -221,60 +219,48 @@ describe('processInvites', () => {
                         { id: { S: 'chat:2021:11' } },
                         { id: { S: 'chat:2021:7' } },
                         { id: { S: 'chat:2021:13' } }
-                        // chat:2021:17 is missing, because nobody got 17 part 2
+                        // chat:2021:17 is missing, nobody got 17 part 2
                     ],
                     ProjectionExpression: 'd, chat'
                 }
             }
         });
 
+        // filterSentInvites
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(3, {
+            RequestItems: {
+                'aoc-bot': {
+                    Keys: [
+                        { id: { S: 'invite:4242:2021:5:50505' } },
+                        { id: { S: 'invite:4242:2021:11:111111' } },
+                        { id: { S: 'invite:6969:2021:7:70707' } },
+                        { id: { S: 'invite:6969:2021:13:131313' } },
+                        // invite:9191:2021:5:50505 is missing, user nAmE91 has no telegram account in db
+                        { id: { S: 'invite:9292:2021:5:50505' } },
+                        { id: { S: 'invite:9393:2021:5:50505' } },
+                        { id: { S: 'invite:9494:2021:5:50505' } },
+                        { id: { S: 'invite:9595:2021:5:50505' } },
+                        { id: { S: 'invite:9696:2021:5:50505' } }
+                    ],
+                    ProjectionExpression: 'id'
+                }
+            }
+        });
+
         // filterUsersInChat
-        expect(network.sendTelegram).toHaveBeenCalledTimes(9 + 9);
+        expect(network.sendTelegram).toHaveBeenCalledTimes(8 + 9);
         let st = 1;
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 4242 });
-        // { chat_id: 70707, user_id: 4242 } is missing, because part 2 was not solved
+        // { chat_id: 70707, user_id: 4242 } is missing, part 2 was not solved
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 111111, user_id: 4242 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 70707, user_id: 6969 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 131313, user_id: 6969 });
-        // { chat_id: 171717, user_id: 6969 } is missing, because part 2 was not solved
+        // { chat_id: 171717, user_id: 6969 } is missing, part 2 was not solved
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9292 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9393 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9494 });
+        // { chat_id: 50505, user_id: 9494 } is missing, user already has an invite
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9595 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9696 });
-
-        // filterSentInvites
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledTimes(6);
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(1, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:4242:2021:5:50505' } },
-            ProjectionExpression: 'id'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(2, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:4242:2021:11:111111' } },
-            ProjectionExpression: 'id'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(3, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:6969:2021:7:70707' } },
-            ProjectionExpression: 'id'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(4, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:9494:2021:5:50505' } },
-            ProjectionExpression: 'id'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(5, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:9595:2021:5:50505' } },
-            ProjectionExpression: 'id'
-        });
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenNthCalledWith(6, {
-            TableName: 'aoc-bot',
-            Key: { id: { S: 'invite:9696:2021:5:50505' } },
-            ProjectionExpression: 'id'
-        });
 
         // sendInvites
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
@@ -330,4 +316,7 @@ describe('processInvites', () => {
             }
         });
     });
+
+    // TODO get more than 100 invites (test windowing in dynamodb)
+    // TODO test when no users have invites pending (filterSentInvites with empty UnprocessedKeys)
 });
