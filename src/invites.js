@@ -11,7 +11,7 @@ const getCompletedDays = (leaderboard) => {
     return Object.values(leaderboard.members).flatMap(member =>
         Object.entries(member.completion_day_level)
             // Take days with both parts completed
-            .filter(([, parts]) => parts['1'] && parts['2'])
+            .filter(([day, parts]) => (parts['1'] && parts['2']) || (day === '25' && parts['1']))
             // Make a [name, day] pair for each
             .map(([day, ]) => ({ aocUser: member.name, day: Number(day) }))
     );
