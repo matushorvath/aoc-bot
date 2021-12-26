@@ -17,64 +17,64 @@ describe('processInvites', () => {
         const leaderboard = {
             event: '2021',
             members: {
-                '42': {
-                    name: 'nAmE42',
+                '31': {
+                    name: 'nAmE31',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} },
                         '7': { '1': {} },
                         '11': { '1': {}, '2': {} }
                     }
                 },
-                '69': {
-                    name: 'nAmE69',
+                '32': {
+                    name: 'nAmE32',
                     completion_day_level: {
                         '7': { '1': {}, '2': {} },
                         '13': { '1': {}, '2': {} },     // user is already a member of this chat
                         '17': { '1': {} }
                     },
                 },
-                '88': {
-                    name: 'nAmE88',
+                '33': {
+                    name: 'nAmE33',
                     completion_day_level: {},
                 },
-                '91': {         // user with no telegram account
-                    name: 'nAmE91',
+                '51': {         // user with no telegram account
+                    name: 'nAmE51',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '92': {         // user with a telegram account that no longer exists
-                    name: 'nAmE92',
+                '52': {         // user with a telegram account that no longer exists
+                    name: 'nAmE52',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '93': {         // user where telegrams fails when retrieving the membership
-                    name: 'nAmE93',
+                '54': {         // user where telegrams fails when retrieving the membership
+                    name: 'nAmE54',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '94': {         // user who is not in the chat room, but already has an invite
-                    name: 'nAmE94',
+                '55': {         // user who is not in the chat room, but already has an invite
+                    name: 'nAmE55',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '95': {         // user where we could not create an invite
-                    name: 'nAmE95',
+                '56': {         // user where we could not create an invite
+                    name: 'nAmE56',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '96': {         // user where we could not send an invite
-                    name: 'nAmE96',
+                '57': {         // user where we could not send an invite
+                    name: 'nAmE57',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
                     },
                 },
-                '97': {         // user with just part 1 for day 25
-                    name: 'nAmE97',
+                '59': {         // user with just part 1 for day 25
+                    name: 'nAmE59',
                     completion_day_level: {
                         '25': { '1': {} }
                     },
@@ -88,34 +88,34 @@ describe('processInvites', () => {
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
                 'aoc-bot': [{
-                    aoc_user: { S: 'nAmE42' },
-                    telegram_user: { N: 4242 }
+                    aoc_user: { S: 'nAmE31' },
+                    telegram_user: { N: 3131 }
                 }, {
-                    aoc_user: { S: 'nAmE69' },
-                    telegram_user: { N: 6969 }
+                    aoc_user: { S: 'nAmE32' },
+                    telegram_user: { N: 3232 }
                 }, {
-                    aoc_user: { S: 'nAmE88' },
-                    telegram_user: { N: 8888 }
+                    aoc_user: { S: 'nAmE33' },
+                    telegram_user: { N: 3333 }
                 },
                 // aoc_user nAmE11 has no telegram account in db
                 {
-                    aoc_user: { S: 'nAmE92' },
-                    telegram_user: { N: 9292 }
+                    aoc_user: { S: 'nAmE52' },
+                    telegram_user: { N: 5252 }
                 }, {
-                    aoc_user: { S: 'nAmE93' },
-                    telegram_user: { N: 9393 }
+                    aoc_user: { S: 'nAmE54' },
+                    telegram_user: { N: 5454 }
                 }, {
-                    aoc_user: { S: 'nAmE94' },
-                    telegram_user: { N: 9494 }
+                    aoc_user: { S: 'nAmE55' },
+                    telegram_user: { N: 5555 }
                 }, {
-                    aoc_user: { S: 'nAmE95' },
-                    telegram_user: { N: 9595 }
+                    aoc_user: { S: 'nAmE56' },
+                    telegram_user: { N: 5656 }
                 }, {
-                    aoc_user: { S: 'nAmE96' },
-                    telegram_user: { N: 9696 }
+                    aoc_user: { S: 'nAmE57' },
+                    telegram_user: { N: 5757 }
                 }, {
-                    aoc_user: { S: 'nAmE97' },
-                    telegram_user: { N: 9797 }
+                    aoc_user: { S: 'nAmE59' },
+                    telegram_user: { N: 5959 }
                 }]
             }
         });
@@ -148,63 +148,64 @@ describe('processInvites', () => {
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
                 'aoc-bot': [{
-                    id: { S: 'invite:9494:2021:5:50505' }
+                    id: { S: 'invite:5555:2021:5:50505' }
                 }]
             }
         });
 
         // filterUsersInChat
-        const leftMember = { ok: true, result: { status: 'left' } };
-        for (let i = 0; i < 3; i++) {
-            network.sendTelegram.mockResolvedValueOnce(leftMember);
-        }
-        // aoc_user nAmE69 is already member of the chat for day 13
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE31
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE32
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE33
+        // aoc_user nAmE32 is already member of the chat for day 13
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'member' } });
-        // aoc_user nAmE92 has a telegram account in db, but it no longer exists
+        // aoc_user nAmE52 has a telegram account in db, but it no longer exists
         network.sendTelegram.mockRejectedValueOnce({ isAxiosError: true, response: { data: { error_code: 400 } } });
-        // aoc_user nAmE93 returned an error state
+        // aoc_user nAmE54 returned an error state
         network.sendTelegram.mockResolvedValueOnce({ ok: false });
-        // aoc_users nAmE95 to nAmE97 are not in chat yet
-        for (let i = 0; i < 3; i++) {
-            network.sendTelegram.mockResolvedValueOnce(leftMember);
-        }
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE56
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE57
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE59
 
         // sendInvites
-        for (let i = 0; i < 3; i++) {
-            // createChatInviteLink
-            const invite = { ok: true, result: { name: `iNvItE${i}`, invite_link: `InViTeLiNk${i}` } };
-            network.sendTelegram.mockResolvedValueOnce(invite);
+        network.sendTelegram.mockResolvedValueOnce(
+            { ok: true, result: { name: 'iNvItE31_5', invite_link: 'InViTeLiNk31_5' } });
+        network.sendTelegram.mockResolvedValueOnce(undefined);
 
-            // sendMessage
-            network.sendTelegram.mockResolvedValueOnce(undefined);
-        }
+        network.sendTelegram.mockResolvedValueOnce(
+            { ok: true, result: { name: 'iNvItE31_11', invite_link: 'InViTeLiNk31_11' } });
+        network.sendTelegram.mockResolvedValueOnce(undefined);
 
-        // aoc_user nAmE95, could not create an invite
+        network.sendTelegram.mockResolvedValueOnce(
+            { ok: true, result: { name: 'iNvItE32_7', invite_link: 'InViTeLiNk32_7' } });
+        network.sendTelegram.mockResolvedValueOnce(undefined);
+
+        // aoc_user nAmE56, could not create an invite
         network.sendTelegram.mockResolvedValueOnce({ ok: false });
 
-        // aoc_user nAmE96, could not send an invite
+        // aoc_user nAmE57, could not send an invite
         network.sendTelegram.mockResolvedValueOnce(
-            { ok: true, result: { name: 'iNvItE96', invite_link: 'InViTeLiNk96' } });
+            { ok: true, result: { name: 'iNvItE57_5', invite_link: 'InViTeLiNk57_5' } });
         network.sendTelegram.mockRejectedValueOnce(
             { isAxiosError: true, response: { data: { error_code: 400 } } });
 
-        // aoc_user nAmE97, send an invite
-        const invite = { ok: true, result: { name: `iNvItE97`, invite_link: `InViTeLiNk97` } };
+        // aoc_user nAmE59, successful sending
+        const invite = { ok: true, result: { name: `iNvItE59_25`, invite_link: `InViTeLiNk59_25` } };
         network.sendTelegram.mockResolvedValueOnce(invite);
         network.sendTelegram.mockResolvedValueOnce(undefined);
 
         await expect(processInvites(leaderboard)).resolves.toEqual({
             sent: [{
-                aocUser: 'nAmE42', chat: 50505, day: 5, telegramUser: 4242, year: 2021
+                aocUser: 'nAmE31', chat: 50505, day: 5, telegramUser: 3131, year: 2021
             }, {
-                aocUser: 'nAmE42', chat: 111111, day: 11, telegramUser: 4242, year: 2021
+                aocUser: 'nAmE31', chat: 111111, day: 11, telegramUser: 3131, year: 2021
             }, {
-                aocUser: 'nAmE69', chat: 70707, day: 7, telegramUser: 6969, year: 2021
+                aocUser: 'nAmE32', chat: 70707, day: 7, telegramUser: 3232, year: 2021
             }, {
-                aocUser: 'nAmE97', chat: 252525, day: 25, telegramUser: 9797, year: 2021
+                aocUser: 'nAmE59', chat: 252525, day: 25, telegramUser: 5959, year: 2021
             }],
             failed: [{
-                aocUser: 'nAmE95', chat: 50505, day: 5, telegramUser: 9595, year: 2021
+                aocUser: 'nAmE56', chat: 50505, day: 5, telegramUser: 5656, year: 2021
             }]
         });
 
@@ -215,15 +216,15 @@ describe('processInvites', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'aoc_user:nAmE42' } },
-                        { id: { S: 'aoc_user:nAmE69' } },
-                        { id: { S: 'aoc_user:nAmE91' } },
-                        { id: { S: 'aoc_user:nAmE92' } },
-                        { id: { S: 'aoc_user:nAmE93' } },
-                        { id: { S: 'aoc_user:nAmE94' } },
-                        { id: { S: 'aoc_user:nAmE95' } },
-                        { id: { S: 'aoc_user:nAmE96' } },
-                        { id: { S: 'aoc_user:nAmE97' } }
+                        { id: { S: 'aoc_user:nAmE31' } },
+                        { id: { S: 'aoc_user:nAmE32' } },
+                        { id: { S: 'aoc_user:nAmE51' } },
+                        { id: { S: 'aoc_user:nAmE52' } },
+                        { id: { S: 'aoc_user:nAmE54' } },
+                        { id: { S: 'aoc_user:nAmE55' } },
+                        { id: { S: 'aoc_user:nAmE56' } },
+                        { id: { S: 'aoc_user:nAmE57' } },
+                        { id: { S: 'aoc_user:nAmE59' } }
                     ],
                     ProjectionExpression: 'aoc_user, telegram_user'
                 }
@@ -252,17 +253,17 @@ describe('processInvites', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'invite:4242:2021:5:50505' } },
-                        { id: { S: 'invite:4242:2021:11:111111' } },
-                        { id: { S: 'invite:6969:2021:7:70707' } },
-                        { id: { S: 'invite:6969:2021:13:131313' } },
-                        // invite:9191:2021:5:50505 is missing, user nAmE91 has no telegram account in db
-                        { id: { S: 'invite:9292:2021:5:50505' } },
-                        { id: { S: 'invite:9393:2021:5:50505' } },
-                        { id: { S: 'invite:9494:2021:5:50505' } },
-                        { id: { S: 'invite:9595:2021:5:50505' } },
-                        { id: { S: 'invite:9696:2021:5:50505' } },
-                        { id: { S: 'invite:9797:2021:25:252525' } }
+                        { id: { S: 'invite:3131:2021:5:50505' } },
+                        { id: { S: 'invite:3131:2021:11:111111' } },
+                        { id: { S: 'invite:3232:2021:7:70707' } },
+                        { id: { S: 'invite:3232:2021:13:131313' } },
+                        // invite:5151:2021:5:50505 is missing, user nAmE51 has no telegram account in db
+                        { id: { S: 'invite:5252:2021:5:50505' } },
+                        { id: { S: 'invite:5454:2021:5:50505' } },
+                        { id: { S: 'invite:5555:2021:5:50505' } },
+                        { id: { S: 'invite:5656:2021:5:50505' } },
+                        { id: { S: 'invite:5757:2021:5:50505' } },
+                        { id: { S: 'invite:5959:2021:25:252525' } }
                     ],
                     ProjectionExpression: 'id'
                 }
@@ -270,36 +271,35 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        expect(network.sendTelegram).toHaveBeenCalledTimes(9 + 11);
         let st = 1;
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 4242 });
-        // { chat_id: 70707, user_id: 4242 } is missing, part 2 was not solved
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 111111, user_id: 4242 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 70707, user_id: 6969 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 131313, user_id: 6969 });
-        // { chat_id: 171717, user_id: 6969 } is missing, part 2 was not solved
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9292 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9393 });
-        // { chat_id: 50505, user_id: 9494 } is missing, user already has an invite
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9595 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 9696 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 252525, user_id: 9797 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 3131 });
+        // { chat_id: 70707, user_id: 3131 } is missing, part 2 was not solved
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 111111, user_id: 3131 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 70707, user_id: 3232 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 131313, user_id: 3232 });
+        // { chat_id: 171717, user_id: 3232 } is missing, part 2 was not solved
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5252 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5454 });
+        // { chat_id: 50505, user_id: 5555 } is missing, user already has an invite
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5656 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5757 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 252525, user_id: 5959 });
 
         // sendInvites
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
-            { chat_id: 4242, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk0/) });
+            { chat_id: 3131, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk31_5/) });
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 111111, name: 'AoC 2021 Day 11', member_limit: 1, creates_join_request: false });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
-            { chat_id: 4242, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk1/) });
+            { chat_id: 3131, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk31_11/) });
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 70707, name: 'AoC 2021 Day 7', member_limit: 1, creates_join_request: false });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
-            { chat_id: 6969, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk2/) });
+            { chat_id: 3232, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk32_7/) });
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
@@ -307,19 +307,21 @@ describe('processInvites', () => {
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
-            { chat_id: 9696, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk96/) });
+            { chat_id: 5757, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk57_5/) });
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 252525, name: 'AoC 2021 Day 25', member_limit: 1, creates_join_request: false });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
-            { chat_id: 9797, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk97/) });
+            { chat_id: 5959, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk59_25/) });
+
+        expect(network.sendTelegram).toHaveBeenCalledTimes(st - 1);
 
         // markAsSent
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(4);
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(1, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:4242:2021:5:50505' },
+                id: { S: 'invite:3131:2021:5:50505' },
                 y: { N: '2021' },
                 d: { N: '5' },
                 chat: { N: '50505' }
@@ -328,7 +330,7 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:4242:2021:11:111111' },
+                id: { S: 'invite:3131:2021:11:111111' },
                 y: { N: '2021' },
                 d: { N: '11' },
                 chat: { N: '111111' }
@@ -337,7 +339,7 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(3, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:6969:2021:7:70707' },
+                id: { S: 'invite:3232:2021:7:70707' },
                 y: { N: '2021' },
                 d: { N: '7' },
                 chat: { N: '70707' }
@@ -346,7 +348,7 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(4, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:9797:2021:25:252525' },
+                id: { S: 'invite:5959:2021:25:252525' },
                 y: { N: '2021' },
                 d: { N: '25' },
                 chat: { N: '252525' }
