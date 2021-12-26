@@ -105,20 +105,18 @@ const filterSentInvites = async (chats) => {
             .map(({ telegramUser, chat, year, day }) =>
                 ({ id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } }));
 
-        if (keys.length > 0) {
-            const params = {
-                RequestItems: {
-                    [DB_TABLE]: {
-                        Keys: keys,
-                        ProjectionExpression: 'id'
-                    }
+        const params = {
+            RequestItems: {
+                [DB_TABLE]: {
+                    Keys: keys,
+                    ProjectionExpression: 'id'
                 }
-            };
-            const data = await db.batchGetItem(params);
-
-            for (const item of data.Responses[DB_TABLE]) {
-                sentInvites.add(item.id.S);
             }
+        };
+        const data = await db.batchGetItem(params);
+
+        for (const item of data.Responses[DB_TABLE]) {
+            sentInvites.add(item.id.S);
         }
     }
 
