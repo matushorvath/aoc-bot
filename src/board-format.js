@@ -20,7 +20,7 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
 const getResults = (year, day, leaderboard, startTimes) => {
     // Results from AoC leaderboard
     const leaderboardResults = Object.values(leaderboard.members)
-        .filter(member => member.completion_day_level[day])
+        .filter(member => member.completion_day_level[day]?.[1])
         .map(member => ({
             name: member.name,
             ts1: member.completion_day_level[day][1]?.get_star_ts ?? Infinity,
