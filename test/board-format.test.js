@@ -119,16 +119,10 @@ Day  5 @  8d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na
     });
 
     test('displays infinity for dates far back', async () => {
-        const leaderboard = {
-            members: {
-                '111': {
-                    name: 'Connor MacLeod',
-                    completion_day_level: {
-                        '25': { '1': { get_star_ts: 868793814000 } }
-                    }
-                }
-            }
-        };
+        const leaderboard = { members: { '111': {
+            name: 'Connor MacLeod',
+            completion_day_level: { '25': { '1': { get_star_ts: 868793814000 } } }
+        } } };
 
         expect(formatBoard(2021, 25, leaderboard)).toEqual(`\
 Day 25 @\\-\\-:\\-\\-:\\-\\- ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
@@ -137,21 +131,42 @@ Day 25 @\\-\\-:\\-\\-:\\-\\- ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(
 
     test('handles missing get_star_ts', async () => {
         // This should not happen on input, this test exists to complete coverage
-        const leaderboard = {
-            members: {
-                '111': {
-                    name: 'Person One',
-                    completion_day_level: {
-                        '1': { '1': {} }
-                    }
-                }
-            }
-        };
+        const leaderboard = { members: { '111': {
+            name: 'Person One',
+            completion_day_level: { '1': { '1': {} } }
+        } } };
 
         // If the person is in the input but with no time, add them to leaderboard with no time
         expect(formatBoard(2021, 1, leaderboard)).toEqual(`\
 Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
       Person One \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)`);
+    });
+
+    test('ignores negative solution times', async () => {
+        const leaderboard = { members: { '111': {
+            name: 'Person One',
+            completion_day_level: { '1': { '1': { get_star_ts: 1639440000 }, '2': { get_star_ts: 1639443600 } } }
+        } } };
+
+        const startTimes = { '2021': { '1': { 'Person One': { '1': [1639526400], '2': [1639530000] } } } };
+
+        expect(formatBoard(2021, 1, leaderboard, startTimes)).toEqual(`\
+Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
+      Person One  12d 19h  12d 20h \\(01:00:00\\)`);
+    });
+
+    test('ignores negative difference between part 1 and part 2', async () => {
+        // This is a wrong leaderboard, part 2 time is earlier than part 1
+        const leaderboard = { members: { '111': {
+            name: 'Person One',
+            completion_day_level: { '1': { '1': { get_star_ts: 1639443600 }, '2': { get_star_ts: 1639440000 } } }
+        } } };
+
+        const startTimes = { '2021': { '1': { 'Person One': { '1': [1639429200], '2': [1639441800] } } } };
+
+        expect(formatBoard(2021, 1, leaderboard, startTimes)).toEqual(`\
+Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
+      Person One  12d 20h  12d 19h \\(\\-\\-:\\-\\-:\\-\\-\\) \\[04:00:00 03:00:00\\]`);
     });
 
     // TODO start times that exist but don't include current year
