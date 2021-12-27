@@ -56,19 +56,26 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
 
     if (dayStartTimes?.[1]) {
         const start1 = Math.min(...dayStartTimes[1]);
-        const nts1d = formatDuration(result.ts1 - start1);
-        const nts2d = formatDuration(result.ts2 - start1);
+        const ots1 = result.ts1 - start1;
+        const ots2 = result.ts2 - start1;
 
-        line += ` [${nts1d} ${nts2d}`;
+        if (ots1 >= 0 && ots2 >= 0) {
+            const nts1d = formatDuration(ots1);
+            const nts2d = formatDuration(ots2);
+            line += ` [${nts1d} ${nts2d}`;
 
-        if (dayStartTimes?.[2]) {
-            const start2 = Math.min(...dayStartTimes[2]);
-            const ndiffd = formatDuration(result.ts2 - start2);
+            if (dayStartTimes?.[2]) {
+                const start2 = Math.min(...dayStartTimes[2]);
+                const ndiff = result.ts2 - start2;
 
-            line += ` (${ndiffd})`
+                if (ndiff > 0) {
+                    const ndiffd = formatDuration(ndiff);
+                    line += ` (${ndiffd})`
+                }
+            }
+
+            line += ']';
         }
-
-        line += ']';
     }
     return line;
 };
