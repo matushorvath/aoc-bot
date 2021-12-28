@@ -7,7 +7,7 @@ uuid=$(uuidgen -r | tr -d -)
 package=aoc-bot-$version-$uuid.zip
 
 region=eu-central-1
-bucket=cf.009116496185.eu-central-1
+bucket=cf.009116496185.$region
 
 missing_params=$(aws ssm get-parameters \
     --region $region \
