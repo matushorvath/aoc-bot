@@ -81,26 +81,43 @@ Resources:
           KeyType: HASH
       TableName: aoc-bot
 
-  # Rule to regularly trigger AocBotScheduleFunction
-  AocBotRule:
+  # Rule to regularly trigger AocBotScheduleFunction in December
+  AocBotDecemberRule:
     Type: AWS::Events::Rule
     Properties:
-      ScheduleExpression: rate(15 minutes)
+      ScheduleExpression: cron(0/15 * * DEC ? *) # every 15 minutes, only in December
       State: ENABLED
       Targets:
         - Arn: !GetAtt AocBotScheduleFunction.Arn
           Id: AocBotRuleTarget
 
-  # Permission that allows Events to call AocBotScheduleFunction
-  AocBotSchedulePerms:
+  # Permission that allows Events to call AocBotScheduleFunction in December
+  AocBotDecemberSchedulePerms:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AocBotScheduleFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotScheduleFunction
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt AocBotRule.Arn
+      SourceArn: !GetAtt AocBotDecemberRule.Arn
+
+  # Rule to regularly trigger AocBotScheduleFunction in January to November
+  AocBotNotDecemberRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: cron(0 12 * JAN-NOV ? *) # at 12:00, January through November
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AocBotScheduleFunction.Arn
+          Id: AocBotRuleTarget
+
+  # Permission that allows Events to call AocBotScheduleFunction in January to November
+  AocBotNotDecemberSchedulePerms:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AocBotScheduleFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AocBotNotDecemberRule.Arn
 
   # API Gateway to handle Telegram webhooks
   AocBotApi:
@@ -133,7 +150,6 @@ Resources:
   AocBotWebhookPerms:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - AocBotWebhookFunction
       - AocBotApi
     Properties:
       Action: lambda:InvokeFunction
