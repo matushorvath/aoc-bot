@@ -6,7 +6,8 @@
         "eslint": "eslint .",
         "eslint-fix": "eslint --fix .",
         "yamllint": "yamllint .",
-        "lint": "npm run eslint && npm run yamllint",
+        "cfn-lint": "cfn-lint template.yml",
+        "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
         "jest": "jest",
         "test": "npm run lint && npm run jest",
         "deploy": "./deploy.sh"

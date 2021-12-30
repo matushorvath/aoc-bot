@@ -94,8 +94,6 @@ Resources:
   # Permission that allows Events to call AocBotScheduleFunction in December
   AocBotDecemberSchedulePerms:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AocBotScheduleFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotScheduleFunction
@@ -115,8 +113,6 @@ Resources:
   # Permission that allows Events to call AocBotScheduleFunction in January to November
   AocBotNotDecemberSchedulePerms:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AocBotScheduleFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotScheduleFunction
@@ -154,7 +150,6 @@ Resources:
   AocBotWebhookPerms:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - AocBotWebhookFunction
       - AocBotApi
     Properties:
       Action: lambda:InvokeFunction
