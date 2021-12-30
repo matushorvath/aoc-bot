@@ -7,3 +7,5 @@ ignore: |
 rules:
   indentation:
     level: error
+  line-length:
+    max: 120
