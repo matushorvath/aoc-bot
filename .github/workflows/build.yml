@@ -34,13 +34,6 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Report test coverage
-        if: github.ref != 'refs/heads/main'
-        uses: artiomtr/jest-coverage-report-action@v2.0-rc.6
-        with:
-          annotations: none
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
   deploy:
     name: Deploy to AWS
     runs-on: ubuntu-20.04
