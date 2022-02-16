@@ -6,6 +6,9 @@ const { formatBoard } = require('./board-format');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
+const fsp = require('fs/promises');
+const path = require('path');
+
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
@@ -284,34 +287,20 @@ const onCommandUpdate = async (chat) => {
     console.log('onCommandUpdate: done');
 };
 
-const HELP_TEXT =
-`I can register your Advent of Code name, and then automatically invite you into the daily chat rooms once you solve each daily problem\\.
-
-Supported commands:
-
-/reg \\<aocname\\> – Register your Advent of Code name\\.
-Format your name exactly as it is visible in our [leaderboard](https://adventofcode\\.com/2021/leaderboard/private/view/380635) \\(without the \`(AoC\\+\\+)\` suffix\\)\\.
-
-/unreg – Unregister from the bot\\.
-
-/status – Display your registration status\\.
-
-/update – Update the leaderboard\\.
-Leaderboard is updated automatically every 15 minutes\\. This command is only needed if you want to trigger the update immediately\\.
-
-/board \\<year\\> \\<day\\> – Display a board for given year and day\\.
-
-/help – Show this message\\.
-`;
+let helpText;
 
 const onCommandHelp = async (chat) => {
     console.log('onCommandHelp: start');
+
+    if (!helpText) {
+        helpText = await fsp.readFile(path.join(__dirname, 'help.txt'), 'utf-8');
+    }
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
         disable_notification: true,
-        text: HELP_TEXT
+        text: helpText
     });
 };
 
