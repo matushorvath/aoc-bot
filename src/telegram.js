@@ -47,7 +47,6 @@ const onMyChatMember = async (my_chat_member) => {
     console.log('onMyChatMember: admin data stored in db');
 
     // Initialize the group
-    // TODO bot name should be clickable and open chat with the bot
     await sendTelegram('sendMessage', {
         chat_id: my_chat_member.chat.id,
         text: `@AocElfBot is online, AoC ${year} Day ${day}`,
@@ -63,7 +62,6 @@ const onMessage = async (message) => {
         return;
     }
 
-    // TODO support unreg command
     let m = message.text.match(/^\s*\/(reg|unreg|status|update|board|start|help)(?:\s+(.+))?\s*$/)
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
