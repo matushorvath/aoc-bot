@@ -14,6 +14,8 @@ jest.mock('../src/board-format');
 const schedule = require('../src/schedule');
 jest.mock('../src/schedule');
 
+const fsp = require('fs/promises');
+
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.batchWriteItem.mockReset();
@@ -670,7 +672,17 @@ describe('onTelegramUpdate', () => {
     });
 
     describe('onMessage /help', () => {
-        test('displays help', async () => {
+        let readFileSpy;
+
+        beforeEach(() => {
+            readFileSpy = jest.spyOn(fsp, 'readFile');
+        });
+
+        afterEach(() => {
+            readFileSpy.mockRestore();
+        });
+
+        test('displays help, first time from help.txt', async () => {
             const update = {
                 message: {
                     text: '/help',
@@ -680,6 +692,27 @@ describe('onTelegramUpdate', () => {
             };
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(readFileSpy).toHaveBeenCalledWith(expect.stringMatching(/\/help\.txt$/), 'utf-8');
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
+                text: expect.stringMatching(/^I can register[^]*this message\\\.\n$/)
+            });
+        });
+
+        test('displays help, second time from the cache', async () => {
+            const update = {
+                message: {
+                    text: '/help',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(readFileSpy).not.toHaveBeenCalled();
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,

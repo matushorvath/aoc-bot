@@ -1,0 +1,17 @@
+I can register your Advent of Code name, and then automatically invite you into the daily chat rooms once you solve each daily problem\.
+
+Supported commands:
+
+/reg \<aocname\> – Register your Advent of Code name\.
+Format your name exactly as it is visible in our [leaderboard](https://adventofcode\.com/2021/leaderboard/private/view/380635) \(without the \`(AoC\+\+)\` suffix\)\.
+
+/unreg – Unregister from the bot\.
+
+/status – Display your registration status\.
+
+/update – Update the leaderboard\.
+Leaderboard is updated automatically every 15 minutes\. This command is only needed if you want to trigger the update immediately\.
+
+/board \<year\> \<day\> – Display a board for given year and day\.
+
+/help – Show this message\.
