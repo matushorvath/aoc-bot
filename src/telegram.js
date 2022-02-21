@@ -208,6 +208,17 @@ const onCommandBoard = async (chat, params) => {
     const [year, day] = params.split(' ').map(Number);
 
     const leaderboard = await getLeaderboard(year);
+    if (!leaderboard) {
+        console.log('onCommandBoard: no leaderboard data');
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            parse_mode: 'MarkdownV2',
+            text: 'Could not retrieve leaderboard data',
+            disable_notification: true
+        });
+        return;
+    }
+
     const startTimes = await getStartTimes();
     const board = formatBoard(year, day, leaderboard, startTimes);
 
