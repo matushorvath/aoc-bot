@@ -13,11 +13,12 @@ const updateLeaderboards = async () => {
     // Download start times and leaderboards in parallel
     let [startTimes, ...leaderboards] = await Promise.all([
         getStartTimes(),
-        ...years.map(async (year) => await getLeaderboard(year))
+        ...years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
     ]);
 
     // Filter out empty leaderboards
-    leaderboards = leaderboards.filter(leaderboard => !!leaderboard);
+    const unretrieved = leaderboards.filter(leaderboard => leaderboard.data === undefined);
+    leaderboards = leaderboards.filter(leaderboard => leaderboard.data !== undefined);
 
     const sent = [];
     const failed = [];
@@ -26,20 +27,20 @@ const updateLeaderboards = async () => {
 
     // Process invites and publish boards in parallel
     await Promise.all([
-        ...leaderboards.map(async (leaderboard) => {
-            const invites = await processInvites(leaderboard);
+        ...leaderboards.map(async ({ data }) => {
+            const invites = await processInvites(data);
             sent.push(...invites.sent);
             failed.push(...invites.failed);
         }),
-        ...leaderboards.map(async (leaderboard) => {
-            const boards = await publishBoards(leaderboard, startTimes);
+        ...leaderboards.map(async ({ data }) => {
+            const boards = await publishBoards(data, startTimes);
             created.push(...boards.created);
             updated.push(...boards.updated);
         })
     ]);
 
     console.log('updateLeaderboards: done');
-    return { sent, failed, created, updated };
+    return { unretrieved, sent, failed, created, updated };
 };
 
 const handler = async () => {
