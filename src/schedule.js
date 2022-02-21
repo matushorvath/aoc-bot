@@ -11,10 +11,13 @@ const updateLeaderboards = async () => {
     const years = [2021, 2020];
 
     // Download start times and leaderboards in parallel
-    const [startTimes, ...leaderboards] = await Promise.all([
+    let [startTimes, ...leaderboards] = await Promise.all([
         getStartTimes(),
         ...years.map(async (year) => await getLeaderboard(year))
     ]);
+
+    // Filter out empty leaderboards
+    leaderboards = leaderboards.filter(leaderboard => !!leaderboard);
 
     const sent = [];
     const failed = [];

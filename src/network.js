@@ -12,7 +12,22 @@ const getLeaderboard = async (year) => {
 
     const url = `https://adventofcode.com/${year}/leaderboard/private/view/${LEADERBOARD_ID}.json`;
     const options = { headers: { Cookie: `session=${secret}` } };
-    const response = await axios.get(url, options);
+
+    let response;
+    try {
+        response = await axios.get(url, options);
+    } catch (error) {
+        if (error.isAxiosError) {
+            console.log('getLeaderboard: returning empty leaderboard, HTTP error', error);
+            return undefined;
+        }
+        throw error;
+    }
+
+    if (response.headers['content-type'] !== 'application/json') {
+        console.log('getLeaderboard: returning empty leaderboard, content type is not JSON', response.headers['content-type']);
+        return undefined;
+    }
 
     console.log('getLeaderboard: done');
 
