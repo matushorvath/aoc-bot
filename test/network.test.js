@@ -15,7 +15,10 @@ beforeEach(() => {
 
 describe('getLeaderboard', () => {
     test('downloads AoC data', async () => {
-        axios.get.mockResolvedValueOnce({ data: { fAkEaOcDaTa: true } });
+        axios.get.mockResolvedValueOnce({
+            headers: { 'content-type': 'application/json' },
+            data: { fAkEaOcDaTa: true }
+        });
         secrets.getAdventOfCodeSecret.mockResolvedValueOnce('aOcSeCrEt');
 
         await expect(getLeaderboard(1492)).resolves.toEqual({ fAkEaOcDaTa: true });
@@ -36,11 +39,41 @@ describe('getLeaderboard', () => {
         expect(axios.get).not.toHaveBeenCalled();
     });
 
-    test('fails on HTTP error', async () => {
-        axios.get.mockRejectedValueOnce(new Error('aXiOsErRoR'));
+    test('loads an empty leaderboard when leaderboard returns HTML', async () => {
+        // This happens when you have a valid but expired session cookie
+        axios.get.mockResolvedValueOnce({
+            headers: { 'content-type': 'text/html' },
+            data: '<!DOCTYPE html>\n<html lang="en-us">\n</html>'
+        });
         secrets.getAdventOfCodeSecret.mockResolvedValueOnce('aOcSeCrEt');
 
-        await expect(getLeaderboard(1492)).rejects.toThrow('aXiOsErRoR');
+        await expect(getLeaderboard(1492)).resolves.toBeUndefined();
+
+        expect(secrets.getAdventOfCodeSecret).toHaveBeenCalled();
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://adventofcode.com/1492/leaderboard/private/view/380635.json',
+            { headers: { Cookie: 'session=aOcSeCrEt' } }
+        );
+    });
+
+    test('loads an empty leaderboard on HTTP error', async () => {
+        axios.get.mockRejectedValueOnce({ isAxiosError: true });
+        secrets.getAdventOfCodeSecret.mockResolvedValueOnce('aOcSeCrEt');
+
+        await expect(getLeaderboard(1492)).resolves.toBeUndefined();
+
+        expect(secrets.getAdventOfCodeSecret).toHaveBeenCalled();
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://adventofcode.com/1492/leaderboard/private/view/380635.json',
+            { headers: { Cookie: 'session=aOcSeCrEt' } }
+        );
+    });
+
+    test('fails on non-HTTP error', async () => {
+        axios.get.mockRejectedValueOnce(new Error('nOnHtTpErRoR'));
+        secrets.getAdventOfCodeSecret.mockResolvedValueOnce('aOcSeCrEt');
+
+        await expect(getLeaderboard(1492)).rejects.toThrow('nOnHtTpErRoR');
 
         expect(secrets.getAdventOfCodeSecret).toHaveBeenCalled();
         expect(axios.get).toHaveBeenCalledWith(
