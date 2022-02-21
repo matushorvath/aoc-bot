@@ -267,13 +267,16 @@ const onCommandUpdate = async (chat) => {
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: 'Updating leaderboard, this might take a few seconds',
+        text: 'Updating leaderboards, this might take a few seconds',
         disable_notification: true
     });
 
-    const { sent, created, updated }  = await updateLeaderboards();
+    const { unretrieved, sent, created, updated } = await updateLeaderboards();
 
     let info = '';
+    for (const { year } of unretrieved) {
+        info += `• could not retrieve data for year ${year}\n`;
+    }
     for (const { aocUser, year, day } of sent) {
         info += `• invited ${aocUser} to ${year} day ${day}\n`;
     }
@@ -289,7 +292,7 @@ const onCommandUpdate = async (chat) => {
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: `Leaderboard updated\n${info}`,
+        text: `Leaderboards updated\n${info}`,
         disable_notification: true
     });
 

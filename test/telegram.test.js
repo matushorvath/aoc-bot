@@ -639,21 +639,21 @@ describe('onTelegramUpdate', () => {
             };
 
             schedule.updateLeaderboards.mockResolvedValueOnce({
-                sent: [], created: [], updated: []
+                unretrieved: [], sent: [], created: [], updated: []
             });
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Updating leaderboard, this might take a few seconds'
+                text: 'Updating leaderboards, this might take a few seconds'
             });
 
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Leaderboard updated\n(no changes)\n'
+                text: 'Leaderboards updated\n(no changes)\n'
             });
         });
 
@@ -667,29 +667,32 @@ describe('onTelegramUpdate', () => {
             };
 
             schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [{ year: 1984 }, { year: 2345 }],
                 sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
                 created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
-                updated: [{ year: 1918, day: 14 }, { year: 2067, day: 22 }]
+                updated: [{ year: 1918, day: 14 }, { year: 2063, day: 5 }]
             });
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Updating leaderboard, this might take a few seconds'
+                text: 'Updating leaderboards, this might take a few seconds'
             });
 
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `Leaderboard updated
+                text: `Leaderboards updated
+• could not retrieve data for year 1984
+• could not retrieve data for year 2345
 • invited AoCu1 to 1980 day 13
 • invited AoCu2 to 1995 day 4
 • created board for 1945 day 2
 • created board for 1815 day 7
 • updated board for 1918 day 14
-• updated board for 2067 day 22
+• updated board for 2063 day 5
 `});
         });
     });
