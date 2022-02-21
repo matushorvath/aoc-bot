@@ -526,6 +526,29 @@ describe('onTelegramUpdate', () => {
             });
         });
 
+        test('with empty leaderboard', async () => {
+            const update = {
+                message: {
+                    text: '/board 1980 24',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            network.getLeaderboard.mockResolvedValueOnce(undefined);
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
+            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(boardFormat.formatBoard).not.toHaveBeenCalled();
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
+                text: 'Could not retrieve leaderboard data'
+            });
+        });
+
         test('with valid parameters', async () => {
             const update = {
                 message: {
