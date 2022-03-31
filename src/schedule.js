@@ -3,12 +3,12 @@
 const { processInvites } = require('./invites');
 const { getLeaderboard, getStartTimes } = require('./network');
 const { publishBoards } = require('./board-publish');
+const { getYears } = require('./years');
 
 const updateLeaderboards = async () => {
     console.log('updateLeaderboards: start');
 
-    // TODO find which chats are we subscribed to, and get those years only
-    const years = [2021, 2020];
+    const years = [...await getYears()];
 
     // Download start times and leaderboards in parallel
     let [startTimes, ...leaderboards] = await Promise.all([
