@@ -3,6 +3,7 @@
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
 const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./board-format');
+const { addYear } = require('./years');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
@@ -44,7 +45,9 @@ const onMyChatMember = async (my_chat_member) => {
     };
     await db.putItem(params);
 
-    console.log('onMyChatMember: admin data stored in db');
+    console.log('onMyChatMember: chat stored in db');
+
+    await addYear(year);
 
     // Initialize the group
     await sendTelegram('sendMessage', {

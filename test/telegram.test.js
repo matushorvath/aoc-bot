@@ -14,6 +14,9 @@ jest.mock('../src/board-format');
 const schedule = require('../src/schedule');
 jest.mock('../src/schedule');
 
+const years = require('../src/years');
+jest.mock('../src/years');
+
 const fsp = require('fs/promises');
 
 beforeEach(() => {
@@ -21,6 +24,7 @@ beforeEach(() => {
     dynamodb.DynamoDB.prototype.batchWriteItem.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
+    years.addYear.mockReset();
     network.sendTelegram.mockReset();
 });
 
@@ -33,6 +37,7 @@ describe('onTelegramUpdate', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
+        expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
         expect(network.getStartTimes).not.toHaveBeenCalled();
@@ -53,6 +58,7 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
             expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
+            expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
             expect(network.getStartTimes).not.toHaveBeenCalled();
@@ -72,6 +78,7 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
             expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
+            expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
             expect(network.getStartTimes).not.toHaveBeenCalled();
@@ -91,6 +98,7 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
             expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
+            expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
             expect(network.getStartTimes).not.toHaveBeenCalled();
@@ -110,6 +118,7 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
             expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
+            expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
             expect(network.getStartTimes).not.toHaveBeenCalled();
@@ -136,6 +145,36 @@ describe('onTelegramUpdate', () => {
                 },
                 TableName: 'aoc-bot'
             });
+
+            expect(years.addYear).not.toHaveBeenCalled();
+            expect(network.sendTelegram).not.toHaveBeenCalled();
+        });
+
+        test('fails if addYear throws', async () => {
+            const update = {
+                my_chat_member: {
+                    new_chat_member: { status: 'administrator' },
+                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+                }
+            };
+
+            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+            years.addYear.mockRejectedValueOnce(new Error('aDdYeArErRoR'));
+
+            await expect(onTelegramUpdate(update)).rejects.toThrow('aDdYeArErRoR');
+
+            expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
+                Item: {
+                    id: { S: 'chat:1980:13' },
+                    y: { N: '1980' },
+                    d: { N: '13' },
+                    chat: { N: '-4242' }
+                },
+                TableName: 'aoc-bot'
+            });
+
+            expect(years.addYear).toHaveBeenCalledWith(1980);
+            expect(network.sendTelegram).not.toHaveBeenCalled();
         });
 
         test('fails if sendTelegram throws', async () => {
@@ -147,6 +186,7 @@ describe('onTelegramUpdate', () => {
             };
 
             dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+            years.addYear.mockResolvedValueOnce(undefined);
             network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));
 
             await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
@@ -180,6 +220,8 @@ describe('onTelegramUpdate', () => {
                 },
                 TableName: 'aoc-bot'
             });
+
+            expect(years.addYear).toHaveBeenCalledWith(1980);
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: -4242,
