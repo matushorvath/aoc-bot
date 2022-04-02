@@ -1,3 +1,5 @@
+'use strict';
+
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
 const DB_TABLE = 'aoc-bot';

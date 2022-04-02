@@ -33,53 +33,53 @@ describe('processInvites', () => {
                         '7': { '1': {}, '2': {} },
                         '13': { '1': {}, '2': {} },     // user is already a member of this chat
                         '17': { '1': {} }
-                    },
+                    }
                 },
                 '33': {
                     name: 'nAmE33',
-                    completion_day_level: {},
+                    completion_day_level: {}
                 },
                 '51': {         // user with no telegram account
                     name: 'nAmE51',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '52': {         // user with a telegram account that no longer exists
                     name: 'nAmE52',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '53': {         // user where telegrams fails when retrieving the membership
                     name: 'nAmE53',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '54': {         // user who is not in the chat room, but already has an invite
                     name: 'nAmE54',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '55': {         // user where we could not create an invite
                     name: 'nAmE55',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '56': {         // user where we could not send an invite
                     name: 'nAmE56',
                     completion_day_level: {
                         '5': { '1': {}, '2': {} }
-                    },
+                    }
                 },
                 '57': {         // user with just part 1 for day 25
                     name: 'nAmE57',
                     completion_day_level: {
                         '25': { '1': {} }
-                    },
+                    }
                 }
             }
         };
@@ -162,7 +162,7 @@ describe('processInvites', () => {
             { isAxiosError: true, response: { data: { error_code: 400 } } });
 
         // aoc_user nAmE57, successful sending
-        const invite = { ok: true, result: { name: `iNvItE57_25`, invite_link: `InViTeLiNk57_25` } };
+        const invite = { ok: true, result: { name: 'iNvItE57_25', invite_link: 'InViTeLiNk57_25' } };
         network.sendTelegram.mockResolvedValueOnce(invite);
         network.sendTelegram.mockResolvedValueOnce(undefined);
 
@@ -332,7 +332,7 @@ describe('processInvites', () => {
         const leaderboard = {
             event: '2020',
             members: {
-                '99': {  name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
             }
         };
 
@@ -365,7 +365,7 @@ describe('processInvites', () => {
         const leaderboard = {
             event: '2020',
             members: {
-                '99': {  name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
             }
         };
 
@@ -400,12 +400,11 @@ describe('processInvites', () => {
             { chat_id: 9999, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
     });
 
-
     test('works with no chats', async () => {
         const leaderboard = {
             event: '2020',
             members: {
-                '99': {  name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
             }
         };
 

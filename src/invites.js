@@ -13,7 +13,7 @@ const getCompletedDays = (leaderboard) => {
             // Take days with both parts completed
             .filter(([day, parts]) => (parts['1'] && parts['2']) || (day === '25' && parts['1']))
             // Make a [name, day] pair for each
-            .map(([day, ]) => ({ aocUser: member.name, day: Number(day) }))
+            .map(([day]) => ({ aocUser: member.name, day: Number(day) }))
     );
 };
 

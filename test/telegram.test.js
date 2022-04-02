@@ -303,7 +303,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `Sorry, I don't understand that command`
+                text: "Sorry, I don't understand that command"
             });
         });
     });
@@ -322,7 +322,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `Sorry, I don't understand that command`
+                text: "Sorry, I don't understand that command"
             });
         });
 
@@ -348,7 +348,7 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: `You are now registered as AoC user 'New User'`, disable_notification: true
+                chat_id: 2323, text: "You are now registered as AoC user 'New User'", disable_notification: true
             });
         });
 
@@ -375,14 +375,14 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                         { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
-                         { DeleteRequest: { Key: { id: { S: `telegram_user:7878` } } }
-                    }]
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                    ]
                 }
             });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: `You are now registered as AoC user 'Existing User'`, disable_notification: true
+                chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
             });
         });
 
@@ -399,7 +399,7 @@ describe('onTelegramUpdate', () => {
             dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
                 UnprocessedItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } }
                     ]
                 }
             });
@@ -416,14 +416,14 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                         { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
-                         { DeleteRequest: { Key: { id: { S: `telegram_user:7878` } } }
-                    }]
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                    ]
                 }
             });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: `You are now registered as AoC user 'Existing User'`, disable_notification: true
+                chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
             });
         });
     });
@@ -478,15 +478,15 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                         { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
-                         { DeleteRequest: { Key: { id: { S: `telegram_user:7878` } } }
-                    }]
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                    ]
                 }
             });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `You are no longer registered (your AoC name was 'OlDaOcUsEr')`
+                text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
             });
         });
 
@@ -503,7 +503,7 @@ describe('onTelegramUpdate', () => {
             dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
                 UnprocessedItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } }
                     ]
                 }
             });
@@ -520,15 +520,15 @@ describe('onTelegramUpdate', () => {
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                         { DeleteRequest: { Key: { id: { S: `aoc_user:OlDaOcUsEr` } } } },
-                         { DeleteRequest: { Key: { id: { S: `telegram_user:7878` } } }
-                    }]
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                    ]
                 }
             });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `You are no longer registered (your AoC name was 'OlDaOcUsEr')`
+                text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
             });
         });
     });
@@ -547,7 +547,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `Sorry, I don't understand that command`
+                text: "Sorry, I don't understand that command"
             });
         });
 
@@ -564,7 +564,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `I need two parameters, \`/board <year> <day>\``
+                text: "I need two parameters, '/board <year> <day>'"
             });
         });
 
@@ -665,7 +665,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: `You are registered as AoC user 'Existing User'`
+                text: "You are registered as AoC user 'Existing User'"
             });
         });
     });
@@ -735,7 +735,7 @@ describe('onTelegramUpdate', () => {
 • created board for 1815 day 7
 • updated board for 1918 day 14
 • updated board for 2063 day 5
-`});
+` });
         });
     });
 
