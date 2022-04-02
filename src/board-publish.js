@@ -27,7 +27,7 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
 
     if (message === undefined) {
         // Send new message
-        const message = await sendTelegram('sendMessage', {
+        message = await sendTelegram('sendMessage', {
             chat_id: chat,
             parse_mode: 'MarkdownV2',
             text,
@@ -130,10 +130,10 @@ const publishBoards = async (leaderboard, startTimes) => {
         .filter(({ chat }) => chat !== undefined);
 
     const chatMessageMap = await mapChatsToMessages(chatData);
-    const messageData = chatData.map(item => ({ ...item, ...chatMessageMap[item.chat] }))
+    const messageData = chatData.map(item => ({ ...item, ...chatMessageMap[item.chat] }));
 
     const results = await Promise.allSettled(messageData
-        .map(async ({ day, chat, message, sha256}) =>
+        .map(async ({ day, chat, message, sha256 }) =>
             await publishOneBoard(day, chat, message, sha256, leaderboard, startTimes))
     );
 

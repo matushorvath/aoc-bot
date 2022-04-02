@@ -25,10 +25,10 @@ beforeEach(() => {
 describe('schedule.handler', () => {
     test('succeeds updating the leaderboard', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true })
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true })
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true })
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
 
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
@@ -116,10 +116,10 @@ describe('schedule.handler', () => {
 
     test('skips an undefined leaderboard after an HTTP error', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true })
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce(undefined);
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true })
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
 
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
         boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
@@ -142,10 +142,10 @@ describe('schedule.handler', () => {
 
     test('fails processing invites', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true })
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true })
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true })
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
 
         invites.processInvites.mockRejectedValueOnce(new Error('pRoCeSsErRoR'));
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
@@ -173,10 +173,10 @@ describe('schedule.handler', () => {
 
     test('fails publishing boards', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true })
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true })
-        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true })
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
 
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });

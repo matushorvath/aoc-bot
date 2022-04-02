@@ -65,7 +65,7 @@ const onMessage = async (message) => {
         return;
     }
 
-    let m = message.text.match(/^\s*\/(reg|unreg|status|update|board|start|help)(?:\s+(.+))?\s*$/)
+    let m = message.text.match(/^\s*\/(reg|unreg|status|update|board|start|help)(?:\s+(.+))?\s*$/);
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -202,7 +202,7 @@ const onCommandBoard = async (chat, params) => {
         console.log(`onCommandBoard: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: `I need two parameters, \`/board <year> <day>\``,
+            text: "I need two parameters, '/board <year> <day>'",
             disable_notification: true
         });
         return;
@@ -322,7 +322,7 @@ const onCommandHelp = async (chat) => {
 const onCommandUnknown = async (chat) => {
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: `Sorry, I don't understand that command`,
+        text: "Sorry, I don't understand that command",
         disable_notification: true
     });
 };

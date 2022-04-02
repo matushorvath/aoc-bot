@@ -70,7 +70,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
 
                 if (ndiff > 0) {
                     const ndiffd = formatDuration(ndiff);
-                    line += ` (${ndiffd})`
+                    line += ` (${ndiffd})`;
                 }
             }
 
