@@ -103,7 +103,7 @@ const formatDuration = (duration) => {
 };
 
 const escapeForTelegram = (text) => {
-    return text.replace(/[-_*[\]()~`>#+=|{}.!]/g, '\\$&');
+    return text.replace(/[-_*[\]\\()~`>#+=|{}.!]/g, '\\$&');
 };
 
 exports.formatBoard = formatBoard;

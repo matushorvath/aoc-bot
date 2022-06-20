@@ -169,6 +169,17 @@ Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na
       Person One  12d 20h  12d 19h \\(\\-\\-:\\-\\-:\\-\\-\\) \\[04:00:00 03:00:00\\]`);
     });
 
+    test('escapes backslash correctly', async () => {
+        const leaderboard = { members: { '111': {
+            name: 'Per\\son One',
+            completion_day_level: { '1': { '1': {} } }
+        } } };
+
+        expect(formatBoard(2021, 1, leaderboard)).toEqual(`\
+Day  1 @ 12d  7h ofic\\. part 1 a 2 \\(cas na p2\\)  neoficialne \\(cisty cas na p2\\)
+     Per\\\\son One \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)`);
+    });
+
     // TODO start times that exist but don't include current year
     // TODO long name
 });
