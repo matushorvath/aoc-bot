@@ -36,7 +36,7 @@ jobs:
 
       - name: Report test coverage
         # Actions run by dependabot are not allowed to update PRs
-        if: github.ref != 'refs/heads/main' && ${{ github.actor != 'dependabot[bot]' }}
+        if: github.ref != 'refs/heads/main' && github.actor != 'dependabot[bot]'
         uses: artiomtr/jest-coverage-report-action@v2.0-rc.6
         with:
           annotations: none
