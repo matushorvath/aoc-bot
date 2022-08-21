@@ -19,7 +19,7 @@
     "author": "Matus Horvath <matus.horvath@gmail.com>",
     "license": "UNLICENSED",
     "engines": {
-        "node": "^14"
+        "node": "^16"
     },
     "files": [
         "src/*.js",
