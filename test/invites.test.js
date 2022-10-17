@@ -159,7 +159,7 @@ describe('processInvites', () => {
         network.sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE56_5', invite_link: 'InViTeLiNk56_5' } });
         network.sendTelegram.mockRejectedValueOnce(
-            { isAxiosError: true, response: { data: { error_code: 400 } } });
+            { isAxiosError: true, response: { data: { error_code: 403 } } });
 
         // aoc_user nAmE57, successful sending
         const invite = { ok: true, result: { name: 'iNvItE57_25', invite_link: 'InViTeLiNk57_25' } };
