@@ -9,20 +9,17 @@ package=aoc-bot-$version-$uuid.zip
 region=eu-central-1
 bucket=cf.009116496185.$region
 
-missing_params=$(aws ssm get-parameters \
-    --region $region \
-    --names "/aoc-bot/advent-of-code-secret" "/aoc-bot/telegram-secret" \
-    | jq '.InvalidParameters|length')
-
-if [ "$missing_params" -ne 0 ] ; then
-    # Store secrets passed from GitHub Actions
+# Update SSM secrets using values from GitHub
+if [ -z "$SKIP_SECRETS"] ; then
     aws ssm put-parameter \
+        --overwrite \
         --region $region \
         --name /aoc-bot/advent-of-code-secret \
         --type SecureString \
         --value "$ADVENT_OF_CODE_SECRET"
 
     aws ssm put-parameter \
+        --overwrite \
         --region $region \
         --name /aoc-bot/telegram-secret \
         --type SecureString \
