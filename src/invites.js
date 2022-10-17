@@ -192,9 +192,10 @@ const sendInvites = async (changes) => {
                 success = true;
                 console.log(`sendInvites: sent to aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
             } catch (error) {
-                if (error.isAxiosError && error.response?.data?.error_code === 400) {
+                const error_code = error.response?.data?.error_code;
+                if (error.isAxiosError && error_code >= 400 && error_code < 500) {
                     // This often means we are not allowed to contact the user
-                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
+                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day} code ${error_code}`);
                     continue;
                 }
 
