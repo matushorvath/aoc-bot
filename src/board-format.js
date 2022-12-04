@@ -12,7 +12,7 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
 
     const header = pre(escape(`Deň ${day.toString().padStart(2)} @${elapsed} ` +
         'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*'));
-    const footer = pre('\\* čistý čas zistený pluginom ') + `[${pluginUrl}](${pre(pluginUrl)})`;
+    const footer = pre('\\* čistý čas zistený pluginom ') + `[${escape(pluginUrl)}](${pluginUrl})`;
 
     const body = results.map(result => pre(escape(formatOneLine(
         result, startTs, startTimes?.[year][day][result.name]))));

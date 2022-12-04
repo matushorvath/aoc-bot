@@ -611,7 +611,8 @@ describe('onTelegramUpdate', () => {
             expect(boardFormat.formatBoard).toHaveBeenCalledWith(1980, 24, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
+                chat_id: 2323, parse_mode: 'MarkdownV2',
+                disable_notification: true, disable_web_page_preview: true,
                 text: 'bOaRd'
             });
         });

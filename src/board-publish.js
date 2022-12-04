@@ -30,7 +30,8 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
             chat_id: chat,
             parse_mode: 'MarkdownV2',
             text: board,
-            disable_notification: true
+            disable_notification: true,
+            disable_web_page_preview: true
         });
 
         await sendTelegram('pinChatMessage', {
@@ -50,7 +51,8 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
             chat_id: chat,
             message_id: message,
             parse_mode: 'MarkdownV2',
-            text: board
+            text: board,
+            disable_web_page_preview: true
         });
 
         // Update text hash in database
