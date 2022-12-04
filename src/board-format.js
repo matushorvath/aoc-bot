@@ -1,6 +1,7 @@
 'use strict';
 
 const LOCALE = 'sk';
+const pluginUrl = 'https://github.com/TrePe0/aoc-plugin';
 
 const formatBoard = (year, day, leaderboard, startTimes) => {
     // Make an array of results for this day: [[name, ts1, ts2], ...]
@@ -9,12 +10,15 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
 
-    const header = `Day ${day.toString().padStart(2)} @${elapsed} ` +
-        'ofic. part 1 a 2 (cas na p2)  neoficialne (cisty cas na p2)';
+    const header = escapeForTelegram(`Deň ${day.toString().padStart(2)} @${elapsed} ` +
+        'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*');
+    const footer = `\\* čistý čas zistený pluginom [${pluginUrl}](${pluginUrl})`;
 
-    const board = [header, ...results.map(result => formatOneLine(
-        result, startTs, startTimes?.[year][day][result.name]))].join('\n');
-    return escapeForTelegram(board);
+    const body = results.map(result => escapeForTelegram(formatOneLine(
+        result, startTs, startTimes?.[year][day][result.name])));
+
+    const board = [header, ...body, '', footer].join('\n');
+    return board;
 };
 
 const getResults = (year, day, leaderboard, startTimes) => {
