@@ -53,9 +53,9 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444, 6: 666 });
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // '2INkWWDej19GH+0clyxLxE4/vttyHYuRQ+V+E/Fq8kU='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'RgabrYcLKO7hBXKpvA7ejffjxlRNeyS0MTjnAEGIVLg='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'FbplNUZdPUMuEBC6Z2BDOAEVMWVFnpeZ4Xiy1Zp+QMk='
+        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
+        boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
+        boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI='
         boardFormat.formatBoard.mockImplementationOnce(() => { throw new Error('fOrMaTeRrOr666'); });
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
@@ -66,7 +66,7 @@ describe('publishBoards', () => {
                         // Message found in db for 222, same hash
                         chat: { N: '222' },
                         message: { N: '777777' },
-                        sha256: { S: 'RgabrYcLKO7hBXKpvA7ejffjxlRNeyS0MTjnAEGIVLg=' }
+                        sha256: { S: 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws=' }
                     }, {
                         // Message found in db for 444, different hash
                         chat: { N: '444' },
@@ -112,7 +112,7 @@ describe('publishBoards', () => {
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 111,
             parse_mode: 'MarkdownV2',
-            text: '```\nbOaRd111\n```',
+            text: 'bOaRd111',
             disable_notification: true
         });
         expect(network.sendTelegram).toHaveBeenCalledWith('pinChatMessage', {
@@ -124,7 +124,7 @@ describe('publishBoards', () => {
             chat_id: 444,
             message_id: 888888,
             parse_mode: 'MarkdownV2',
-            text: '```\nbOaRd444\n```'
+            text: 'bOaRd444'
         });
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(2);
@@ -134,7 +134,7 @@ describe('publishBoards', () => {
                 id: { S: 'board:111' },
                 chat: { N: '111' },
                 message: { N: '999999' },
-                sha256: { S: '2INkWWDej19GH+0clyxLxE4/vttyHYuRQ+V+E/Fq8kU=' }
+                sha256: { S: 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE=' }
             }
         });
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
@@ -143,7 +143,7 @@ describe('publishBoards', () => {
                 id: { S: 'board:444' },
                 chat: { N: '444' },
                 message: { N: '888888' },
-                sha256: { S: 'FbplNUZdPUMuEBC6Z2BDOAEVMWVFnpeZ4Xiy1Zp+QMk=' }
+                sha256: { S: 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI=' }
             }
         });
     });

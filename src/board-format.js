@@ -10,14 +10,14 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
 
-    const header = escapeForTelegram(`Deň ${day.toString().padStart(2)} @${elapsed} ` +
-        'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*');
-    const footer = `\\* čistý čas zistený pluginom [${pluginUrl}](${pluginUrl})`;
+    const header = pre(escape(`Deň ${day.toString().padStart(2)} @${elapsed} ` +
+        'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*'));
+    const footer = pre('\\* čistý čas zistený pluginom ') + `[${pluginUrl}](${pre(pluginUrl)})`;
 
-    const body = results.map(result => escapeForTelegram(formatOneLine(
-        result, startTs, startTimes?.[year][day][result.name])));
+    const body = results.map(result => pre(escape(formatOneLine(
+        result, startTs, startTimes?.[year][day][result.name]))));
 
-    const board = [header, ...body, '', footer].join('\n');
+    const board = [header, ...body, '``', footer].join('\n');
     return board;
 };
 
@@ -106,8 +106,10 @@ const formatDuration = (duration) => {
     }
 };
 
-const escapeForTelegram = (text) => {
+const escape = (text) => {
     return text.replace(/[-_*[\]\\()~`>#+=|{}.!]/g, '\\$&');
 };
+
+const pre = (text) => `\`${text}\``;
 
 exports.formatBoard = formatBoard;

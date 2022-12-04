@@ -612,7 +612,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
-                text: '```\nbOaRd\n```'
+                text: 'bOaRd'
             });
         });
 

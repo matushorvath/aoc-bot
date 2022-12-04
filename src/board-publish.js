@@ -21,8 +21,7 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
 
     // Telegram does not allow us to update messages with exactly the same text,
     // so we store a hash of the text and only update when it changes
-    const text = `\`\`\`\n${board}\n\`\`\``;
-    const newHash = crypto.createHash('sha256').update(text).digest('base64');
+    const newHash = crypto.createHash('sha256').update(board).digest('base64');
     console.log(`publishOneBoard: new hash ${newHash}`);
 
     if (message === undefined) {
@@ -30,7 +29,7 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
         message = await sendTelegram('sendMessage', {
             chat_id: chat,
             parse_mode: 'MarkdownV2',
-            text,
+            text: board,
             disable_notification: true
         });
 
@@ -51,7 +50,7 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
             chat_id: chat,
             message_id: message,
             parse_mode: 'MarkdownV2',
-            text
+            text: board
         });
 
         // Update text hash in database
