@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable max-len */
+
 const { formatBoard } = require('../src/board-format');
 const fsp = require('fs/promises');
 
@@ -22,25 +24,25 @@ describe('formatBoard', () => {
 \`\\* čistý čas zistený pluginom \`[https://github.com/TrePe0/aoc-plugin](\`https://github.com/TrePe0/aoc-plugin\`)`);
     });
 
-/*
     test('day 2: person one part2, person two part1', async () => {
         expect(formatBoard(2021, 2, jsonLeaderboard)).toEqual(`\
-Deň  2 @ 11d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*
-      Person One 00:07:42 00:31:16 \\(00:23:34\\)
-      Person Two  13d  7h \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)
-
-\\* čistý čas zistený pluginom [https://github.com/TrePe0/aoc-plugin](https://github.com/TrePe0/aoc-plugin)`);
+\`Deň  2 @ 11d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
+\`      Person One 00:07:42 00:31:16 \\(00:23:34\\)\`
+\`      Person Two  13d  7h \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)\`
+\`\`
+\`\\* čistý čas zistený pluginom \`[https://github.com/TrePe0/aoc-plugin](\`https://github.com/TrePe0/aoc-plugin\`)`);
     });
 
     test('day 3: both part2', async () => {
         expect(formatBoard(2021, 3, jsonLeaderboard)).toEqual(`\
-Deň  3 @ 10d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*
-      Person Two 03:12:34 12:54:32 \\(09:41:58\\)
-      Person One 234d 12h 234d 12h \\(00:00:01\\)
-
-\\* čistý čas zistený pluginom [https://github.com/TrePe0/aoc-plugin](https://github.com/TrePe0/aoc-plugin)`);
+\`Deň  3 @ 10d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
+\`      Person Two 03:12:34 12:54:32 \\(09:41:58\\)\`
+\`      Person One 234d 12h 234d 12h \\(00:00:01\\)\`
+\`\`
+\`\\* čistý čas zistený pluginom \`[https://github.com/TrePe0/aoc-plugin](\`https://github.com/TrePe0/aoc-plugin\`)`);
     });
 
+    /*
     test('day 4: only person one, part 2', async () => {
         expect(formatBoard(2021, 4, jsonLeaderboard)).toEqual(`\
 Deň  4 @  9d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*
@@ -209,7 +211,8 @@ Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý č
 \\* čistý čas zistený pluginom [https://github.com/TrePe0/aoc-plugin](https://github.com/TrePe0/aoc-plugin)`);
     });
 
+    */
+
     // TODO start times that exist but don't include current year
     // TODO long name
-*/
 });

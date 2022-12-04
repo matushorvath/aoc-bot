@@ -50,7 +50,7 @@ const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTi
             chat_id: chat,
             message_id: message,
             parse_mode: 'MarkdownV2',
-            text
+            text: board
         });
 
         // Update text hash in database
