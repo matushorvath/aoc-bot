@@ -113,7 +113,8 @@ describe('publishBoards', () => {
             chat_id: 111,
             parse_mode: 'MarkdownV2',
             text: 'bOaRd111',
-            disable_notification: true
+            disable_notification: true,
+            disable_web_page_preview: true
         });
         expect(network.sendTelegram).toHaveBeenCalledWith('pinChatMessage', {
             chat_id: 111,
@@ -124,7 +125,8 @@ describe('publishBoards', () => {
             chat_id: 444,
             message_id: 888888,
             parse_mode: 'MarkdownV2',
-            text: 'bOaRd444'
+            text: 'bOaRd444',
+            disable_web_page_preview: true
         });
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(2);

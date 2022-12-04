@@ -229,7 +229,8 @@ const onCommandBoard = async (chat, params) => {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
         text: board,
-        disable_notification: true
+        disable_notification: true,
+        disable_web_page_preview: true
     });
 
     console.log('onCommandBoard: done');
