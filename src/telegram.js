@@ -228,7 +228,7 @@ const onCommandBoard = async (chat, params) => {
     await sendTelegram('sendMessage', {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
-        text: `\`\`\`\n${board}\n\`\`\``,
+        text: board,
         disable_notification: true
     });
 
