@@ -17,6 +17,9 @@ jest.mock('../src/schedule');
 const years = require('../src/years');
 jest.mock('../src/years');
 
+const logs = require('../src/logs');
+jest.mock('../src/logs');
+
 const fsp = require('fs/promises');
 
 beforeEach(() => {
@@ -25,6 +28,9 @@ beforeEach(() => {
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
     years.addYear.mockReset();
+    logs.enableLogs.mockReset();
+    logs.disableLogs.mockReset();
+    logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
 });
 
@@ -228,6 +234,8 @@ describe('onTelegramUpdate', () => {
                 text: '@AocElfBot is online, AoC 1980 Day 13',
                 disable_notification: true
             });
+
+            expect(logs.logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
         });
     });
 
@@ -347,6 +355,8 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
 
+            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'New User'");
+
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, text: "You are now registered as AoC user 'New User'", disable_notification: true
             });
@@ -380,6 +390,8 @@ describe('onTelegramUpdate', () => {
                     ]
                 }
             });
+
+            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
@@ -421,6 +433,8 @@ describe('onTelegramUpdate', () => {
                     ]
                 }
             });
+
+            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
@@ -484,6 +498,8 @@ describe('onTelegramUpdate', () => {
                 }
             });
 
+            expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
@@ -526,9 +542,93 @@ describe('onTelegramUpdate', () => {
                 }
             });
 
+            expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
+            });
+        });
+    });
+
+    describe('onMessage /logs', () => {
+        test('without parameters', async () => {
+            const update = {
+                message: {
+                    text: '/logs',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(logs.enableLogs).not.toHaveBeenCalled();
+            expect(logs.disableLogs).not.toHaveBeenCalled();
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: "Sorry, I don't understand that command"
+            });
+        });
+
+        test('with an invalid parameter', async () => {
+            const update = {
+                message: {
+                    text: '/logs xxx',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(logs.enableLogs).not.toHaveBeenCalled();
+            expect(logs.disableLogs).not.toHaveBeenCalled();
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop"
+            });
+        });
+
+        test('enabling logs for a user', async () => {
+            const update = {
+                message: {
+                    text: '/logs on',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(logs.enableLogs).toHaveBeenCalledWith(2323);
+            expect(logs.disableLogs).not.toHaveBeenCalled();
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Activity logs will now be sent to this chat'
+            });
+        });
+
+        test('disabling logs for a user', async () => {
+            const update = {
+                message: {
+                    text: '/logs off',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(logs.enableLogs).not.toHaveBeenCalled();
+            expect(logs.disableLogs).toHaveBeenCalledWith(2323);
+
+            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Activity logs will now be no longer sent to this chat'
             });
         });
     });
@@ -676,7 +776,7 @@ describe('onTelegramUpdate', () => {
             const update = {
                 message: {
                     text: '/update',
-                    from: { id: 7878 },
+                    from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
                     chat: { id: 2323, type: 'private', title: 'tItLe' }
                 }
             };
@@ -694,6 +794,8 @@ describe('onTelegramUpdate', () => {
 
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
 
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
+
             expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Leaderboards updated\n(no changes)\n'
@@ -704,7 +806,7 @@ describe('onTelegramUpdate', () => {
             const update = {
                 message: {
                     text: '/update',
-                    from: { id: 7878 },
+                    from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
                     chat: { id: 2323, type: 'private', title: 'tItLe' }
                 }
             };
@@ -725,6 +827,8 @@ describe('onTelegramUpdate', () => {
 
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
 
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
+
             expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Leaderboards updated
@@ -737,6 +841,24 @@ describe('onTelegramUpdate', () => {
 • updated board for 1918 day 14
 • updated board for 2063 day 5
 ` });
+        });
+
+        test('with no first or last name', async () => {
+            const update = {
+                message: {
+                    text: '/update',
+                    from: { id: 7878 },
+                    chat: { id: 2323, type: 'private', title: 'tItLe' }
+                }
+            };
+
+            schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [], sent: [], created: [], updated: []
+            });
+
+            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)'");
         });
     });
 

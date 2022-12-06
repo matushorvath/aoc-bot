@@ -4,6 +4,7 @@ const { processInvites } = require('./invites');
 const { getLeaderboard, getStartTimes } = require('./network');
 const { publishBoards } = require('./board-publish');
 const { getYears } = require('./years');
+const { logActivity } = require('./logs');
 
 const updateLeaderboards = async () => {
     console.log('updateLeaderboards: start');
@@ -36,6 +37,16 @@ const updateLeaderboards = async () => {
             const boards = await publishBoards(data, startTimes);
             created.push(...boards.created);
             updated.push(...boards.updated);
+        })
+    ]);
+
+    // Send activity logs to subscribers
+    await Promise.all([
+        ...sent.map(async ({ aocUser, year, day }) => {
+            await logActivity(`Invited ${aocUser} to ${year} day ${day}`);
+        }),
+        ...created.map(async ({ year, day }) => {
+            await logActivity(`Created board for ${year} day ${day}`);
         })
     ]);
 

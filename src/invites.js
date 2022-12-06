@@ -136,7 +136,8 @@ const filterUsersInChat = async (chats) => {
             const member = await sendTelegram('getChatMember', { chat_id: chat, user_id: telegramUser });
             return member.ok && member.result.status === 'left';
         } catch (error) {
-            if (error.isAxiosError && error.response?.data?.error_code === 400) {
+            const error_code = error.response?.data?.error_code;
+            if (error.isAxiosError && error_code >= 400 && error_code < 500) {
                 console.warn(`filterUsersInChat: user not found ${telegramUser}`);
                 return false;
             }
