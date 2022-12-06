@@ -14,4 +14,6 @@ Leaderboard is updated automatically every 15 minutes\. This command is only nee
 
 /board \<year\> \<day\> – Display a board for given year and day\.
 
+/logs on\|off – Enable/disable sending activity logs into your chat with the bot\.
+
 /help – Show this message\.

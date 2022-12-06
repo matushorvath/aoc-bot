@@ -4,6 +4,7 @@ const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
 const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./board-format');
 const { addYear } = require('./years');
+const { enableLogs, disableLogs, logActivity } = require('./logs');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
@@ -56,6 +57,8 @@ const onMyChatMember = async (my_chat_member) => {
         disable_notification: true
     });
 
+    await logActivity(`Added to chat '${my_chat_member.chat.title}' (${year}/${day})`);
+
     console.log('onMyChatMember: done');
 };
 
@@ -65,7 +68,7 @@ const onMessage = async (message) => {
         return;
     }
 
-    let m = message.text.match(/^\s*\/(reg|unreg|status|update|board|start|help)(?:\s+(.+))?\s*$/);
+    let m = message.text.match(/^\s*\/(reg|unreg|logs|status|update|board|start|help)(?:\s+(.+))?\s*$/);
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -79,10 +82,12 @@ const onMessage = async (message) => {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'unreg') {
         await onCommandUnreg(message.chat.id, message.from.id);
+    } else if (command === 'logs' && params) {
+        await onCommandLogs(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'status') {
         await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
-        await onCommandUpdate(message.chat.id);
+        await onCommandUpdate(message.chat.id, message.from);
     } else if (command === 'board' && params) {
         await onCommandBoard(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
@@ -129,6 +134,8 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
         disable_notification: true
     });
 
+    await logActivity(`Registered user '${aocUser}'`);
+
     console.log('onCommandReg: done');
 };
 
@@ -142,6 +149,8 @@ const onCommandUnreg = async (chat, telegramUser) => {
             text: `You are no longer registered (your AoC name was '${aocUser}')`,
             disable_notification: true
         });
+
+        await logActivity(`Unregistered user '${aocUser}'`);
     } else {
         await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -192,6 +201,39 @@ const deleteUserData = async (telegramUser) => {
 
     console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
     return aocUser;
+};
+
+const onCommandLogs = async (chat, value) => {
+    console.log(`onCommandLogs: start, value '${value}'`);
+
+    if (value === 'on') {
+        enableLogs(chat);
+        console.log('onCommandLogs: logs enabled');
+
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Activity logs will now be sent to this chat',
+            disable_notification: true
+        });
+    } else if (value === 'off') {
+        disableLogs(chat);
+        console.log('onCommandLogs: logs disabled');
+
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Activity logs will now be no longer sent to this chat',
+            disable_notification: true
+        });
+    } else {
+        console.log(`onCommandLogs: value is invalid: ${value}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop",
+            disable_notification: true
+        });
+    }
+
+    console.log('onCommandLogs: done');
 };
 
 const onCommandBoard = async (chat, params) => {
@@ -266,7 +308,7 @@ const onCommandStatus = async (chat, telegramUser) => {
     console.log('onCommandStatus: done');
 };
 
-const onCommandUpdate = async (chat) => {
+const onCommandUpdate = async (chat, from) => {
     console.log('onCommandUpdate: start');
 
     await sendTelegram('sendMessage', {
@@ -300,7 +342,20 @@ const onCommandUpdate = async (chat) => {
         disable_notification: true
     });
 
+    const senderName = formatSenderName(from);
+    await logActivity(`Update triggered by user '${senderName}'`);
+
     console.log('onCommandUpdate: done');
+};
+
+const formatSenderName = (from) => {
+    if (from.first_name && from.last_name) {
+        return `${from.first_name} ${from.last_name}`;
+    } else if (from.first_name) {
+        return from.first_name;
+    } else {
+        return `(id ${from.id})`;
+    }
 };
 
 let helpText;

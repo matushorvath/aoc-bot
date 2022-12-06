@@ -14,12 +14,16 @@ jest.mock('../src/board-publish');
 const years = require('../src/years');
 jest.mock('../src/years');
 
+const logs = require('../src/logs');
+jest.mock('../src/logs');
+
 beforeEach(() => {
     network.getLeaderboard.mockReset();
     network.getStartTimes.mockReset();
     invites.processInvites.mockReset();
     boardPublish.publishBoards.mockReset();
     years.getYears.mockReset();
+    logs.logActivity.mockReset();
 });
 
 describe('schedule.handler', () => {
@@ -52,6 +56,8 @@ describe('schedule.handler', () => {
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails loading years', async () => {
@@ -65,6 +71,7 @@ describe('schedule.handler', () => {
 
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('loads no years', async () => {
@@ -78,6 +85,7 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).not.toHaveBeenCalled();
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails loading start times', async () => {
@@ -95,6 +103,7 @@ describe('schedule.handler', () => {
 
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails loading the leaderboard', async () => {
@@ -112,6 +121,7 @@ describe('schedule.handler', () => {
 
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('skips an undefined leaderboard after an HTTP error', async () => {
@@ -138,6 +148,8 @@ describe('schedule.handler', () => {
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails processing invites', async () => {
@@ -169,6 +181,8 @@ describe('schedule.handler', () => {
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+
+        expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails publishing boards', async () => {
@@ -200,5 +214,41 @@ describe('schedule.handler', () => {
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
         expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+    });
+
+    test('sends logs after certain changes', async () => {
+        years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
+
+        invites.processInvites.mockResolvedValueOnce({
+            sent: [{ aocUser: 'U1', year: 1, day: 11 }],
+            failed: []
+        });
+        invites.processInvites.mockResolvedValueOnce({
+            sent: [{ aocUser: 'U2', year: 2, day: 12 }, { aocUser: 'U3', year: 3, day: 13 }],
+            failed: []
+        });
+
+        boardPublish.publishBoards.mockResolvedValueOnce({
+            created: [{ year: 5, day: 15 }, { year: 6, day: 16 }],
+            updated: []
+        });
+        boardPublish.publishBoards.mockResolvedValueOnce({
+            created: [{ year: 7, day: 17 }],
+            updated: []
+        });
+
+        await expect(handler()).resolves.toBeUndefined();
+
+        expect(logs.logActivity).toHaveBeenCalledTimes(6);
+        expect(logs.logActivity).toHaveBeenCalledWith('Invited U1 to 1 day 11');
+        expect(logs.logActivity).toHaveBeenCalledWith('Invited U2 to 2 day 12');
+        expect(logs.logActivity).toHaveBeenCalledWith('Invited U3 to 3 day 13');
+        expect(logs.logActivity).toHaveBeenCalledWith('Created board for 5 day 15');
+        expect(logs.logActivity).toHaveBeenCalledWith('Created board for 6 day 16');
+        expect(logs.logActivity).toHaveBeenCalledWith('Created board for 7 day 17');
     });
 });
