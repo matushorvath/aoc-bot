@@ -10,7 +10,7 @@ region=eu-central-1
 bucket=cf.009116496185.$region
 
 # Update SSM secrets using values from GitHub
-if [ -z "$SKIP_SECRETS"] ; then
+if [ -z "$SKIP_SECRETS" ] ; then
     aws ssm put-parameter \
         --overwrite \
         --region $region \
