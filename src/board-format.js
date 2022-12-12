@@ -5,7 +5,7 @@ const pluginUrl = 'https://github.com/TrePe0/aoc-plugin';
 
 const formatBoard = (year, day, leaderboard, startTimes) => {
     // Make an array of results for this day: [[name, ts1, ts2], ...]
-    const results = getResults(year, day, leaderboard, startTimes);
+    const results = getResults(day, leaderboard);
 
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
@@ -21,9 +21,9 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     return board;
 };
 
-const getResults = (year, day, leaderboard, startTimes) => {
+const getResults = (day, leaderboard) => {
     // Results from AoC leaderboard
-    const leaderboardResults = Object.values(leaderboard.members)
+    const results = Object.values(leaderboard.members)
         .filter(member => member.completion_day_level[day]?.[1])
         .map(member => ({
             name: member.name,
@@ -31,15 +31,8 @@ const getResults = (year, day, leaderboard, startTimes) => {
             ts2: member.completion_day_level[day][2]?.get_star_ts ?? Infinity
         }));
 
-    // Add an entries from startTimes for all names not yet in AoC leaderboard
-    const leaderboardNames = new Set(leaderboardResults.map(({ name }) => name));
-
-    const startedResults = Object.keys(startTimes?.[year]?.[day] ?? {})
-        .filter(name => !leaderboardNames.has(name))
-        .map(name => ({ name, ts1: Infinity, ts2: Infinity }));
-
-    // Merge and sort
-    return [...leaderboardResults, ...startedResults]
+    // Sort by timestamps
+    return results
         .sort((a, b) => {
             if (a.ts2 === b.ts2) {
                 if (a.ts1 === b.ts1) {
