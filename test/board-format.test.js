@@ -107,37 +107,6 @@ describe('formatBoard', () => {
 \`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
     });
 
-    test('adds results from startTimes', async () => {
-        const leaderboard = {
-            members: {
-                '111': {
-                    name: 'Person One',
-                    completion_day_level: {
-                        '5': { '1': { get_star_ts: 1638684500 } }
-                    }
-                }
-            }
-        };
-
-        const startTimes = {
-            '2021': {
-                '5': {
-                    'Person One': { '1': [1638683500] },
-                    'Still Working 2': { '1': [1638685500], '2': [1638686500] },
-                    'Still Working 1': { '1': [1638687500] }
-                }
-            }
-        };
-
-        expect(formatBoard(2021, 5, leaderboard, startTimes)).toEqual(`\
-\`Deň  5 @  8d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
-\`      Person One 01:08:20 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[00:16:40 \\-\\-:\\-\\-:\\-\\-\\]\`
-\` Still Working 1 \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[\\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\-\\]\`
-\` Still Working 2 \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[\\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)\\]\`
-\`\`
-\`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
-    });
-
     test('displays infinity for dates far back', async () => {
         const leaderboard = { members: { '111': {
             name: 'Connor MacLeod',
@@ -193,6 +162,36 @@ describe('formatBoard', () => {
         expect(formatBoard(2021, 1, leaderboard, startTimes)).toEqual(`\
 \`Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
 \`      Person One  12d 20h  12d 19h \\(\\-\\-:\\-\\-:\\-\\-\\) \\[04:00:00 03:00:00\\]\`
+\`\`
+\`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
+    });
+
+    test('displays positive difference between part 1 and part 2', async () => {
+        const leaderboard = { members: { '111': {
+            name: 'Person One',
+            completion_day_level: { '1': { '1': { get_star_ts: 1639443600 }, '2': { get_star_ts: 1639450000 } } }
+        } } };
+
+        const startTimes = { '2021': { '1': { 'Person One': { '1': [1639429200], '2': [1639444800] } } } };
+
+        expect(formatBoard(2021, 1, leaderboard, startTimes)).toEqual(`\
+\`Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
+\`      Person One  12d 20h  12d 21h \\(01:46:40\\) \\[04:00:00 05:46:40 \\(01:26:40\\)\\]\`
+\`\`
+\`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
+    });
+
+    test('handles missing start time for part 2', async () => {
+        const leaderboard = { members: { '111': {
+            name: 'Person One',
+            completion_day_level: { '1': { '1': { get_star_ts: 1639443600 }, '2': { get_star_ts: 1639450000 } } }
+        } } };
+
+        const startTimes = { '2021': { '1': { 'Person One': { '1': [1639429200] } } } };
+
+        expect(formatBoard(2021, 1, leaderboard, startTimes)).toEqual(`\
+\`Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*\`
+\`      Person One  12d 20h  12d 21h \\(01:46:40\\) \\[04:00:00 05:46:40\\]\`
 \`\`
 \`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
     });
