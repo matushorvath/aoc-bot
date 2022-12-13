@@ -159,11 +159,22 @@ const markAsSent = async (telegramUser, year, day, chat) => {
             d: { N: String(day) },
             chat: { N: String(chat) }
         },
-        TableName: DB_TABLE
+        TableName: DB_TABLE,
+        ConditionExpression: 'attribute_not_exists(id)'
     };
-    await db.putItem(params);
+
+    try {
+        await db.putItem(params);
+    } catch (e) {
+        if (e.name === 'ConditionalCheckFailedException') {
+            console.log(`markAsSent: already marked as sent ${telegramUser} ${chat} ${year} ${day}`);
+            return false;
+        }
+        throw e;
+    }
 
     console.log(`markAsSent: marked as sent ${telegramUser} ${chat} ${year} ${day}`);
+    return true;
 };
 
 const sendInvites = async (changes) => {
@@ -172,6 +183,12 @@ const sendInvites = async (changes) => {
 
     for (const change of changes) {
         const { telegramUser, aocUser, chat, year, day } = change;
+
+        const marked = await markAsSent(telegramUser, year, day, chat);
+        if (!marked) {
+            // Someone already sent this invite, probably a race condition
+            continue;
+        }
 
         const invite = await sendTelegram('createChatInviteLink', {
             chat_id: chat,
@@ -202,11 +219,10 @@ const sendInvites = async (changes) => {
 
                 throw error;
             }
-
-            await markAsSent(telegramUser, year, day, chat);
         }
 
         (success ? sent : failed).push(change);
+        // If this failed, it will never be sent again, since it's already marked in the database
     }
 
     return { sent, failed };
