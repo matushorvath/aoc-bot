@@ -80,6 +80,12 @@ describe('processInvites', () => {
                     completion_day_level: {
                         '25': { '1': {} }
                     }
+                },
+                '58': {         // user both parts, simulating a race condition while sending 
+                    name: 'nAmE58',
+                    completion_day_level: {
+                        '5': { '1': {}, '2': {} }
+                    }
                 }
             }
         };
@@ -99,7 +105,8 @@ describe('processInvites', () => {
                     { aoc_user: { S: 'nAmE54' }, telegram_user: { N: 5454 } },
                     { aoc_user: { S: 'nAmE55' }, telegram_user: { N: 5555 } },
                     { aoc_user: { S: 'nAmE56' }, telegram_user: { N: 5656 } },
-                    { aoc_user: { S: 'nAmE57' }, telegram_user: { N: 5757 } }
+                    { aoc_user: { S: 'nAmE57' }, telegram_user: { N: 5757 } },
+                    { aoc_user: { S: 'nAmE58' }, telegram_user: { N: 5858 } }
                 ]
             }
         });
@@ -123,6 +130,8 @@ describe('processInvites', () => {
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
                 'aoc-bot': [{ id: { S: 'invite:5454:2021:5:50505' } }]
+                // invite:5858:2021:5:50505 is not here, because we simulate that
+                // the database record appeared while we were processing invites
             }
         });
 
@@ -138,6 +147,16 @@ describe('processInvites', () => {
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE55
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE56
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE57
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE58
+
+        // markAsSent
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE31
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE31
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE32
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE55
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE56
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE57
+        dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' }); // nAmE58, simulates a detected race condition
 
         // sendInvites
         network.sendTelegram.mockResolvedValueOnce(
@@ -165,6 +184,9 @@ describe('processInvites', () => {
         const invite = { ok: true, result: { name: 'iNvItE57_25', invite_link: 'InViTeLiNk57_25' } };
         network.sendTelegram.mockResolvedValueOnce(invite);
         network.sendTelegram.mockResolvedValueOnce(undefined);
+
+        // aoc_user nAmE58, will detect a race condition and not attempt to send an invite
+        // aoc_user nAmE59, could not mark in dynamo
 
         await expect(processInvites(leaderboard)).resolves.toEqual({
             sent: [{
@@ -196,7 +218,8 @@ describe('processInvites', () => {
                         { id: { S: 'aoc_user:nAmE54' } },
                         { id: { S: 'aoc_user:nAmE55' } },
                         { id: { S: 'aoc_user:nAmE56' } },
-                        { id: { S: 'aoc_user:nAmE57' } }
+                        { id: { S: 'aoc_user:nAmE57' } },
+                        { id: { S: 'aoc_user:nAmE58' } }
                     ],
                     ProjectionExpression: 'aoc_user, telegram_user'
                 }
@@ -235,7 +258,8 @@ describe('processInvites', () => {
                         { id: { S: 'invite:5454:2021:5:50505' } },
                         { id: { S: 'invite:5555:2021:5:50505' } },
                         { id: { S: 'invite:5656:2021:5:50505' } },
-                        { id: { S: 'invite:5757:2021:25:252525' } }
+                        { id: { S: 'invite:5757:2021:25:252525' } },
+                        { id: { S: 'invite:5858:2021:5:50505' } }
                     ],
                     ProjectionExpression: 'id'
                 }
@@ -256,6 +280,80 @@ describe('processInvites', () => {
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5555 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5656 });
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 252525, user_id: 5757 });
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5858 });
+
+        // markAsSent
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(7);
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(1, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:3131:2021:5:50505' },
+                y: { N: '2021' },
+                d: { N: '5' },
+                chat: { N: '50505' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(2, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:3131:2021:11:111111' },
+                y: { N: '2021' },
+                d: { N: '11' },
+                chat: { N: '111111' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(3, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:3232:2021:7:70707' },
+                y: { N: '2021' },
+                d: { N: '7' },
+                chat: { N: '70707' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(4, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:5555:2021:5:50505' },
+                y: { N: '2021' },
+                d: { N: '5' },
+                chat: { N: '50505' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(5, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:5656:2021:5:50505' },
+                y: { N: '2021' },
+                d: { N: '5' },
+                chat: { N: '50505' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(6, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:5757:2021:25:252525' },
+                y: { N: '2021' },
+                d: { N: '25' },
+                chat: { N: '252525' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
+        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(7, {
+            TableName: 'aoc-bot',
+            Item: {
+                id: { S: 'invite:5858:2021:5:50505' },
+                y: { N: '2021' },
+                d: { N: '5' },
+                chat: { N: '50505' }
+            },
+            ConditionExpression: 'attribute_not_exists(id)'
+        });
 
         // sendInvites
         expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
@@ -287,45 +385,6 @@ describe('processInvites', () => {
             { chat_id: 5757, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk57_25/) });
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(st - 1);
-
-        // markAsSent
-        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(4);
-        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(1, {
-            TableName: 'aoc-bot',
-            Item: {
-                id: { S: 'invite:3131:2021:5:50505' },
-                y: { N: '2021' },
-                d: { N: '5' },
-                chat: { N: '50505' }
-            }
-        });
-        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(2, {
-            TableName: 'aoc-bot',
-            Item: {
-                id: { S: 'invite:3131:2021:11:111111' },
-                y: { N: '2021' },
-                d: { N: '11' },
-                chat: { N: '111111' }
-            }
-        });
-        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(3, {
-            TableName: 'aoc-bot',
-            Item: {
-                id: { S: 'invite:3232:2021:7:70707' },
-                y: { N: '2021' },
-                d: { N: '7' },
-                chat: { N: '70707' }
-            }
-        });
-        expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(4, {
-            TableName: 'aoc-bot',
-            Item: {
-                id: { S: 'invite:5757:2021:25:252525' },
-                y: { N: '2021' },
-                d: { N: '25' },
-                chat: { N: '252525' }
-            }
-        });
     });
 
     test('handles error in getChatMembers', async () => {
@@ -398,6 +457,41 @@ describe('processInvites', () => {
         expect(network.sendTelegram).toHaveBeenCalledTimes(3);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
             { chat_id: 9999, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
+    });
+
+    test('handles error in markAsSent', async () => {
+        const leaderboard = {
+            event: '2020',
+            members: {
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
+            }
+        };
+
+        // mapUsers
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ aoc_user: { S: 'nAmE99' }, telegram_user: { N: 9999 } }] }
+        });
+
+        // mapDaysToChats
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ d: { N: '1' }, chat: { N: 10101 } }] }
+        });
+
+        // filterSentInvites
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [] }
+        });
+
+        // filterUsersInChat
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+
+        // markAsSent
+        dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
+
+        await expect(processInvites(leaderboard)).rejects.toThrow('dYnAmOfAiLeD');
+
+        // sendInvites
+        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
     });
 
     test('works with no chats', async () => {
