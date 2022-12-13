@@ -3,7 +3,13 @@
 set -e
 
 version=$(<package.json jq -re .version)
-uuid=$(uuidgen -r | tr -d -)
+
+if [[ "$OSTYPE" == "darwin"* ]] ; then
+    uuid=$(uuidgen | tr "[:upper:]" "[:lower:]" | tr -d -)
+else
+    uuid=$(uuidgen -r | tr -d -)
+fi
+
 package=aoc-bot-$version-$uuid.zip
 
 region=eu-central-1
