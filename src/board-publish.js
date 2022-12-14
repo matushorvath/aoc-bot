@@ -168,12 +168,24 @@ const saveBoardMessage = async (chat, message, hash) => {
     return true;
 };
 
-const publishBoards = async (leaderboard, startTimes) => {
+const publishBoards = async (leaderboard, startTimes, selection = {}) => {
     console.log('publishBoards: start');
 
     const year = Number(leaderboard.event);
+    if (selection.year !== undefined && selection.year !== year) {
+        return { created: [], updated: [] };
+    }
+
     const days = Object.values(leaderboard.members).flatMap(member =>
-        Object.keys(member.completion_day_level).map(Number));
+        Object.keys(member.completion_day_level)
+            // Select all days present in leaderboard
+            .map(Number)
+            // Choose only days that match the selection
+            .filter(([day]) => selection.day === undefined || selection.day === Number(day))
+    );
+    if (days.length === 0) {
+        return { created: [], updated: [] };
+    }
 
     const uniqueDays = [...new Set(days)];
     const dayChatMap = await mapDaysToChats(year, uniqueDays);

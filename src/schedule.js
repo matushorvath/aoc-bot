@@ -6,10 +6,26 @@ const { publishBoards } = require('./board-publish');
 const { getYears } = require('./years');
 const { logActivity } = require('./logs');
 
-const updateLeaderboards = async () => {
-    console.log('updateLeaderboards: start');
+const selectYears = async (selection) => {
+    let years = [...await getYears()];
 
-    const years = [...await getYears()];
+    if (selection.year) {
+        // Select just one year, and only if it exists in the database
+        years = years.filter(y => y === selection.year);
+    }
+
+    return years;
+};
+
+const updateLeaderboards = async (selection = {}) => {
+    console.log(`updateLeaderboards: start, selection ${selection}`);
+
+    const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
+
+    let years = await selectYears(selection);
+    if (years.length === 0) {
+        return result;
+    }
 
     // Download start times and leaderboards in parallel
     let [startTimes, ...leaderboards] = await Promise.all([
@@ -18,40 +34,35 @@ const updateLeaderboards = async () => {
     ]);
 
     // Filter out empty leaderboards
-    const unretrieved = leaderboards.filter(leaderboard => leaderboard.data === undefined);
+    result.unretrieved = leaderboards.filter(leaderboard => leaderboard.data === undefined);
     leaderboards = leaderboards.filter(leaderboard => leaderboard.data !== undefined);
-
-    const sent = [];
-    const failed = [];
-    const created = [];
-    const updated = [];
 
     // Process invites and publish boards in parallel
     await Promise.all([
         ...leaderboards.map(async ({ data }) => {
-            const invites = await processInvites(data);
-            sent.push(...invites.sent);
-            failed.push(...invites.failed);
+            const invites = await processInvites(data, selection);
+            result.sent.push(...invites.sent);
+            result.failed.push(...invites.failed);
         }),
         ...leaderboards.map(async ({ data }) => {
-            const boards = await publishBoards(data, startTimes);
-            created.push(...boards.created);
-            updated.push(...boards.updated);
+            const boards = await publishBoards(data, startTimes, selection);
+            result.created.push(...boards.created);
+            result.updated.push(...boards.updated);
         })
     ]);
 
     // Send activity logs to subscribers
     await Promise.all([
-        ...sent.map(async ({ aocUser, year, day }) => {
+        ...result.sent.map(async ({ aocUser, year, day }) => {
             await logActivity(`Invited ${aocUser} to ${year} day ${day}`);
         }),
-        ...created.map(async ({ year, day }) => {
+        ...result.created.map(async ({ year, day }) => {
             await logActivity(`Created board for ${year} day ${day}`);
         })
     ]);
 
     console.log('updateLeaderboards: done');
-    return { unretrieved, sent, failed, created, updated };
+    return result;
 };
 
 const handler = async () => {

@@ -9,10 +9,14 @@ Format your name exactly as it is visible in our [leaderboard](https://adventofc
 
 /status – Display your registration status\.
 
-/update – Update the leaderboard\.
-Leaderboard is updated automatically every 15 minutes\. This command is only needed if you want to trigger the update immediately\.
+/update \[today\|all\|\<year\>\|\<year\> \<day\>\] – Process leaderboards and invites\.
+Updates are performed automatically every 15 minutes\. This command is only needed if you want to trigger an update immediately\.
+    /update today – Processes today's leaderboard and invites (default in December)
+    /update all – Processes all leaderboards and invites (default outside of December)
+    /update \<year\> – Processes leaderboards and invites for selected year
+    /update \<year\> \<day\> – Processes leaderboards and invites for selected day
 
-/board \<year\> \<day\> – Display a board for given year and day\.
+/board \<year\> \<day\> – Format and display a board for given year and day\.
 
 /logs on\|off – Enable/disable sending activity logs into your chat with the bot\.
 
