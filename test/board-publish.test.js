@@ -287,7 +287,6 @@ describe('publishBoards', () => {
             }
         });
 
-        // Simulate someone changing the records just before we try to lock them
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
 
         await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
@@ -353,7 +352,6 @@ describe('publishBoards', () => {
             }
         });
 
-        // Simulate someone changing the records just before we try to lock them
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
 
         await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
@@ -391,6 +389,80 @@ describe('publishBoards', () => {
             ExpressionAttributeValues: { ':sha256': { S: 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE=' } }
         });
 
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+    });
+
+    test('selected day is applied', async () => {
+        const leaderboard = {
+            members: {
+                '12345': {
+                    completion_day_level: {
+                        '1': { '1': { get_star_ts: 1638346411 }, '2': { get_star_ts: 1638346788 } },
+                        '9': { '1': { get_star_ts: 1638346411 }, '2': { get_star_ts: 1638346788 } }
+                    }
+                }
+            },
+            event: '1918'
+        };
+
+        invites.mapDaysToChats.mockResolvedValueOnce({ 9: 999 });
+        boardFormat.formatBoard.mockReturnValueOnce('bOaRd999');
+
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: {
+                'aoc-bot': [
+                    {
+                        // Message found in db for 999, different hash
+                        chat: { N: '999' },
+                        message: { N: '777777' },
+                        sha256: { S: 'dIfFeReNtHaSh' }
+                    }
+                ]
+            }
+        });
+
+        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true }, { year: 1918, day: 9 })).resolves.toEqual({
+            created: [],
+            updated: [{ year: 1918, day: 9 }]
+        });
+
+        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [9]);
+
+        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 9, leaderboard, { sTaRtTiMeS: true });
+
+        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
+        expect(network.sendTelegram).toHaveBeenCalledWith('editMessageText', {
+            chat_id: 999,
+            message_id: 777777,
+            parse_mode: 'MarkdownV2',
+            text: 'bOaRd999',
+            disable_web_page_preview: true
+        });
+    });
+
+    test.each([
+        ['year', { year: 1492 }],
+        ['day', { year: 1918, day: 15 }]
+    ])('selected %s not in leaderboard', async (_description, selection) => {
+        const leaderboard = {
+            members: {
+                '12345': {
+                    completion_day_level: {
+                        '1': { '1': { get_star_ts: 1638346411 }, '2': { get_star_ts: 1638346788 } }
+                    }
+                }
+            },
+            event: '1918'
+        };
+
+        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true }, selection)).resolves.toEqual({
+            created: [],
+            updated: []
+        });
+
+        expect(invites.mapDaysToChats).not.toHaveBeenCalled();
+        expect(boardFormat.formatBoard).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
     });
 });

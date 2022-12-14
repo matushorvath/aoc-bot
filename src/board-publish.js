@@ -181,7 +181,7 @@ const publishBoards = async (leaderboard, startTimes, selection = {}) => {
             // Select all days present in leaderboard
             .map(Number)
             // Choose only days that match the selection
-            .filter(([day]) => selection.day === undefined || selection.day === Number(day))
+            .filter(day => selection.day === undefined || selection.day === Number(day))
     );
     if (days.length === 0) {
         return { created: [], updated: [] };
