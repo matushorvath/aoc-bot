@@ -809,7 +809,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' \\(updating everything\\)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (everything)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -842,7 +842,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' \\(updating everything\\)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (everything)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -896,7 +896,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' \\(updating ${logSelectionString}\\)`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${logSelectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -929,7 +929,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' \\(updating ${logSelectionString}\\)`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${logSelectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -981,7 +981,7 @@ describe('onTelegramUpdate', () => {
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'id 7878' \\(updating everything\\)");
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (everything)");
         });
     });
 
