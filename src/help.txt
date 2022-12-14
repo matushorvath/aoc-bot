@@ -11,8 +11,8 @@ Format your name exactly as it is visible in our [leaderboard](https://adventofc
 
 /update \[today\|all\|\<year\>\|\<year\> \<day\>\] – Process leaderboards and invites\.
 Updates are performed automatically every 15 minutes\. This command is only needed if you want to trigger an update immediately\.
-    /update today – Processes today's leaderboard and invites (default in December)
-    /update all – Processes all leaderboards and invites (default outside of December)
+    /update today – Processes today's leaderboard and invites \(default in December\)
+    /update all – Processes all leaderboards and invites \(default outside of December\)
     /update \<year\> – Processes leaderboards and invites for selected year
     /update \<year\> \<day\> – Processes leaderboards and invites for selected day
 
