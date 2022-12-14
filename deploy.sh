@@ -4,7 +4,7 @@ set -e
 
 version=$(<package.json jq -re .version)
 
-if [ "$(uname -s)" == "Darwin" ] ; then
+if [ "$(uname -s)" = "Darwin" ] ; then
     uuid=$(uuidgen | tr "[:upper:]" "[:lower:]" | tr -d -)
 else
     uuid=$(uuidgen -r | tr -d -)
