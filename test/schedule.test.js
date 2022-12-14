@@ -1,6 +1,6 @@
 'use strict';
 
-const { handler } = require('../src/schedule');
+const { handler, updateLeaderboards } = require('../src/schedule');
 
 const invites = require('../src/invites');
 jest.mock('../src/invites');
@@ -50,12 +50,14 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
 
         expect(invites.processInvites).toHaveBeenCalledTimes(2);
-        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true });
-        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true });
+        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
@@ -80,8 +82,8 @@ describe('schedule.handler', () => {
         await expect(handler()).resolves.toBeUndefined();
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
+        expect(network.getStartTimes).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
@@ -144,10 +146,11 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
 
         expect(invites.processInvites).toHaveBeenCalledTimes(1);
-        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true });
+        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
@@ -175,12 +178,14 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
 
         expect(invites.processInvites).toHaveBeenCalledTimes(2);
-        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true });
-        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true });
+        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
@@ -208,12 +213,14 @@ describe('schedule.handler', () => {
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
 
         expect(invites.processInvites).toHaveBeenCalledTimes(2);
-        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true });
-        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true });
+        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true });
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true });
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
     });
 
     test('sends logs after certain changes', async () => {
@@ -250,5 +257,53 @@ describe('schedule.handler', () => {
         expect(logs.logActivity).toHaveBeenCalledWith('Created board for 5 day 15');
         expect(logs.logActivity).toHaveBeenCalledWith('Created board for 6 day 16');
         expect(logs.logActivity).toHaveBeenCalledWith('Created board for 7 day 17');
+    });
+});
+
+describe('schedule.updateLeaderboards', () => {
+    test('selected year not in database', async () => {
+        years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
+
+        await expect(updateLeaderboards({ year: 1953 })).resolves.toStrictEqual({
+            unretrieved: [], sent: [], failed: [], created: [], updated: []
+        });
+
+        expect(years.getYears).toHaveBeenCalledTimes(1);
+        expect(network.getStartTimes).not.toHaveBeenCalled();
+
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(invites.processInvites).not.toHaveBeenCalled();
+        expect(boardPublish.publishBoards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        ['year', { year: 2021 }],
+        ['date', { year: 2021, day: 19 }]
+    ])('selected %s is applied', async (_description, selection) => {
+        years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
+
+        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
+
+        invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+
+        await expect(updateLeaderboards(selection)).resolves.toStrictEqual({
+            unretrieved: [], sent: [], failed: [], created: [], updated: []
+        });
+
+        expect(years.getYears).toHaveBeenCalledTimes(1);
+        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
+
+        expect(network.getLeaderboard).toHaveBeenCalledTimes(1);
+        expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
+
+        expect(invites.processInvites).toHaveBeenCalledTimes(1);
+        expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, selection);
+
+        expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
+            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, selection);
     });
 });

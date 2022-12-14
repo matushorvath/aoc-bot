@@ -87,7 +87,7 @@ const onMessage = async (message) => {
     } else if (command === 'status') {
         await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
-        await onCommandUpdate(message.chat.id, message.from);
+        await onCommandUpdate(message.chat.id, message.from, params?.trim());
     } else if (command === 'board' && params) {
         await onCommandBoard(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
@@ -308,16 +308,27 @@ const onCommandStatus = async (chat, telegramUser) => {
     console.log('onCommandStatus: done');
 };
 
-const onCommandUpdate = async (chat, from) => {
+const onCommandUpdate = async (chat, from, params) => {
     console.log('onCommandUpdate: start');
+
+    const selection = parseUpdateSelection(params);
+    if (!selection) {
+        console.log(`onCommandUpdate: params are invalid: ${params}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Invalid parameters \\(see /help\\)',
+            disable_notification: true
+        });
+        return;
+    }
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: 'Updating leaderboards, this might take a few seconds',
+        text: 'Processing leaderboards and invites, this will take a few seconds',
         disable_notification: true
     });
 
-    const { unretrieved, sent, created, updated } = await updateLeaderboards();
+    const { unretrieved, sent, created, updated } = await updateLeaderboards(selection);
 
     let info = '';
     for (const { year } of unretrieved) {
@@ -346,6 +357,29 @@ const onCommandUpdate = async (chat, from) => {
     await logActivity(`Update triggered by user '${senderName}'`);
 
     console.log('onCommandUpdate: done');
+};
+
+const parseUpdateSelection = (params) => {
+    const date = new Date();
+
+    if (params === 'today' || (params === undefined && date.getMonth() === 11 && date.getDate() <= 25)) {
+        // Update today
+        return { year: date.getFullYear(), day: date.getDate() };
+    } else if (params === 'all' || params === undefined) {
+        // Update everything
+        return {};
+    } else {
+        const m = params.match(/^\s*([0-9]{4})(?:\s+([0-9]{1,2}))?\s*$/);
+        if (m && m[1] && m[2]) {
+            // Update one selected day
+            return { year: Number(m[1]), day: Number(m[2]) };
+        } else if (m && m[1]) {
+            // Update one selected year
+            return { year: Number(m[1]) };
+        }
+    }
+
+    return undefined;
 };
 
 const formatSenderName = (from) => {

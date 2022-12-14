@@ -525,5 +525,73 @@ describe('processInvites', () => {
         });
     });
 
+    test('selected day is applied', async () => {
+        const leaderboard = {
+            event: '1945',
+            members: {
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} }, '9': { '1': {}, '2': {} } } }
+            }
+        };
+
+        // mapUsers
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ aoc_user: { S: 'nAmE99' }, telegram_user: { N: 9999 } }] }
+        });
+
+        // mapDaysToChats
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ d: { N: '9' }, chat: { N: 10101 } }] }
+        });
+
+        // filterSentInvites
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [] }
+        });
+
+        // filterUsersInChat
+        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+
+        // sendInvites
+        network.sendTelegram.mockResolvedValueOnce(
+            { ok: true, result: { name: 'iNvItE99_1', invite_link: 'InViTeLiNk99_1' } });
+
+        await expect(processInvites(leaderboard, { year: 1945, day: 9 })).resolves.toEqual({
+            sent: [{
+                aocUser: 'nAmE99', chat: 10101, day: 9, telegramUser: 9999, year: 1945
+            }],
+            failed: []
+        });
+
+        expect(network.sendTelegram).toHaveBeenCalledTimes(3);
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
+            { chat_id: 9999, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
+    });
+
+    test.each([
+        ['year', { year: 1492 }],
+        ['day', { year: 2020, day: 15 }]
+    ])('selected %s not in leaderboard', async (_description, selection) => {
+        const leaderboard = {
+            event: '2020',
+            members: {
+                '99': { name: 'nAmE99', completion_day_level: { '1': { '1': {}, '2': {} } } }
+            }
+        };
+
+        // mapUsers
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ aoc_user: { S: 'nAmE99' }, telegram_user: { N: 9999 } }] }
+        });
+
+        // mapDaysToChats
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ d: { N: '1' }, chat: { N: 10101 } }] }
+        });
+
+        await expect(processInvites(leaderboard, selection)).resolves.toEqual({ sent: [], failed: [] });
+
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+    });
+
     // TODO get more than 100 invites (test windowing in dynamodb)
 });

@@ -32,6 +32,8 @@ beforeEach(() => {
     logs.disableLogs.mockReset();
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
+    schedule.updateLeaderboards.mockReset();
+    logs.logActivity.mockReset();
 });
 
 describe('onTelegramUpdate', () => {
@@ -772,10 +774,178 @@ describe('onTelegramUpdate', () => {
     });
 
     describe('onMessage /update', () => {
-        test('with no updates', async () => {
+        describe.each([
+            ['defaults (outside of December)', '/update'],
+            ['the "all" parameter', '/update all']
+        ])('with %s', (_description, command) => {
+            beforeAll(() => {
+                jest.useFakeTimers('modern');
+                jest.setSystemTime(new Date(1980, 8, 17));
+            });
+
+            afterAll(() => {
+                jest.useRealTimers();
+            });
+
+            test('with no updates', async () => {
+                const update = {
+                    message: {
+                        text: command,
+                        from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
+                        chat: { id: 2323, type: 'private', title: 'tItLe' }
+                    }
+                };
+
+                schedule.updateLeaderboards.mockResolvedValueOnce({
+                    unretrieved: [], sent: [], created: [], updated: []
+                });
+
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                });
+
+                expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
+
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Leaderboards updated\n(no changes)\n'
+                });
+            });
+
+            test('with updates', async () => {
+                const update = {
+                    message: {
+                        text: '/update all',
+                        from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
+                        chat: { id: 2323, type: 'private', title: 'tItLe' }
+                    }
+                };
+
+                schedule.updateLeaderboards.mockResolvedValueOnce({
+                    unretrieved: [{ year: 1984 }, { year: 2345 }],
+                    sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
+                    created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
+                    updated: [{ year: 1918, day: 14 }, { year: 2063, day: 5 }]
+                });
+
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                });
+
+                expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
+
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: `Leaderboards updated
+• could not retrieve data for year 1984
+• could not retrieve data for year 2345
+• invited AoCu1 to 1980 day 13
+• invited AoCu2 to 1995 day 4
+• created board for 1945 day 2
+• created board for 1815 day 7
+• updated board for 1918 day 14
+• updated board for 2063 day 5
+` });
+            });
+        });
+
+        describe.each([
+            ['defaults (in December)', '/update', { year: 1980, day: 13 }],
+            ['the "today" parameter', '/update today', { year: 1980, day: 13 }],
+            ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }],
+            ['specific year selection', '/update 1968', { year: 1968 }]
+        ])('with %s', (_description, command, expectedSelection) => {
+            beforeAll(() => {
+                jest.useFakeTimers('modern');
+                jest.setSystemTime(new Date(1980, 11, 13));
+            });
+
+            afterAll(() => {
+                jest.useRealTimers();
+            });
+
+            test('with no updates', async () => {
+                const update = {
+                    message: {
+                        text: command,
+                        from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
+                        chat: { id: 2323, type: 'private', title: 'tItLe' }
+                    }
+                };
+
+                schedule.updateLeaderboards.mockResolvedValueOnce({
+                    unretrieved: [], sent: [], created: [], updated: []
+                });
+
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                });
+
+                expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Leaderboards updated\n(no changes)\n'
+                });
+            });
+
+            test('with updates', async () => {
+                const update = {
+                    message: {
+                        text: command,
+                        from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
+                        chat: { id: 2323, type: 'private', title: 'tItLe' }
+                    }
+                };
+
+                schedule.updateLeaderboards.mockResolvedValueOnce({
+                    unretrieved: [],
+                    sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }],
+                    created: [{ year: 1980, day: 13 }],
+                    updated: []
+                });
+
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                });
+
+                expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
+
+                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                    chat_id: 2323, disable_notification: true,
+                    text: `Leaderboards updated
+• invited AoCu1 to 1980 day 13
+• created board for 1980 day 13
+` });
+            });
+        });
+
+        test.each([
+            'asdf', 'jkl poi', '1980 a', '1122 11 17'
+        ])('with invalid parameters "%s"', async (params) => {
             const update = {
                 message: {
-                    text: '/update',
+                    text: `/update ${params}`,
                     from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
                     chat: { id: 2323, type: 'private', title: 'tItLe' }
                 }
@@ -789,58 +959,11 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Updating leaderboards, this might take a few seconds'
+                text: 'Invalid parameters \\(see /help\\)'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Leaderboards updated\n(no changes)\n'
-            });
-        });
-
-        test('with updates', async () => {
-            const update = {
-                message: {
-                    text: '/update',
-                    from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            schedule.updateLeaderboards.mockResolvedValueOnce({
-                unretrieved: [{ year: 1984 }, { year: 2345 }],
-                sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
-                created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
-                updated: [{ year: 1918, day: 14 }, { year: 2063, day: 5 }]
-            });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Updating leaderboards, this might take a few seconds'
-            });
-
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith();
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: `Leaderboards updated
-• could not retrieve data for year 1984
-• could not retrieve data for year 2345
-• invited AoCu1 to 1980 day 13
-• invited AoCu2 to 1995 day 4
-• created board for 1945 day 2
-• created board for 1815 day 7
-• updated board for 1918 day 14
-• updated board for 2063 day 5
-` });
+            expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+            expect(logs.logActivity).not.toHaveBeenCalled();
         });
 
         test('with no first or last name', async () => {

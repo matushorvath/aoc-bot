@@ -6,12 +6,14 @@ const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const getCompletedDays = (leaderboard) => {
+const getCompletedDays = (selection, leaderboard) => {
     // Get list of completed problems from the leaderboard
     return Object.values(leaderboard.members).flatMap(member =>
         Object.entries(member.completion_day_level)
             // Take days with both parts completed
             .filter(([day, parts]) => (parts['1'] && parts['2']) || (day === '25' && parts['1']))
+            // Choose only days that match the selection
+            .filter(([day]) => selection.day === undefined || selection.day === Number(day))
             // Make a [name, day] pair for each
             .map(([day]) => ({ aocUser: member.name, day: Number(day) }))
     );
@@ -228,10 +230,17 @@ const sendInvites = async (changes) => {
     return { sent, failed };
 };
 
-const processInvites = async (leaderboard) => {
-    // Parse the leaderboard
+const processInvites = async (leaderboard, selection = {}) => {
+    // Parse the leaderboard, select which dates we process
     const year = Number(leaderboard.event);
-    const days = getCompletedDays(leaderboard);
+    if (selection.year !== undefined && selection.year !== year) {
+        return { sent: [], failed: [] };
+    }
+
+    let days = getCompletedDays(selection, leaderboard);
+    if (days.length === 0) {
+        return { sent: [], failed: [] };
+    }
 
     // Get list of chats each user should be in
     const chats = await getChats(year, days);
