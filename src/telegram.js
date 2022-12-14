@@ -354,7 +354,8 @@ const onCommandUpdate = async (chat, from, params) => {
     });
 
     const senderName = formatSenderName(from);
-    await logActivity(`Update triggered by user '${senderName}'`);
+    const selectionString = formatSelectionString(selection); 
+    await logActivity(`Update triggered by user '${senderName}' \\(updating ${selectionString}\\)`);
 
     console.log('onCommandUpdate: done');
 };
@@ -388,7 +389,17 @@ const formatSenderName = (from) => {
     } else if (from.first_name) {
         return from.first_name;
     } else {
-        return `(id ${from.id})`;
+        return `id ${from.id}`;
+    }
+};
+
+const formatSelectionString = (selection) => {
+    if (selection.day) {
+        return `year ${selection.year} day ${selection.day}`;
+    } else if (selection.year) {
+        return `year ${selection.year}`;
+    } else {
+        return 'everything';
     }
 };
 
