@@ -809,7 +809,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' \\(updating everything\\)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -842,7 +842,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' \\(updating everything\\)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -860,11 +860,11 @@ describe('onTelegramUpdate', () => {
         });
 
         describe.each([
-            ['defaults (in December)', '/update', { year: 1980, day: 13 }],
-            ['the "today" parameter', '/update today', { year: 1980, day: 13 }],
-            ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }],
-            ['specific year selection', '/update 1968', { year: 1968 }]
-        ])('with %s', (_description, command, expectedSelection) => {
+            ['defaults (in December)', '/update', { year: 1980, day: 13 }, 'year 1980 day 13'],
+            ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
+            ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
+        ])('with %s', (_description, command, expectedSelection, logSelectionString) => {
             beforeAll(() => {
                 jest.useFakeTimers('modern');
                 jest.setSystemTime(new Date(1980, 11, 13));
@@ -896,7 +896,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE'");
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' \\(updating ${logSelectionString}\\)`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -929,7 +929,7 @@ describe('onTelegramUpdate', () => {
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe'");
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' \\(updating ${logSelectionString}\\)`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -969,7 +969,7 @@ describe('onTelegramUpdate', () => {
         test('with no first or last name', async () => {
             const update = {
                 message: {
-                    text: '/update',
+                    text: '/update all',
                     from: { id: 7878 },
                     chat: { id: 2323, type: 'private', title: 'tItLe' }
                 }
@@ -981,7 +981,7 @@ describe('onTelegramUpdate', () => {
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)'");
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'id 7878' \\(updating everything\\)");
         });
     });
 
