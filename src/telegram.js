@@ -355,7 +355,7 @@ const onCommandUpdate = async (chat, from, params) => {
 
     const senderName = formatSenderName(from);
     const selectionString = formatSelectionString(selection); 
-    await logActivity(`Update triggered by user '${senderName}' \\(updating ${selectionString}\\)`);
+    await logActivity(`Update triggered by user '${senderName}' (${selectionString})`);
 
     console.log('onCommandUpdate: done');
 };
@@ -389,7 +389,7 @@ const formatSenderName = (from) => {
     } else if (from.first_name) {
         return from.first_name;
     } else {
-        return `id ${from.id}`;
+        return `(id ${from.id})`;
     }
 };
 
