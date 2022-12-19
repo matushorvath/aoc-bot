@@ -14,6 +14,7 @@ Updates are performed automatically every 15 minutes\. This command is only need
     /update today – Processes today's leaderboard and invites \(default in December\)
     /update all – Processes all leaderboards and invites \(default outside of December\)
     /update \<year\> – Processes leaderboards and invites for selected year
+    /update \<day\> – Processes leaderboards and invites for selected day in current year
     /update \<year\> \<day\> – Processes leaderboards and invites for selected day
 
 /board \<year\> \<day\> – Format and display a board for given year and day\.

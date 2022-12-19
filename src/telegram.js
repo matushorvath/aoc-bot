@@ -7,6 +7,7 @@ const { addYear } = require('./years');
 const { enableLogs, disableLogs, logActivity } = require('./logs');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+const luxon = require('luxon');
 
 const fsp = require('fs/promises');
 const path = require('path');
@@ -361,22 +362,33 @@ const onCommandUpdate = async (chat, from, params) => {
 };
 
 const parseUpdateSelection = (params) => {
-    const date = new Date();
+    // Current time in EST time zone
+    const today = luxon.DateTime.now().setZone('EST');
 
-    if (params === 'today' || (params === undefined && date.getMonth() === 11 && date.getDate() <= 25)) {
+    if (params === 'today' || (params === undefined && today.month === 12 && today.day <= 25)) {
         // Update today
-        return { year: date.getFullYear(), day: date.getDate() };
+        return { year: today.year, day: today.day };
     } else if (params === 'all' || params === undefined) {
         // Update everything
         return {};
     } else {
-        const m = params.match(/^\s*([0-9]{4})(?:\s+([0-9]{1,2}))?\s*$/);
-        if (m && m[1] && m[2]) {
+        const m = params.match(/^\s*([0-9]+)(?:\s+([0-9]+))?\s*$/);
+        if (!m) {
+            return undefined;
+        }
+
+        const year = m[1]?.length === 4 ? Number(m[1]) : m[2]?.length === 4 ? Number(m[2]) : undefined;
+        const day = m[1]?.length <= 2 ? Number(m[1]) : m[2]?.length <= 2 ? Number(m[2]) : undefined;
+
+        if (year && day) {
             // Update one selected day
-            return { year: Number(m[1]), day: Number(m[2]) };
-        } else if (m && m[1]) {
+            return { year, day };
+        } else if (day && m[2] === undefined) {
+            // Update one selected in current year
+            return { year: today.year, day };
+        } else if (year && m[2] === undefined) {
             // Update one selected year
-            return { year: Number(m[1]) };
+            return { year };
         }
     }
 

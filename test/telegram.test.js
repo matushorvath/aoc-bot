@@ -778,9 +778,9 @@ describe('onTelegramUpdate', () => {
             ['defaults (outside of December)', '/update'],
             ['the "all" parameter', '/update all']
         ])('with %s', (_description, command) => {
-            beforeAll(() => {
+            beforeEach(() => {
                 jest.useFakeTimers('modern');
-                jest.setSystemTime(new Date(1980, 8, 17));
+                jest.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
             });
 
             afterAll(() => {
@@ -862,12 +862,15 @@ describe('onTelegramUpdate', () => {
         describe.each([
             ['defaults (in December)', '/update', { year: 1980, day: 13 }, 'year 1980 day 13'],
             ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
-            ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, year first', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, day first', '/update 11 2001', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, without a year', '/update 19', { year: 1980, day: 19 }, 'year 1980 day 19'],
             ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
         ])('with %s', (_description, command, expectedSelection, selectionString) => {
-            beforeAll(() => {
+            beforeEach(() => {
                 jest.useFakeTimers('modern');
-                jest.setSystemTime(new Date(1980, 11, 13));
+                // Intentionally use time that falls into different dates in UTC and in EST
+                jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
             });
 
             afterAll(() => {
@@ -941,7 +944,8 @@ describe('onTelegramUpdate', () => {
         });
 
         test.each([
-            'asdf', 'jkl poi', '1980 a', '1122 11 17'
+            'asdf', 'jkl poi', '1980 a', '1122 11 17',
+            '1980 1980', '13 14', '123'
         ])('with invalid parameters "%s"', async (params) => {
             const update = {
                 message: {
