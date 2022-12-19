@@ -649,7 +649,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Invalid parameters \\(see /help\\)'
+                text: 'Invalid parameters (see /help)'
             });
         });
 
@@ -965,7 +965,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Invalid parameters \\(see /help\\)'
+                text: 'Invalid parameters (see /help)'
             });
 
             expect(schedule.updateLeaderboards).not.toHaveBeenCalled();

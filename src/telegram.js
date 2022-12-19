@@ -245,7 +245,7 @@ const onCommandBoard = async (chat, params) => {
         console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: 'Invalid parameters \\(see /help\\)',
+            text: 'Invalid parameters (see /help)',
             disable_notification: true
         });
         return;
@@ -315,7 +315,7 @@ const onCommandUpdate = async (chat, from, params) => {
         console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: 'Invalid parameters \\(see /help\\)',
+            text: 'Invalid parameters (see /help)',
             disable_notification: true
         });
         return;
