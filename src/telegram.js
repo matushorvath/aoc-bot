@@ -322,9 +322,10 @@ const onCommandUpdate = async (chat, from, params) => {
         return;
     }
 
+    const selectionString = formatSelectionString(selection);
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: 'Processing leaderboards and invites, this will take a few seconds',
+        text: `Processing leaderboards and invites (${selectionString})`,
         disable_notification: true
     });
 
@@ -354,7 +355,6 @@ const onCommandUpdate = async (chat, from, params) => {
     });
 
     const senderName = formatSenderName(from);
-    const selectionString = formatSelectionString(selection); 
     await logActivity(`Update triggered by user '${senderName}' (${selectionString})`);
 
     console.log('onCommandUpdate: done');
@@ -399,7 +399,7 @@ const formatSelectionString = (selection) => {
     } else if (selection.year) {
         return `year ${selection.year}`;
     } else {
-        return 'everything';
+        return 'all years';
     }
 };
 

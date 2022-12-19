@@ -804,12 +804,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: 'Processing leaderboards and invites (all years)'
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (everything)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (all years)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -837,12 +837,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: 'Processing leaderboards and invites (all years)'
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (everything)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (all years)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -864,7 +864,7 @@ describe('onTelegramUpdate', () => {
             ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
             ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
             ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
-        ])('with %s', (_description, command, expectedSelection, logSelectionString) => {
+        ])('with %s', (_description, command, expectedSelection, selectionString) => {
             beforeAll(() => {
                 jest.useFakeTimers('modern');
                 jest.setSystemTime(new Date(1980, 11, 13));
@@ -891,12 +891,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: `Processing leaderboards and invites (${selectionString})`
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${logSelectionString})`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -924,12 +924,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: `Processing leaderboards and invites (${selectionString})`
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${logSelectionString})`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -981,7 +981,7 @@ describe('onTelegramUpdate', () => {
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (everything)");
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (all years)");
         });
     });
 
