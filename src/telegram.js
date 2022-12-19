@@ -7,6 +7,7 @@ const { addYear } = require('./years');
 const { enableLogs, disableLogs, logActivity } = require('./logs');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+const luxon = require('luxon');
 
 const fsp = require('fs/promises');
 const path = require('path');
@@ -88,7 +89,7 @@ const onMessage = async (message) => {
         await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
         await onCommandUpdate(message.chat.id, message.from, params?.trim());
-    } else if (command === 'board' && params) {
+    } else if (command === 'board') {
         await onCommandBoard(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
@@ -239,20 +240,18 @@ const onCommandLogs = async (chat, value) => {
 const onCommandBoard = async (chat, params) => {
     console.log(`onCommandBoard: start, day ${params}`);
 
-    const m = params.match(/([0-9]{4})\s+([0-9]{1,2})/);
-    if (!m) {
-        console.log(`onCommandBoard: params are invalid: ${params}`);
+    const selection = parseYearDaySelection(params, true);
+    if (!selection) {
+        console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: "I need two parameters, '/board <year> <day>'",
+            text: 'Invalid parameters (see /help)',
             disable_notification: true
         });
         return;
     }
 
-    const [year, day] = params.split(' ').map(Number);
-
-    const leaderboard = await getLeaderboard(year);
+    const leaderboard = await getLeaderboard(selection.year);
     if (!leaderboard) {
         console.log('onCommandBoard: no leaderboard data');
         await sendTelegram('sendMessage', {
@@ -265,7 +264,7 @@ const onCommandBoard = async (chat, params) => {
     }
 
     const startTimes = await getStartTimes();
-    const board = formatBoard(year, day, leaderboard, startTimes);
+    const board = formatBoard(selection.year, selection.day, leaderboard, startTimes);
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
@@ -311,20 +310,21 @@ const onCommandStatus = async (chat, telegramUser) => {
 const onCommandUpdate = async (chat, from, params) => {
     console.log('onCommandUpdate: start');
 
-    const selection = parseUpdateSelection(params);
+    const selection = parseYearDaySelection(params);
     if (!selection) {
         console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: 'Invalid parameters \\(see /help\\)',
+            text: 'Invalid parameters (see /help)',
             disable_notification: true
         });
         return;
     }
 
+    const selectionString = formatSelectionString(selection);
     await sendTelegram('sendMessage', {
         chat_id: chat,
-        text: 'Processing leaderboards and invites, this will take a few seconds',
+        text: `Processing leaderboards and invites (${selectionString})`,
         disable_notification: true
     });
 
@@ -354,29 +354,41 @@ const onCommandUpdate = async (chat, from, params) => {
     });
 
     const senderName = formatSenderName(from);
-    const selectionString = formatSelectionString(selection); 
     await logActivity(`Update triggered by user '${senderName}' (${selectionString})`);
 
     console.log('onCommandUpdate: done');
 };
 
-const parseUpdateSelection = (params) => {
-    const date = new Date();
+const parseYearDaySelection = (params, singleDay = false) => {
+    // Current time in EST time zone
+    const today = luxon.DateTime.now().setZone('EST');
 
-    if (params === 'today' || (params === undefined && date.getMonth() === 11 && date.getDate() <= 25)) {
+    const defaultToOneDay = singleDay || (today.month === 12 && today.day <= 25);
+
+    if (params === 'today' || (params === undefined && defaultToOneDay)) {
         // Update today
-        return { year: date.getFullYear(), day: date.getDate() };
-    } else if (params === 'all' || params === undefined) {
+        return { year: today.year, day: today.day };
+    } else if (!singleDay && (params === 'all' || params === undefined)) {
         // Update everything
         return {};
     } else {
-        const m = params.match(/^\s*([0-9]{4})(?:\s+([0-9]{1,2}))?\s*$/);
-        if (m && m[1] && m[2]) {
+        const m = params.match(/^\s*([0-9]+)(?:\s+([0-9]+))?\s*$/);
+        if (!m) {
+            return undefined;
+        }
+
+        const year = m[1]?.length === 4 ? Number(m[1]) : m[2]?.length === 4 ? Number(m[2]) : undefined;
+        const day = m[1]?.length <= 2 ? Number(m[1]) : m[2]?.length <= 2 ? Number(m[2]) : undefined;
+
+        if (year && day) {
             // Update one selected day
-            return { year: Number(m[1]), day: Number(m[2]) };
-        } else if (m && m[1]) {
+            return { year, day };
+        } else if (day && m[2] === undefined) {
+            // Update one selected in current year
+            return { year: today.year, day };
+        } else if (!singleDay && year && m[2] === undefined) {
             // Update one selected year
-            return { year: Number(m[1]) };
+            return { year };
         }
     }
 
@@ -399,7 +411,7 @@ const formatSelectionString = (selection) => {
     } else if (selection.year) {
         return `year ${selection.year}`;
     } else {
-        return 'everything';
+        return 'all years';
     }
 };
 

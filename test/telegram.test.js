@@ -636,23 +636,6 @@ describe('onTelegramUpdate', () => {
     });
 
     describe('onMessage /board', () => {
-        test('without parameters', async () => {
-            const update = {
-                message: {
-                    text: '/board',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "Sorry, I don't understand that command"
-            });
-        });
-
         test('with invalid parameters', async () => {
             const update = {
                 message: {
@@ -666,7 +649,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: "I need two parameters, '/board <year> <day>'"
+                text: 'Invalid parameters (see /help)'
             });
         });
 
@@ -693,29 +676,48 @@ describe('onTelegramUpdate', () => {
             });
         });
 
-        test('with valid parameters', async () => {
-            const update = {
-                message: {
-                    text: '/board 1980 24',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+        describe.each([
+            ['no parameters', '/board', { year: 1980, day: 13 }],
+            ['the "today" parameter', '/board today', { year: 1980, day: 13 }],
+            ['specific date selection, year first', '/board 2001 11', { year: 2001, day: 11 }],
+            ['specific date selection, day first', '/board 11 2001', { year: 2001, day: 11 }],
+            ['specific date selection, without a year', '/board 19', { year: 1980, day: 19 }]
+        ])('with %s', (_description, command, expectedSelection) => {
+            beforeEach(() => {
+                jest.useFakeTimers('modern');
+                // Intentionally use time that falls into different dates in UTC and in EST
+                jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
+            });
 
-            network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
-            network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
-            boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
+            afterAll(() => {
+                jest.useRealTimers();
+            });
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+            test('generates the board', async () => {
+                const update = {
+                    message: {
+                        text: command,
+                        from: { id: 7878 },
+                        chat: { id: 2323, type: 'private', title: 'tItLe' }
+                    }
+                };
 
-            expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
-            expect(network.getStartTimes).toHaveBeenCalledWith();
-            expect(boardFormat.formatBoard).toHaveBeenCalledWith(1980, 24, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
+                network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
+                network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+                boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2',
-                disable_notification: true, disable_web_page_preview: true,
-                text: 'bOaRd'
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(network.getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
+                expect(network.getStartTimes).toHaveBeenCalledWith();
+                expect(boardFormat.formatBoard).toHaveBeenCalledWith(
+                    expectedSelection.year, expectedSelection.day, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
+
+                expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                    chat_id: 2323, parse_mode: 'MarkdownV2',
+                    disable_notification: true, disable_web_page_preview: true,
+                    text: 'bOaRd'
+                });
             });
         });
 
@@ -778,9 +780,9 @@ describe('onTelegramUpdate', () => {
             ['defaults (outside of December)', '/update'],
             ['the "all" parameter', '/update all']
         ])('with %s', (_description, command) => {
-            beforeAll(() => {
+            beforeEach(() => {
                 jest.useFakeTimers('modern');
-                jest.setSystemTime(new Date(1980, 8, 17));
+                jest.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
             });
 
             afterAll(() => {
@@ -804,12 +806,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: 'Processing leaderboards and invites (all years)'
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (everything)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (all years)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -837,12 +839,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: 'Processing leaderboards and invites (all years)'
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (everything)");
+                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (all years)");
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -862,12 +864,15 @@ describe('onTelegramUpdate', () => {
         describe.each([
             ['defaults (in December)', '/update', { year: 1980, day: 13 }, 'year 1980 day 13'],
             ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
-            ['specific date selection', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, year first', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, day first', '/update 11 2001', { year: 2001, day: 11 }, 'year 2001 day 11'],
+            ['specific date selection, without a year', '/update 19', { year: 1980, day: 19 }, 'year 1980 day 19'],
             ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
-        ])('with %s', (_description, command, expectedSelection, logSelectionString) => {
-            beforeAll(() => {
+        ])('with %s', (_description, command, expectedSelection, selectionString) => {
+            beforeEach(() => {
                 jest.useFakeTimers('modern');
-                jest.setSystemTime(new Date(1980, 11, 13));
+                // Intentionally use time that falls into different dates in UTC and in EST
+                jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
             });
 
             afterAll(() => {
@@ -891,12 +896,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: `Processing leaderboards and invites (${selectionString})`
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${logSelectionString})`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -924,12 +929,12 @@ describe('onTelegramUpdate', () => {
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites, this will take a few seconds'
+                    text: `Processing leaderboards and invites (${selectionString})`
                 });
 
                 expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${logSelectionString})`);
+                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
 
                 expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
                     chat_id: 2323, disable_notification: true,
@@ -941,7 +946,8 @@ describe('onTelegramUpdate', () => {
         });
 
         test.each([
-            'asdf', 'jkl poi', '1980 a', '1122 11 17'
+            'asdf', 'jkl poi', '1980 a', '1122 11 17',
+            '1980 1980', '13 14', '123'
         ])('with invalid parameters "%s"', async (params) => {
             const update = {
                 message: {
@@ -959,7 +965,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Invalid parameters \\(see /help\\)'
+                text: 'Invalid parameters (see /help)'
             });
 
             expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
@@ -981,7 +987,7 @@ describe('onTelegramUpdate', () => {
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (everything)");
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (all years)");
         });
     });
 
