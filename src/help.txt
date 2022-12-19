@@ -2,23 +2,46 @@ I can register your Advent of Code name, and then automatically invite you into 
 
 Supported commands:
 
-/reg \<aocname\> – Register your Advent of Code name\.
-Format your name exactly as it is visible in our [leaderboard](https://adventofcode\.com/2021/leaderboard/private/view/380635) \(without the `(AoC\+\+)` suffix\)\.
+/reg \<aocname\>
+    Register your Advent of Code name\. Format your name exactly as it is visible in our
+    [leaderboard](https://adventofcode\.com/2021/leaderboard/private/view/380635) \(without the `(AoC\+\+)` suffix\)\.
 
-/unreg – Unregister from the bot\.
+/unreg
+    Unregister from the bot\.
 
-/status – Display your registration status\.
+/status
+    Display your registration status\.
 
-/update \[today\|all\|\<year\>\|\<year\> \<day\>\] – Process leaderboards and invites\.
-Updates are performed automatically every 15 minutes\. This command is only needed if you want to trigger an update immediately\.
-    /update today – Processes today's leaderboard and invites \(default in December\)
-    /update all – Processes all leaderboards and invites \(default outside of December\)
-    /update \<year\> – Processes leaderboards and invites for selected year
-    /update \<day\> – Processes leaderboards and invites for selected day in current year
-    /update \<year\> \<day\> – Processes leaderboards and invites for selected day
+/update \[today\|all\|\<year\>\|\<year\> \<day\>\]
+    Process leaderboards and invites\. Updates are performed automatically every 15 minutes\.
+    This command is only needed if you want to trigger an update immediately\.
 
-/board \<year\> \<day\> – Format and display a board for given year and day\.
+    /update                     Process today's leaderboard and invites \(default in December\)
+    /update today
 
-/logs on\|off – Enable/disable sending activity logs into your chat with the bot\.
+    /update all                 Process all leaderboards and invites \(default outside of December\)
 
-/help – Show this message\.
+    /update \<year\>            Process leaderboards and invites for selected year
+
+    /update \<day\>             Process leaderboards and invites for selected day in current year
+
+    /update \<day\> \<year\>
+    /update \<year\> \<day\>    Process leaderboards and invites for selected day
+
+
+/board \[today\|\<day\>\|\<year\> \<day\|\<day\> \<year\>
+    Format and display a board for selected day\.
+
+    /board                      Display today's board
+    /board today
+
+    /board \<day\>              Display board for selected day in current year
+
+    /board \<year\> \<day\>
+    /board \<year\> \<day\>     Display board for selected day and year
+
+/logs on\|off
+    Enable/disable sending activity logs into your chat with the bot\.
+
+/help
+    Show this message\.

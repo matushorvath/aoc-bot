@@ -89,7 +89,7 @@ const onMessage = async (message) => {
         await onCommandStatus(message.chat.id, message.from.id);
     } else if (command === 'update') {
         await onCommandUpdate(message.chat.id, message.from, params?.trim());
-    } else if (command === 'board' && params) {
+    } else if (command === 'board') {
         await onCommandBoard(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
@@ -240,20 +240,18 @@ const onCommandLogs = async (chat, value) => {
 const onCommandBoard = async (chat, params) => {
     console.log(`onCommandBoard: start, day ${params}`);
 
-    const m = params.match(/([0-9]{4})\s+([0-9]{1,2})/);
-    if (!m) {
-        console.log(`onCommandBoard: params are invalid: ${params}`);
+    const selection = parseYearDaySelection(params, true);
+    if (!selection) {
+        console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: "I need two parameters, '/board <year> <day>'",
+            text: 'Invalid parameters \\(see /help\\)',
             disable_notification: true
         });
         return;
     }
 
-    const [year, day] = params.split(' ').map(Number);
-
-    const leaderboard = await getLeaderboard(year);
+    const leaderboard = await getLeaderboard(selection.year);
     if (!leaderboard) {
         console.log('onCommandBoard: no leaderboard data');
         await sendTelegram('sendMessage', {
@@ -266,7 +264,7 @@ const onCommandBoard = async (chat, params) => {
     }
 
     const startTimes = await getStartTimes();
-    const board = formatBoard(year, day, leaderboard, startTimes);
+    const board = formatBoard(selection.year, selection.day, leaderboard, startTimes);
 
     await sendTelegram('sendMessage', {
         chat_id: chat,
@@ -312,7 +310,7 @@ const onCommandStatus = async (chat, telegramUser) => {
 const onCommandUpdate = async (chat, from, params) => {
     console.log('onCommandUpdate: start');
 
-    const selection = parseUpdateSelection(params);
+    const selection = parseYearDaySelection(params);
     if (!selection) {
         console.log(`onCommandUpdate: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
@@ -361,14 +359,16 @@ const onCommandUpdate = async (chat, from, params) => {
     console.log('onCommandUpdate: done');
 };
 
-const parseUpdateSelection = (params) => {
+const parseYearDaySelection = (params, singleDay = false) => {
     // Current time in EST time zone
     const today = luxon.DateTime.now().setZone('EST');
 
-    if (params === 'today' || (params === undefined && today.month === 12 && today.day <= 25)) {
+    const defaultToOneDay = singleDay || (today.month === 12 && today.day <= 25);
+
+    if (params === 'today' || (params === undefined && defaultToOneDay)) {
         // Update today
         return { year: today.year, day: today.day };
-    } else if (params === 'all' || params === undefined) {
+    } else if (!singleDay && (params === 'all' || params === undefined)) {
         // Update everything
         return {};
     } else {
@@ -386,7 +386,7 @@ const parseUpdateSelection = (params) => {
         } else if (day && m[2] === undefined) {
             // Update one selected in current year
             return { year: today.year, day };
-        } else if (year && m[2] === undefined) {
+        } else if (!singleDay && year && m[2] === undefined) {
             // Update one selected year
             return { year };
         }
