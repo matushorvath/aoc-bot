@@ -428,6 +428,7 @@ const onCommandHelp = async (chat) => {
         chat_id: chat,
         parse_mode: 'MarkdownV2',
         disable_notification: true,
+        disable_web_page_preview: true,
         text: helpText
     });
 };
