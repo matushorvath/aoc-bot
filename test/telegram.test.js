@@ -1016,8 +1016,9 @@ describe('onTelegramUpdate', () => {
             expect(readFileSpy).toHaveBeenCalledWith(expect.stringMatching(/\/help\.txt$/), 'utf-8');
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
-                text: expect.stringMatching(/^I can register[^]*this message\\\.\n$/)
+                chat_id: 2323, parse_mode: 'MarkdownV2',
+                disable_notification: true, disable_web_page_preview: true,
+                text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
             });
         });
 
@@ -1035,8 +1036,9 @@ describe('onTelegramUpdate', () => {
             expect(readFileSpy).not.toHaveBeenCalled();
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
-                text: expect.stringMatching(/^I can register[^]*this message\\\.\n$/)
+                chat_id: 2323, parse_mode: 'MarkdownV2',
+                disable_notification: true, disable_web_page_preview: true,
+                text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
             });
         });
     });
