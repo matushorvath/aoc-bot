@@ -1,6 +1,6 @@
 'use strict';
 
-const { handler } = require('../src/webhook');
+const { handler } = require('../src/api');
 
 const secrets = require('../src/secrets');
 jest.mock('../src/secrets');
@@ -13,7 +13,7 @@ beforeEach(() => {
     telegram.onTelegramUpdate.mockReset();
 });
 
-describe('webhook handler', () => {
+describe('API handler', () => {
     test('returns correct headers with errors', async () => {
         const event = { resource: '/uNkNoWn', httpMethod: 'iNvAlId' };
         await expect(handler(event)).resolves.toMatchObject({
