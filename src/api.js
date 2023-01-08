@@ -47,7 +47,7 @@ const explainError = (details) => {
     // TODO fill in the hostname
     return {
         details,
-        usage: `POST https://<hostname>/start\nbody: ${example}`
+        usage: `POST https://<hostname>/start\nbody: ${JSON.stringify(example, undefined, 4)}`
     };
 };
 
@@ -55,10 +55,13 @@ const parseBody = (body) => {
     try {
         return JSON.parse(body);
     } catch (error) {
+        // JSON.parse only throws SyntaxError, but we handle other errors as well for completeness
+        // istanbul ignore else
         if (error instanceof SyntaxError) {
-            throw new ResultError(400, 'Bad Request', 'Invalid JSON syntax');
+            throw new ResultError(400, 'Bad Request', { details: 'Invalid JSON syntax' });
+        } else {
+            throw error;
         }
-        throw error;
     }
 };
 
@@ -75,7 +78,7 @@ const postStart = async (event) => {
     if (typeof year !== 'number' || year < 2000 || year >= 2100) {
         throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'year' parameter"));
     }
-    if (typeof day !== 'number' || day < 0 || day > 25) {
+    if (typeof day !== 'number' || day < 1 || day > 25) {
         throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'day' parameter"));
     }
     if (typeof part !== 'number' || (part !== 1 && part !== 2)) {
@@ -125,13 +128,6 @@ const processEvent = async (event) => {
     throw new ResultError(403, 'Forbidden');
 };
 
-const shortenResponse = (response) => {
-    if (!response.body || response.body.length < 65) {
-        return response;
-    }
-    return { ...response, body: response.body.slice(0, 65) + '…' };
-};
-
 const handler = async (event) => {
     try {
         console.log('handler: start');
@@ -139,7 +135,7 @@ const handler = async (event) => {
         console.log('handler: data response', result);
 
         const response = makeResponse(result);
-        console.log('handler: data response', shortenResponse(response));
+        console.log('handler: data response', response);
 
         return response;
     } catch (error) {

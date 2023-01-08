@@ -151,42 +151,91 @@ describe('POST /telegram API', () => {
 
 describe('POST /start API', () => {
     test.each([
-        ['missing body', {}],
-        ['empty body', { body: {} }],
-
-        ['missing version', { body: { year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['non-numeric version', { body: { version: '1', year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected version', { body: { version: 3, year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-
-        ['missing year', { body: { version: 1, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['non-numeric year', { body: { version: 1, year: '2022', day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected low year', { body: { version: 1, year: 1999, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected high year', { body: { version: 1, year: 2100, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected negative year', { body: { version: 1, year: -2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-
-        ['missing day', { body: { version: 1, year: 2022, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['non-numeric day', { body: { version: 1, year: 2022, day: '13', part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected low day', { body: { version: 1, year: 2022, day: 0, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected high day', { body: { version: 1, year: 2022, day: 26, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected negative day', { body: { version: 1, year: 2022, day: -13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
-
-        ['missing part', { body: { version: 1, year: 2022, day: 13, name: 'FiRsT SeCoNdNaMe' } }],
-        ['non-numeric part', { body: { version: 1, year: 2022, day: 13, part: '2', name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected low part', { body: { version: 1, year: 2022, day: 13, part: 0, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected high part', { body: { version: 1, year: 2022, day: 13, part: 3, name: 'FiRsT SeCoNdNaMe' } }],
-        ['unexpected negative part', { body: { version: 1, year: 2022, day: 13, part: -2, name: 'FiRsT SeCoNdNaMe' } }],
-
-        ['missing name', { body: { version: 1, year: 2022, day: 13, part: 2 } }],
-        ['non-string name', { body: { version: 1, year: 2022, day: 13, part: 2, name: 123 } }]
-    ])('fails with %s', async (description, eventPart) => {
+        ['missing body', {}, 'Invalid JSON syntax'],
+        ['empty body', { body: '' }, 'Invalid JSON syntax'],
+        ['wrong JSON', { body: ']' }, 'Invalid JSON syntax']
+    ])('fails with %s', async (description, eventPart, errorMatch) => {
         const event = {
             resource: '/start',
             httpMethod: 'POST',
             ...eventPart
         };
-        await expect(handler(event)).resolves.toMatchObject({ statusCode: 400 });
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 400,
+            body: expect.stringMatching(errorMatch)
+        });
 
         expect(times.onStartTime).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        ['missing version', { body: { year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'version'],
+        ['non-numeric version', { body: { version: '1', year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'version'],
+        ['unexpected version', { body: { version: 9999, year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'version'],
+
+        ['missing year', { body: { version: 1, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'year'],
+        ['non-numeric year', { body: { version: 1, year: '2022', day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'year'],
+        ['unexpected low year', { body: { version: 1, year: 1999, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'year'],
+        ['unexpected high year', { body: { version: 1, year: 2100, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'year'],
+        ['unexpected negative year', { body: { version: 1, year: -2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'year'],
+
+        ['missing day', { body: { version: 1, year: 2022, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'day'],
+        ['non-numeric day', { body: { version: 1, year: 2022, day: '13', part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'day'],
+        ['unexpected low day', { body: { version: 1, year: 2022, day: 0, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'day'],
+        ['unexpected high day', { body: { version: 1, year: 2022, day: 26, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'day'],
+        ['unexpected negative day', { body: { version: 1, year: 2022, day: -13, part: 2, name: 'FiRsT SeCoNdNaMe' } }, 'day'],
+
+        ['missing part', { body: { version: 1, year: 2022, day: 13, name: 'FiRsT SeCoNdNaMe' } }, 'part'],
+        ['non-numeric part', { body: { version: 1, year: 2022, day: 13, part: '2', name: 'FiRsT SeCoNdNaMe' } }, 'part'],
+        ['unexpected low part', { body: { version: 1, year: 2022, day: 13, part: 0, name: 'FiRsT SeCoNdNaMe' } }, 'part'],
+        ['unexpected high part', { body: { version: 1, year: 2022, day: 13, part: 3, name: 'FiRsT SeCoNdNaMe' } }, 'part'],
+        ['unexpected negative part', { body: { version: 1, year: 2022, day: 13, part: -2, name: 'FiRsT SeCoNdNaMe' } }, 'part'],
+
+        ['missing name', { body: { version: 1, year: 2022, day: 13, part: 2 } }, 'name'],
+        ['non-string name', { body: { version: 1, year: 2022, day: 13, part: 2, name: 123 } }, 'name']
+    ])('fails with %s', async (description, eventPart, errorMatch) => {
+        eventPart.body = JSON.stringify(eventPart.body);
+        const event = {
+            resource: '/start',
+            httpMethod: 'POST',
+            ...eventPart
+        };
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 400,
+            body: expect.stringMatching(errorMatch)
+        });
+
+        expect(times.onStartTime).not.toHaveBeenCalled();
+    });
+
+    test('returns correct error message', async () => {
+        const event = {
+            resource: '/start',
+            httpMethod: 'POST',
+            body: JSON.stringify({
+                version: 9999,
+                year: 2022,
+                day: 13,
+                part: 1,
+                name: 'FiRsT SeCoNdNaMe'
+            })
+        };
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 400,
+            body: JSON.stringify({
+                error: 'Bad Request',
+                details: "Expecting 'version' parameter to be 1",
+                usage:
+`POST https://<hostname>/start
+body: {
+    "version": 1,
+    "year": 2022,
+    "day": 13,
+    "part": 1,
+    "name": "John Smith"
+}`
+            })
+        });
     });
 
     test.each([1, 2])('works with name and part %s', async (part) => {
