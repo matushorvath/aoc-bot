@@ -2,13 +2,14 @@
 
 const { getTelegramSecret } = require('./secrets');
 const { onTelegramUpdate } = require('./telegram');
+const { onStartTime } = require('./times');
 
 class ResultError extends Error {
-    constructor(status, message) {
+    constructor(status, message, data = {}) {
         super(message);
         this.status = status;
         this.message = message;
-        this.body = { error: message };
+        this.body = { error: message, ...data };
     }
 }
 
@@ -26,10 +27,68 @@ const postTelegram = async (event) => {
 
     await validateSecret(event);
 
-    const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
-    await onTelegramUpdate(JSON.parse(body));
+    const body = parseBody(event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body);
+    await onTelegramUpdate(body);
 
     console.log('postTelegram: done');
+
+    return { status: 201 };
+};
+
+const explainError = (details) => {
+    const example = {
+        version: 1,
+        year: 2022,
+        day: 13,
+        part: 1,
+        name: 'John Smith'
+    };
+
+    // TODO fill in the hostname
+    return {
+        details,
+        usage: `POST https://<hostname>/start\nbody: ${example}`
+    };
+};
+
+const parseBody = (body) => {
+    try {
+        return JSON.parse(body);
+    } catch (error) {
+        if (error instanceof SyntaxError) {
+            throw new ResultError(400, 'Bad Request', 'Invalid JSON syntax');
+        }
+        throw error;
+    }
+};
+
+const postStart = async (event) => {
+    console.log('postStart: start');
+
+    const body = parseBody(event.body);
+
+    const { version, year, day, part, name } = body;
+    if (version === undefined || version !== 1) {
+        throw new ResultError(400, 'Bad Request', explainError("Expecting 'version' parameter to be 1"));
+    }
+
+    if (typeof year !== 'number' || year < 2000 || year >= 2100) {
+        throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'year' parameter"));
+    }
+    if (typeof day !== 'number' || day < 0 || day > 25) {
+        throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'day' parameter"));
+    }
+    if (typeof part !== 'number' || (part !== 1 && part !== 2)) {
+        throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'part' parameter"));
+    }
+    if (typeof name !== 'string' && !(name instanceof String)) {
+        throw new ResultError(400, 'Bad Request', explainError("Missing or invalid 'name' parameter"));
+    }
+
+    const ts = Math.floor(Date.now() / 1000);
+    await onStartTime(year, day, part, name, ts);
+
+    console.log('postStart: done');
 
     return { status: 201 };
 };
@@ -57,8 +116,20 @@ const processEvent = async (event) => {
             return postTelegram(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
+    } else if (event.resource === '/start') {
+        if (event.httpMethod === 'POST') {
+            return postStart(event);
+        }
+        throw new ResultError(405, 'Method Not Allowed');
     }
     throw new ResultError(403, 'Forbidden');
+};
+
+const shortenResponse = (response) => {
+    if (!response.body || response.body.length < 65) {
+        return response;
+    }
+    return { ...response, body: response.body.slice(0, 65) + '…' };
 };
 
 const handler = async (event) => {
@@ -67,7 +138,10 @@ const handler = async (event) => {
         const result = await processEvent(event);
         console.log('handler: data response', result);
 
-        return makeResponse(result);
+        const response = makeResponse(result);
+        console.log('handler: data response', shortenResponse(response));
+
+        return response;
     } catch (error) {
         if (error instanceof ResultError) {
             console.log('handler: error response', error);

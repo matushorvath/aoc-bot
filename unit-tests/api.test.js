@@ -8,9 +8,13 @@ jest.mock('../src/secrets');
 const telegram = require('../src/telegram');
 jest.mock('../src/telegram');
 
+const times = require('../src/times');
+jest.mock('../src/times');
+
 beforeEach(() => {
     secrets.getTelegramSecret.mockReset();
     telegram.onTelegramUpdate.mockReset();
+    times.onStartTime.mockReset();
 });
 
 describe('API handler', () => {
@@ -38,14 +42,16 @@ describe('API handler', () => {
         expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
     });
 
-    test('rejects unknown method', async () => {
-        const event = { resource: '/telegram', httpMethod: 'GET' };
+    test.each(['/telegram', '/start'])('rejects unknown method for %s', async (resource) => {
+        const event = { resource, httpMethod: 'GET' };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 405, body: '{"error":"Method Not Allowed"}' });
 
-        expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
         expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(times.onStartTime).not.toHaveBeenCalled();
     });
+});
 
+describe('POST /telegram API', () => {
     test('handles getTelegramSecret throwing', async () => {
         secrets.getTelegramSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
@@ -140,5 +146,63 @@ describe('API handler', () => {
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
         expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
+    });
+});
+
+describe('POST /start API', () => {
+    test.each([
+        ['missing body', {}],
+        ['empty body', { body: {} }],
+
+        ['missing version', { body: { year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['non-numeric version', { body: { version: '1', year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected version', { body: { version: 3, year: 2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+
+        ['missing year', { body: { version: 1, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['non-numeric year', { body: { version: 1, year: '2022', day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected low year', { body: { version: 1, year: 1999, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected high year', { body: { version: 1, year: 2100, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected negative year', { body: { version: 1, year: -2022, day: 13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+
+        ['missing day', { body: { version: 1, year: 2022, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['non-numeric day', { body: { version: 1, year: 2022, day: '13', part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected low day', { body: { version: 1, year: 2022, day: 0, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected high day', { body: { version: 1, year: 2022, day: 26, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected negative day', { body: { version: 1, year: 2022, day: -13, part: 2, name: 'FiRsT SeCoNdNaMe' } }],
+
+        ['missing part', { body: { version: 1, year: 2022, day: 13, name: 'FiRsT SeCoNdNaMe' } }],
+        ['non-numeric part', { body: { version: 1, year: 2022, day: 13, part: '2', name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected low part', { body: { version: 1, year: 2022, day: 13, part: 0, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected high part', { body: { version: 1, year: 2022, day: 13, part: 3, name: 'FiRsT SeCoNdNaMe' } }],
+        ['unexpected negative part', { body: { version: 1, year: 2022, day: 13, part: -2, name: 'FiRsT SeCoNdNaMe' } }],
+
+        ['missing name', { body: { version: 1, year: 2022, day: 13, part: 2 } }],
+        ['non-string name', { body: { version: 1, year: 2022, day: 13, part: 2, name: 123 } }]
+    ])('fails with %s', async (description, eventPart) => {
+        const event = {
+            resource: '/start',
+            httpMethod: 'POST',
+            ...eventPart
+        };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 400 });
+
+        expect(times.onStartTime).not.toHaveBeenCalled();
+    });
+
+    test.each([1, 2])('works with name and part %s', async (part) => {
+        const event = {
+            resource: '/start',
+            httpMethod: 'POST',
+            body: JSON.stringify({
+                version: 1,
+                year: 2022,
+                day: 13,
+                part,
+                name: 'FiRsT SeCoNdNaMe'
+            })
+        };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
+
+        expect(times.onStartTime).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', expect.any(Number));
     });
 });

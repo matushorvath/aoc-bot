@@ -84,6 +84,8 @@ Resources:
         - AttributeName: sk
           KeyType: RANGE
       TableName: aoc-bot
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
   # Rule to regularly trigger AocBotScheduleFunction in December
   AocBotDecemberRule:
@@ -137,6 +139,17 @@ Resources:
           version: !Ref Version
         paths:
           /telegram:
+            post:
+              security:
+                - CustomAuthorizer: []
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
+                  /2015-03-31/functions/${AocBotApiFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+          /start:
             post:
               security:
                 - CustomAuthorizer: []
