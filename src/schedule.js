@@ -2,7 +2,7 @@
 
 const { processInvites } = require('./invites');
 const { getLeaderboard, getStartTimes } = require('./network');
-const { publishBoards } = require('./board-publish');
+const { publishBoards } = require('./publish');
 const { getYears } = require('./years');
 const { logActivity } = require('./logs');
 

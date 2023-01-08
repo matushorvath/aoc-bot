@@ -1,6 +1,6 @@
 'use strict';
 
-const { formatBoard } = require('./board-format');
+const { formatBoard } = require('./board');
 const { sendTelegram } = require('./network');
 const { mapDaysToChats } = require('./invites');
 

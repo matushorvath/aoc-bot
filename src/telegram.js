@@ -2,7 +2,7 @@
 
 const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
 const { updateLeaderboards } = require('./schedule');
-const { formatBoard } = require('./board-format');
+const { formatBoard } = require('./board');
 const { addYear } = require('./years');
 const { enableLogs, disableLogs, logActivity } = require('./logs');
 

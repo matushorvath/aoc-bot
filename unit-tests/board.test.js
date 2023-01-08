@@ -2,7 +2,7 @@
 
 /* eslint-disable max-len */
 
-const { formatBoard } = require('../src/board-format');
+const { formatBoard } = require('../src/board');
 const fsp = require('fs/promises');
 
 jest.useFakeTimers();

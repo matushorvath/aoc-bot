@@ -8,8 +8,8 @@ jest.mock('../src/invites');
 const network = require('../src/network');
 jest.mock('../src/network');
 
-const boardPublish = require('../src/board-publish');
-jest.mock('../src/board-publish');
+const boardPublish = require('../src/publish');
+jest.mock('../src/publish');
 
 const years = require('../src/years');
 jest.mock('../src/years');

@@ -1,9 +1,9 @@
 'use strict';
 
-const { publishBoards } = require('../src/board-publish');
+const { publishBoards } = require('../src/publish');
 
-const boardFormat = require('../src/board-format');
-jest.mock('../src/board-format');
+const boardFormat = require('../src/board');
+jest.mock('../src/board');
 
 const network = require('../src/network');
 jest.mock('../src/network');

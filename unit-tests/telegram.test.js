@@ -8,8 +8,8 @@ jest.mock('@aws-sdk/client-dynamodb');
 const network = require('../src/network');
 jest.mock('../src/network');
 
-const boardFormat = require('../src/board-format');
-jest.mock('../src/board-format');
+const boardFormat = require('../src/board');
+jest.mock('../src/board');
 
 const schedule = require('../src/schedule');
 jest.mock('../src/schedule');
