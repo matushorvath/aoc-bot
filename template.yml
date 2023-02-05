@@ -75,10 +75,14 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: id
           KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
       TableName: aoc-bot
 
   # Rule to regularly trigger AocBotScheduleFunction in December
