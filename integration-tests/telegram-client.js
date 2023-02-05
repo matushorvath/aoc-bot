@@ -17,7 +17,7 @@ class TelegramClient {
 
         let connectionReady = false;
         const onUpdate = (update) => {
-            console.debug('update', update);
+            // console.debug('update', update);
             if (update?._ === 'updateConnectionState' && update?.state?._ === 'connectionStateReady') {
                 connectionReady = true;
             }
@@ -32,7 +32,7 @@ class TelegramClient {
             // TODO this probably happens if we receive connectionStateReady before this.client.on('update', onUpdate)
 
             while (!connectionReady) {
-                console.debug('waiting...', connectionReady);
+                // console.debug('waiting...', connectionReady);
                 await timers.setTimeout(100);
             }
         } finally {
@@ -49,7 +49,7 @@ class TelegramClient {
     async sendReceive(sendText, receiveCount = 1) {
         const messages = [];
         const onUpdate = (update) => {
-            console.debug('update', update);
+            // console.debug('update', update);
             if (update?._ === 'updateNewMessage'
                 && update?.message?.sender_id?._ === 'messageSenderUser'
                 && update?.message?.sender_id?.user_id === this.config.bot.userId) {
@@ -79,7 +79,7 @@ class TelegramClient {
             });
 
             while (messages.length < receiveCount) {
-                console.debug('waiting...', JSON.stringify(messages, undefined, 2));
+                // console.debug('waiting...', JSON.stringify(messages, undefined, 2));
                 await timers.setTimeout(100);
             }
 

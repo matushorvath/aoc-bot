@@ -19,6 +19,8 @@ const yaml = require('yaml');
 const fs = require('fs/promises');
 const path = require('path');
 
+jest.setTimeout(30 * 1000);
+
 let client;
 
 beforeAll(async () => {
