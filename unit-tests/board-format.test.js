@@ -12,7 +12,7 @@ describe('formatBoard', () => {
     let jsonLeaderboard;
 
     beforeAll(async () => {
-        jsonLeaderboard = JSON.parse(await fsp.readFile('./test/board-format.json', 'utf8'));
+        jsonLeaderboard = JSON.parse(await fsp.readFile('./unit-tests/board-format.json', 'utf8'));
     });
 
     test('day 1: person one part1, person two part2', async () => {
