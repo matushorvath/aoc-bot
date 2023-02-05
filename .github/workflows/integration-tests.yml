@@ -1,0 +1,32 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: 1
+  TERM: xterm-color
+
+jobs:
+  test:
+    name: Tntegration Tests
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Setup node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: Install packages
+        run: npm install
+
+      - name: Retrieve secrets
+        run: echo '${{ secrets.INTEGRATION_TEST_CONFIG }}' > ./integration-tests/config.yaml
+
+      - name: Run tests
+        run: npm run integration-tests
