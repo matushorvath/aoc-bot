@@ -29,7 +29,7 @@ jobs:
         run: |
           cat <<< '${{ secrets.INTEGRATION_TESTS_CONFIG }}' > integration-tests/config.yaml
           mkdir _td_database
-          openssl enc -in integration-tests/td.binlog.aes -out _td_database/td.binlog -d -aes256 -pass '${{ secrets.INTEGRATION_TESTS_AES_KEY }}' -pbkdf2
+          openssl enc -in integration-tests/td.binlog.aes -out _td_database/td.binlog -d -aes256 -pass 'pass:${{ secrets.INTEGRATION_TESTS_AES_KEY }}' -pbkdf2
 
       - name: Run tests
         run: npm run integration-tests
