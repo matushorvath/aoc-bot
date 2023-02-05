@@ -78,10 +78,128 @@ test('/status command', async () => {
     }]);
 });
 
-// - board generates a board, with invalid params, with no params, with day,
-//   with year day (both orderings), with 'today'
+describe('/board command', () => {
+    test('with invalid parameters', async () => {
+        await expect(client.sendReceive('/board iNvAlId PaRaMs')).resolves.toMatchObject([{
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: 'Invalid parameters (see /help)'
+                }
+            }
+        }]);
+    });
 
-// - update (no params, bad params, today, day, year, both year day (both orderings)
+    test('with year and day', async () => {
+        await expect(client.sendReceive('/board 2022 13')).resolves.toMatchObject([{
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: expect.stringMatching(/^Deň 13 @ [^]*TrePe0\/aoc-plugin$/)
+                }
+            }
+        }]);
+    });
+});
+
+describe('/update command', () => {
+    test('with invalid parameters', async () => {
+        await expect(client.sendReceive('/update iNvAlId PaRaMs')).resolves.toMatchObject([{
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: 'Invalid parameters (see /help)'
+                }
+            }
+        }]);
+    });
+
+    test('with year', async () => {
+        await expect(client.sendReceive('/update 2022', 3)).resolves.toMatchObject([{
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: 'Processing leaderboards and invites (year 2022)'
+                }
+            }
+        }, {
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: expect.stringMatching(/^Leaderboards updated/)
+                }
+            }
+        }, {
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: "log: Update triggered by user 'Matúš Horváth' (year 2022)"
+                }
+            }
+        }]);
+    });
+
+    test('with year and day', async () => {
+        await expect(client.sendReceive('/update 2022 13', 3)).resolves.toMatchObject([{
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: 'Processing leaderboards and invites (year 2022 day 13)'
+                }
+            }
+        }, {
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: expect.stringMatching(/^Leaderboards updated/)
+                }
+            }
+        }, {
+            sender_id: {
+                user_id: client.config.bot.userId
+            },
+            content: {
+                _: 'messageText',
+                text: {
+                    _: 'formattedText',
+                    text: "log: Update triggered by user 'Matúš Horváth' (year 2022 day 13)"
+                }
+            }
+        }]);
+    });
+});
 
 test('/help command', async () => {
     await expect(client.sendReceive('/help')).resolves.toMatchObject([{
