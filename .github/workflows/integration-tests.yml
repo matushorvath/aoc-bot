@@ -9,7 +9,7 @@ env:
 
 jobs:
   test:
-    name: Tntegration Tests
+    name: Integration Tests
     runs-on: ubuntu-22.04
 
     steps:
@@ -26,7 +26,9 @@ jobs:
         run: npm install
 
       - name: Retrieve secrets
-        run: echo '${{ secrets.INTEGRATION_TEST_CONFIG }}' > ./integration-tests/config.yaml
+        run: |
+          cat <<< '${{ secrets.INTEGRATION_TESTS_CONFIG }}' > './integration-tests/config.yaml'
+          cat './integration-tests/config.yaml'
 
       - name: Run tests
         run: npm run integration-tests
