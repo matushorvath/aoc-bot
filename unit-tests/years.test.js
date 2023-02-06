@@ -24,7 +24,7 @@ describe('getYears', () => {
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'years' } },
+            Key: { id: { S: 'years' }, sk: { S: '0' } },
             ProjectionExpression: 'years'
         });
     });
@@ -36,7 +36,7 @@ describe('getYears', () => {
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'years' } },
+            Key: { id: { S: 'years' }, sk: { S: '0' } },
             ProjectionExpression: 'years'
         });
     });
@@ -55,7 +55,7 @@ describe('addYear', () => {
 
         expect(dynamodb.DynamoDB.prototype.updateItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'years' } },
+            Key: { id: { S: 'years' }, sk: { S: '0' } },
             UpdateExpression: 'ADD years :y',
             ExpressionAttributeValues: {
                 ':y': { NS: ['1815'] }

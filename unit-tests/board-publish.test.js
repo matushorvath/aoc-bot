@@ -100,10 +100,10 @@ describe('publishBoards', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'board:111' } },
-                        { id: { S: 'board:222' } },
-                        { id: { S: 'board:444' } },
-                        { id: { S: 'board:666' } }
+                        { id: { S: 'board' }, sk: { S: '111' } },
+                        { id: { S: 'board' }, sk: { S: '222' } },
+                        { id: { S: 'board' }, sk: { S: '444' } },
+                        { id: { S: 'board' }, sk: { S: '666' } }
                     ],
                     ProjectionExpression: 'chat, message, sha256'
                 }
@@ -114,7 +114,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:111' },
+                id: { S: 'board' },
+                sk: { S: '111' },
                 chat: { N: '111' }
             },
             ConditionExpression: 'attribute_not_exists(id)'
@@ -122,7 +123,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:111' },
+                id: { S: 'board' },
+                sk: { S: '111' },
                 chat: { N: '111' },
                 message: { N: '999999' },
                 sha256: { S: 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE=' }
@@ -133,7 +135,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:444' },
+                id: { S: 'board' },
+                sk: { S: '444' },
                 chat: { N: '444' },
                 message: { N: '888888' },
                 sha256: { S: 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI=' }
@@ -223,9 +226,9 @@ describe('publishBoards', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'board:111' } },
-                        { id: { S: 'board:222' } },
-                        { id: { S: 'board:333' } }
+                        { id: { S: 'board' }, sk: { S: '111' } },
+                        { id: { S: 'board' }, sk: { S: '222' } },
+                        { id: { S: 'board' }, sk: { S: '333' } }
                     ],
                     ProjectionExpression: 'chat, message, sha256'
                 }
@@ -236,7 +239,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:111' },
+                id: { S: 'board' },
+                sk: { S: '111' },
                 chat: { N: '111' }
             },
             ConditionExpression: 'attribute_not_exists(id)'
@@ -244,7 +248,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:222' },
+                id: { S: 'board' },
+                sk: { S: '222' },
                 chat: { N: '222' },
                 message: { N: '777777' },
                 sha256: { S: 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws=' }
@@ -255,7 +260,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:333' },
+                id: { S: 'board' },
+                sk: { S: '333' },
                 chat: { N: '333' }
             },
             ConditionExpression: 'attribute_not_exists(id)'
@@ -303,9 +309,10 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
             RequestItems: {
                 'aoc-bot': {
-                    Keys: [
-                        { id: { S: 'board:111' } }
-                    ],
+                    Keys: [{
+                        id: { S: 'board' },
+                        sk: { S: '111' }
+                    }],
                     ProjectionExpression: 'chat, message, sha256'
                 }
             }
@@ -315,7 +322,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:111' },
+                id: { S: 'board' },
+                sk: { S: '111' },
                 chat: { N: '111' }
             },
             ConditionExpression: 'attribute_not_exists(id)'
@@ -368,9 +376,10 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
             RequestItems: {
                 'aoc-bot': {
-                    Keys: [
-                        { id: { S: 'board:111' } }
-                    ],
+                    Keys: [{
+                        id: { S: 'board' },
+                        sk: { S: '111' }
+                    }],
                     ProjectionExpression: 'chat, message, sha256'
                 }
             }
@@ -380,7 +389,8 @@ describe('publishBoards', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'board:111' },
+                id: { S: 'board' },
+                sk: { S: '111' },
                 chat: { N: '111' },
                 message: { N: '777777' },
                 sha256: { S: 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE=' }

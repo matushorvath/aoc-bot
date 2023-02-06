@@ -38,7 +38,8 @@ const onMyChatMember = async (my_chat_member) => {
     // Store the group info in db
     const params = {
         Item: {
-            id: { S: `chat:${year}:${day}` },
+            id: { S: 'chat' },
+            sk: { S: `${year}:${day}` },
             y: { N: String(year) },
             d: { N: String(day) },
             chat: { N: String(my_chat_member.chat.id) }
@@ -108,7 +109,8 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
     // Store user mapping in db
     const aocParams = {
         Item: {
-            id: { S: `aoc_user:${aocUser}` },
+            id: { S: 'aoc_user' },
+            sk: { S: aocUser },
             aoc_user: { S: aocUser },
             telegram_user: { N: String(telegramUser) }
         },
@@ -118,7 +120,8 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
 
     const telegramParams = {
         Item: {
-            id: { S: `telegram_user:${telegramUser}` },
+            id: { S: 'telegram_user' },
+            sk: { S: String(telegramUser) },
             aoc_user: { S: aocUser },
             telegram_user: { N: String(telegramUser) }
         },
@@ -167,7 +170,10 @@ const deleteUserData = async (telegramUser) => {
     // Find AoC record in database
     const getParams = {
         TableName: DB_TABLE,
-        Key: { id: { S: `telegram_user:${telegramUser}` } },
+        Key: {
+            id: { S: 'telegram_user' },
+            sk: { S: String(telegramUser) }
+        },
         ProjectionExpression: 'aoc_user'
     };
 
@@ -185,11 +191,17 @@ const deleteUserData = async (telegramUser) => {
         RequestItems: {
             [DB_TABLE]: [{
                 DeleteRequest: {
-                    Key: { id: { S: `aoc_user:${aocUser}` } }
+                    Key: {
+                        id: { S: 'aoc_user' },
+                        sk: { S: aocUser }
+                    }
                 }
             }, {
                 DeleteRequest: {
-                    Key: { id: { S: `telegram_user:${telegramUser}` } }
+                    Key: {
+                        id: { S: 'telegram_user' },
+                        sk: { S: String(telegramUser) }
+                    }
                 }
             }]
         }
@@ -283,7 +295,10 @@ const onCommandStatus = async (chat, telegramUser) => {
     // Find AoC record in database
     const getParams = {
         TableName: DB_TABLE,
-        Key: { id: { S: `telegram_user:${telegramUser}` } },
+        Key: {
+            id: { S: 'telegram_user' },
+            sk: { S: String(telegramUser) }
+        },
         ProjectionExpression: 'aoc_user'
     };
 

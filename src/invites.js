@@ -41,7 +41,10 @@ const mapUsers = async (aocUsers) => {
     for (let i = 0; i < aocUsers.length; i += WINDOW) {
         const keys = aocUsers
             .slice(i, i + WINDOW)
-            .map(aocUser => ({ id: { S: `aoc_user:${aocUser}` } }));
+            .map(aocUser => ({
+                id: { S: 'aoc_user' },
+                sk: { S: aocUser }
+            }));
 
         const params = {
             RequestItems: {
@@ -72,7 +75,10 @@ const mapDaysToChats = async (year, days) => {
     for (let i = 0; i < days.length; i += WINDOW) {
         const keys = days
             .slice(i, i + WINDOW)
-            .map(day => ({ id: { S: `chat:${year}:${day}` } }));
+            .map(day => ({
+                id: { S: 'chat' },
+                sk: { S: `${year}:${day}` }
+            }));
 
         const params = {
             RequestItems: {
@@ -104,26 +110,28 @@ const filterSentInvites = async (chats) => {
     for (let i = 0; i < chats.length; i += WINDOW) {
         const keys = chats
             .slice(i, i + WINDOW)
-            .map(({ telegramUser, chat, year, day }) =>
-                ({ id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` } }));
+            .map(({ telegramUser, chat, year, day }) => ({
+                id: { S: 'invite' },
+                sk: { S: `${telegramUser}:${year}:${day}:${chat}` }
+            }));
 
         const params = {
             RequestItems: {
                 [DB_TABLE]: {
                     Keys: keys,
-                    ProjectionExpression: 'id'
+                    ProjectionExpression: 'sk'
                 }
             }
         };
         const data = await db.batchGetItem(params);
 
         for (const item of data.Responses[DB_TABLE]) {
-            sentInvites.add(item.id.S);
+            sentInvites.add(item.sk.S);
         }
     }
 
     const output = chats.filter(({ telegramUser, chat, year, day }) =>
-        !sentInvites.has(`invite:${telegramUser}:${year}:${day}:${chat}`));
+        !sentInvites.has(`${telegramUser}:${year}:${day}:${chat}`));
 
     console.log('filterSentInvites: done');
     return output;
@@ -156,7 +164,8 @@ const filterUsersInChat = async (chats) => {
 const markAsSent = async (telegramUser, year, day, chat) => {
     const params = {
         Item: {
-            id: { S: `invite:${telegramUser}:${year}:${day}:${chat}` },
+            id: { S: 'invite' },
+            sk: { S: `${telegramUser}:${year}:${day}:${chat}` },
             y: { N: String(year) },
             d: { N: String(day) },
             chat: { N: String(chat) }
