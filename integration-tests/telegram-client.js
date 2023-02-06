@@ -46,15 +46,61 @@ class TelegramClient {
         }
     }
 
-    async sendReceive(sendText, receiveCount = 1) {
-        const messages = [];
+    // async sendReceive(sendText, receiveCount = 1) {
+    //     const messages = [];
+    //     const onUpdate = (update) => {
+    //         // console.debug('update', update);
+    //         if (update?._ === 'updateNewMessage'
+    //             && update?.message?.sender_id?._ === 'messageSenderUser'
+    //             && update?.message?.sender_id?.user_id === this.config.bot.userId) {
+
+    //             messages.push(update.message);
+    //         }
+    //     };
+
+    //     try {
+    //         this.client.on('update', onUpdate);
+
+    //         const chat = await this.client.invoke({
+    //             _: 'createPrivateChat',
+    //             user_id: this.config.bot.userId
+    //         });
+
+    //         await this.client.invoke({
+    //             _: 'sendMessage',
+    //             chat_id: chat.id,
+    //             input_message_content: {
+    //                 _: 'inputMessageText',
+    //                 text: {
+    //                     _: 'formattedText',
+    //                     text: sendText
+    //                 }
+    //             }
+    //         });
+
+    //         while (messages.length < receiveCount) {
+    //             // console.debug('waiting...', JSON.stringify(messages, undefined, 2));
+    //             await timers.setTimeout(100);
+    //         }
+
+    //         return messages;
+    //     } finally {
+    //         this.client.off('update', onUpdate);
+    //     }
+    // }
+
+    async sendReceive(sendText, updateFilters) {
+        const updates = {};
+        for (const key in updateFilters) {
+            updates[key] = [];
+        }
+
         const onUpdate = (update) => {
             // console.debug('update', update);
-            if (update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === this.config.bot.userId) {
-
-                messages.push(update.message);
+            for (const [key, [filter]] of Object.entries(updateFilters)) {
+                if (filter(update)) {
+                    updates[key].push(update);
+                }
             }
         };
 
@@ -78,12 +124,12 @@ class TelegramClient {
                 }
             });
 
-            while (messages.length < receiveCount) {
+            while (Object.keys(updates).some(key => updates[key].length < updateFilters[key][1])) {
                 // console.debug('waiting...', JSON.stringify(messages, undefined, 2));
                 await timers.setTimeout(100);
             }
 
-            return messages;
+            return updates;
         } finally {
             this.client.off('update', onUpdate);
         }
