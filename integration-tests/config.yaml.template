@@ -6,3 +6,7 @@ credentials:
 
 bot:
   chatId: <bot-chat-id>
+
+fixtures:
+  testSupergroupId: 1842149447
+  testChatId: -1001842149447

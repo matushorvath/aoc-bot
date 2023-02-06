@@ -6,13 +6,13 @@ const { getTdjson } = require('prebuilt-tdlib');
 const timers = require('timers/promises');
 
 class TelegramClient {
-    constructor(config) {
-        this.config = config;
+    constructor(credentials) {
+        this.credentials = credentials;
     }
 
     async init() {
         const tdlib = new TDLib(getTdjson());
-        this.client = new Client(tdlib, { skipOldUpdates: true, ...this.config.credentials });
+        this.client = new Client(tdlib, { skipOldUpdates: true, ...this.credentials });
         this.client.on('error', console.error);
 
         let connectionReady = false;
@@ -53,7 +53,7 @@ class TelegramClient {
         }
 
         const onUpdate = (update) => {
-            // console.debug('update', update);
+            // console.debug('update', JSON.stringify(update, undefined, 2));
             for (const [key, [filter]] of Object.entries(updateFilters)) {
                 if (filter(update)) {
                     updates[key].push(update);
@@ -66,7 +66,8 @@ class TelegramClient {
 
             await command();
 
-            while (Object.keys(updates).some(key => updates[key].length < updateFilters[key][1])) {
+            let retries = 140;
+            while (retries-- > 0 && Object.keys(updates).some(key => updates[key].length < updateFilters[key][1])) {
                 // console.debug('waiting...', JSON.stringify(messages, undefined, 2));
                 await timers.setTimeout(100);
             }
@@ -79,11 +80,11 @@ class TelegramClient {
         }
     }
 
-    async sendMessage(text, responseCount = 1) {
+    async sendMessage(userId, text, responseCount = 1) {
         const sendMessageToBotCommand = async () => {
             const chat = await this.client.invoke({
                 _: 'createPrivateChat',
-                user_id: this.config.bot.userId
+                user_id: userId
             });
 
             await this.client.invoke({
@@ -102,11 +103,57 @@ class TelegramClient {
         const newMessageFromBotFilter = (update) => {
             return update?._ === 'updateNewMessage'
                 && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === this.config.bot.userId;
+                && update?.message?.sender_id?.user_id === userId;
         };
 
         const updates = await this.sendReceive(sendMessageToBotCommand, {
             botMessages: [newMessageFromBotFilter, responseCount]
+        });
+
+        return updates.botMessages?.map(update => update?.message?.content?.text?.text);
+    }
+
+    async addChatAdmin(userId, chatId) {
+        const addChatAdminCommand = async () => {
+            await this.client.invoke({
+                _: 'addChatMember',
+                chat_id: chatId,
+                user_id: userId
+            });
+
+            await this.client.invoke({
+                _: 'setChatMemberStatus',
+                chat_id: chatId,
+                member_id: {
+                    _: 'messageSenderUser',
+                    user_id: userId
+                },
+                status: {
+                    _: 'chatMemberStatusAdministrator',
+                    can_manage_chat: true,
+                    can_change_info: true,
+                    can_post_messages: true,
+                    can_edit_messages: true,
+                    can_delete_messages: true,
+                    can_invite_users: true,
+                    can_restrict_members: true,
+                    can_pin_messages: true,
+                    can_promote_members: false,
+                    can_manage_video_chats: true,
+                    is_anonymous: false
+                }
+            });
+        };
+
+        const newChatMessageFromBotFilter = (update) => {
+            return update?._ === 'updateNewMessage'
+                && update?.message?.sender_id?._ === 'messageSenderUser'
+                && update?.message?.sender_id?.user_id === userId
+                && update?.message?.chat_id === chatId;
+        };
+
+        const updates = await this.sendReceive(addChatAdminCommand, {
+            botMessages: [newChatMessageFromBotFilter, 1]
         });
 
         return updates.botMessages?.map(update => update?.message?.content?.text?.text);
