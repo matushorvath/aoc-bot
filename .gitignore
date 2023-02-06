@@ -3,4 +3,4 @@ node_modules/
 aoc-bot-*.zip
 _td_files
 _td_database
-integration-tests/config.yaml
+integration-tests/credentials.yaml

@@ -1,8 +1,8 @@
 # Configuration
 
 1. Register the telegram application using https://my.telegram.org/apps.
-1. Save the API id and API hash you receive to config.yaml (created from config.yaml.template).
-   Save config.yaml as INTEGRATION_TESTS_CONFIG GitHub secret.
+1. Save the API id and API hash you receive to credentials.yaml (created from credentials.yaml.template).
+   Save credentials.yaml as INTEGRATION_TESTS_CREDENTIALS GitHub secret.
 1. Run a tdlib-based Telegram client once, to log in using your phone and one-time key.
 1. Generate a large random password:
    Save the password as INTEGRATION_TESTS_AES_KEY GitHub secret.
