@@ -2,9 +2,6 @@
 
 // TODO
 
-// - remove bot from chat before adding, ignoring failures
-// - remove bot from chat after adding
-
 // - reg (invalid arguments, valid arguments)
 // - reg with new user, already known user
 // - unreg when regged, when not regged
@@ -110,9 +107,17 @@ test('/help command', async () => {
 });
 
 describe('chat membership', () => {
+    beforeAll(async () => {
+        await client.removeChatMember(botUserId, testChatId);
+    });
+
     test('add bot to chat as admin', async () => {
         await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toMatchObject([
             '@AocElfBot is online, AoC 1980 Day 13'
         ]);
+    });
+
+    test('remove bot from chat', async () => {
+        await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
     });
 });

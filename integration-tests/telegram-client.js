@@ -17,7 +17,7 @@ class TelegramClient {
 
         let connectionReady = false;
         const onUpdate = (update) => {
-            // console.debug('update', update);
+            // console.debug(JSON.stringify(update, undefined, 2));
             if (update?._ === 'updateConnectionState' && update?.state?._ === 'connectionStateReady') {
                 connectionReady = true;
             }
@@ -28,11 +28,7 @@ class TelegramClient {
 
             await this.client.login();
 
-            // TODO there is some kind of race condition here, sometimes we never receive connectionStateReady
-            // TODO this probably happens if we receive connectionStateReady before this.client.on('update', onUpdate)
-
             while (!connectionReady) {
-                // console.debug('waiting...', connectionReady);
                 await timers.setTimeout(100);
             }
         } finally {
@@ -53,7 +49,7 @@ class TelegramClient {
         }
 
         const onUpdate = (update) => {
-            // console.debug('update', JSON.stringify(update, undefined, 2));
+            // console.debug(JSON.stringify(update, undefined, 2));
             for (const [key, [filter]] of Object.entries(updateFilters)) {
                 if (filter(update)) {
                     updates[key].push(update);
@@ -68,13 +64,10 @@ class TelegramClient {
 
             let retries = 140;
             while (retries-- > 0 && Object.keys(updates).some(key => updates[key].length < updateFilters[key][1])) {
-                // console.debug('waiting...', JSON.stringify(messages, undefined, 2));
                 await timers.setTimeout(100);
             }
 
             return updates;
-        } catch (e) {
-            throw e;
         } finally {
             this.client.off('update', onUpdate);
         }
@@ -158,7 +151,32 @@ class TelegramClient {
 
         return updates.botMessages?.map(update => update?.message?.content?.text?.text);
     }
-};
+
+    async removeChatMember(userId, chatId) {
+        const removeChatMemberCommand = async () => {
+            await this.client.invoke({
+                _: 'setChatMemberStatus',
+                chat_id: chatId,
+                member_id: {
+                    _: 'messageSenderUser',
+                    user_id: userId
+                },
+                status: {
+                    _: 'chatMemberStatusLeft'
+                }
+            });
+        };
+
+        const oneAdminInSupergroupFilter = (update) => {
+            return update?._ === 'updateSupergroupFullInfo'
+                && update?.supergroup_full_info?.administrator_count === 1;
+        };
+
+        await this.sendReceive(removeChatMemberCommand, {
+            botMessages: [oneAdminInSupergroupFilter, 1]
+        });
+    }
+}
 
 module.exports = {
     TelegramClient
