@@ -51,249 +51,60 @@ afterAll(async () => {
     }
 });
 
-const newMessageFromBotFilter = update =>
-    update?._ === 'updateNewMessage'
-    && update?.message?.sender_id?._ === 'messageSenderUser'
-    && update?.message?.sender_id?.user_id === config.bot.userId;
-
 test('unknown command', async () => {
-    const params = {
-        botMessages: [newMessageFromBotFilter, 1]
-    };
-
-    await expect(client.sendReceive('uNkNoWn CoMmAnD', params)).resolves.toMatchObject({
-        botMessages: [{
-            message: {
-                sender_id: {
-                    user_id: config.bot.userId
-                },
-                content: {
-                    _: 'messageText',
-                    text: {
-                        _: 'formattedText',
-                        text: "Sorry, I don't understand that command"
-                    }
-                }
-            }
-        }]
-    });
+    await expect(client.sendMessage('uNkNoWn CoMmAnD')).resolves.toMatchObject([
+        "Sorry, I don't understand that command"
+    ]);
 });
 
 test('/status command', async () => {
-    const params = {
-        botMessages: [newMessageFromBotFilter, 1]
-    };
-
-    await expect(client.sendReceive('/status', params)).resolves.toMatchObject({
-        botMessages: [{
-            message: {
-                sender_id: {
-                    user_id: config.bot.userId
-                },
-                content: {
-                    _: 'messageText',
-                    text: {
-                        _: 'formattedText',
-                        text: "You are registered as AoC user 'Matúš Horváth'"
-                    }
-                }
-            }
-        }]
-    });
+    await expect(client.sendMessage('/status')).resolves.toMatchObject([
+        "You are registered as AoC user 'Matúš Horváth'"
+    ]);
 });
 
 describe('/board command', () => {
     test('with invalid parameters', async () => {
-        const params = {
-            botMessages: [newMessageFromBotFilter, 1]
-        };
-
-        await expect(client.sendReceive('/board iNvAlId PaRaMs', params)).resolves.toMatchObject({
-            botMessages: [{
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: 'Invalid parameters (see /help)'
-                        }
-                    }
-                }
-            }]
-        });
+        await expect(client.sendMessage('/board iNvAlId PaRaMs')).resolves.toMatchObject([
+            'Invalid parameters (see /help)'
+        ]);
     });
 
     test('with year and day', async () => {
-        const params = {
-            botMessages: [newMessageFromBotFilter, 1]
-        };
-
-        await expect(client.sendReceive('/board 2022 13', params)).resolves.toMatchObject({
-            botMessages: [{
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: expect.stringMatching(/^Deň 13 @ [^]*TrePe0\/aoc-plugin$/)
-                        }
-                    }
-                }
-            }]
-        });
+        await expect(client.sendMessage('/board 2022 13')).resolves.toMatchObject([
+            expect.stringMatching(/^Deň 13 @ [^]*TrePe0\/aoc-plugin$/)
+        ]);
     });
 });
 
 describe('/update command', () => {
     test('with invalid parameters', async () => {
-        const params = {
-            botMessages: [newMessageFromBotFilter, 1]
-        };
-
-        await expect(client.sendReceive('/update iNvAlId PaRaMs', params)).resolves.toMatchObject({
-            botMessages: [{
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: 'Invalid parameters (see /help)'
-                        }
-                    }
-                }
-            }]
-        });
+        await expect(client.sendMessage('/update iNvAlId PaRaMs')).resolves.toMatchObject([
+            'Invalid parameters (see /help)'
+        ]);
     });
 
     test('with year', async () => {
-        const params = {
-            botMessages: [newMessageFromBotFilter, 3]
-        };
-
-        await expect(client.sendReceive('/update 2022', params)).resolves.toMatchObject({
-            botMessages: [{
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: 'Processing leaderboards and invites (year 2022)'
-                        }
-                    }
-                }
-            }, {
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: expect.stringMatching(/^Leaderboards updated/)
-                        }
-                    }
-                }
-            }, {
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: "log: Update triggered by user 'Matúš Horváth' (year 2022)"
-                        }
-                    }
-                }
-            }]
-        });
+        await expect(client.sendMessage('/update 2022', 3)).resolves.toMatchObject([
+            'Processing leaderboards and invites (year 2022)',
+            expect.stringMatching(/^Leaderboards updated/),
+            "log: Update triggered by user 'Matúš Horváth' (year 2022)"
+        ]);
     });
 
     test('with year and day', async () => {
-        const params = {
-            botMessages: [newMessageFromBotFilter, 3]
-        };
-
-        await expect(client.sendReceive('/update 2022 13', params)).resolves.toMatchObject({
-            botMessages: [{
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: 'Processing leaderboards and invites (year 2022 day 13)'
-                        }
-                    }
-                }
-            }, {
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: expect.stringMatching(/^Leaderboards updated/)
-                        }
-                    }
-                }
-            }, {
-                message: {
-                    sender_id: {
-                        user_id: config.bot.userId
-                    },
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            _: 'formattedText',
-                            text: "log: Update triggered by user 'Matúš Horváth' (year 2022 day 13)"
-                        }
-                    }
-                }
-            }]
-        });
+        await expect(client.sendMessage('/update 2022 13', 3)).resolves.toMatchObject([
+            'Processing leaderboards and invites (year 2022 day 13)',
+            expect.stringMatching(/^Leaderboards updated/),
+            "log: Update triggered by user 'Matúš Horváth' (year 2022 day 13)"
+        ]);
     });
 });
 
 test('/help command', async () => {
-    const params = {
-        botMessages: [newMessageFromBotFilter, 1]
-    };
-
-    await expect(client.sendReceive('/help', params)).resolves.toMatchObject({
-        botMessages: [{
-            message: {
-                sender_id: {
-                    user_id: config.bot.userId
-                },
-                content: {
-                    _: 'messageText',
-                    text: {
-                        _: 'formattedText',
-                        text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\.$/)
-                    }
-                }
-            }
-        }]
-    });
+    await expect(client.sendMessage('/help')).resolves.toMatchObject([
+        expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\.$/)
+    ]);
 });
 
 // describe('chat membership', () => {
