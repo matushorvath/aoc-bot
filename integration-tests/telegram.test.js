@@ -20,21 +20,24 @@ const path = require('path');
 
 jest.setTimeout(15 * 1000);
 
-const loadConfigYaml = async () => {
+// Telegram ids to use for testing
+const botUserId = 5071613978;
+const testChatId = -1001842149447;
+
+const loadCredentials = async () => {
     try {
-        return yaml.parse(await fs.readFile(path.join(__dirname, 'config.yaml'), 'utf-8'));
+        return yaml.parse(await fs.readFile(path.join(__dirname, 'credentials.yaml'), 'utf-8'));
     } catch (e) {
-        console.error('You need to create config.yaml using config.yaml.template');
+        console.error('You need to create credentials.yaml using credentials.yaml.template');
         throw e;
     }
 };
 
-let config;
 let client;
 
 beforeAll(async () => {
-    config = await loadConfigYaml();
-    client = new TelegramClient(config.credentials);
+    const credentials = await loadCredentials();
+    client = new TelegramClient(credentials);
 
     try {
         await client.init();
@@ -51,26 +54,26 @@ afterAll(async () => {
 });
 
 test('unknown command', async () => {
-    await expect(client.sendMessage(config.bot.userId, 'uNkNoWn CoMmAnD')).resolves.toMatchObject([
+    await expect(client.sendMessage(botUserId, 'uNkNoWn CoMmAnD')).resolves.toMatchObject([
         "Sorry, I don't understand that command"
     ]);
 });
 
 test('/status command', async () => {
-    await expect(client.sendMessage(config.bot.userId, '/status')).resolves.toMatchObject([
+    await expect(client.sendMessage(botUserId, '/status')).resolves.toMatchObject([
         "You are registered as AoC user 'Matúš Horváth'"
     ]);
 });
 
 describe('/board command', () => {
     test('with invalid parameters', async () => {
-        await expect(client.sendMessage(config.bot.userId, '/board iNvAlId PaRaMs')).resolves.toMatchObject([
+        await expect(client.sendMessage(botUserId, '/board iNvAlId PaRaMs')).resolves.toMatchObject([
             'Invalid parameters (see /help)'
         ]);
     });
 
     test('with year and day', async () => {
-        await expect(client.sendMessage(config.bot.userId, '/board 2022 13')).resolves.toMatchObject([
+        await expect(client.sendMessage(botUserId, '/board 2022 13')).resolves.toMatchObject([
             expect.stringMatching(/^Deň 13 @ [^]*TrePe0\/aoc-plugin$/)
         ]);
     });
@@ -78,13 +81,13 @@ describe('/board command', () => {
 
 describe('/update command', () => {
     test('with invalid parameters', async () => {
-        await expect(client.sendMessage(config.bot.userId, '/update iNvAlId PaRaMs')).resolves.toMatchObject([
+        await expect(client.sendMessage(botUserId, '/update iNvAlId PaRaMs')).resolves.toMatchObject([
             'Invalid parameters (see /help)'
         ]);
     });
 
     test('with year', async () => {
-        await expect(client.sendMessage(config.bot.userId, '/update 2022', 3)).resolves.toMatchObject([
+        await expect(client.sendMessage(botUserId, '/update 2022', 3)).resolves.toMatchObject([
             'Processing leaderboards and invites (year 2022)',
             expect.stringMatching(/^Leaderboards updated/),
             "log: Update triggered by user 'Matúš Horváth' (year 2022)"
@@ -92,7 +95,7 @@ describe('/update command', () => {
     });
 
     test('with year and day', async () => {
-        await expect(client.sendMessage(config.bot.userId, '/update 2022 13', 3)).resolves.toMatchObject([
+        await expect(client.sendMessage(botUserId, '/update 2022 13', 3)).resolves.toMatchObject([
             'Processing leaderboards and invites (year 2022 day 13)',
             expect.stringMatching(/^Leaderboards updated/),
             "log: Update triggered by user 'Matúš Horváth' (year 2022 day 13)"
@@ -101,14 +104,14 @@ describe('/update command', () => {
 });
 
 test('/help command', async () => {
-    await expect(client.sendMessage(config.bot.userId, '/help')).resolves.toMatchObject([
+    await expect(client.sendMessage(botUserId, '/help')).resolves.toMatchObject([
         expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\.$/)
     ]);
 });
 
 describe('chat membership', () => {
     test('add bot to chat as admin', async () => {
-        await expect(client.addChatAdmin(config.bot.userId, config.fixtures.testChatId)).resolves.toMatchObject([
+        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toMatchObject([
             '@AocElfBot is online, AoC 1980 Day 13'
         ]);
     });
