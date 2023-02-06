@@ -129,8 +129,11 @@ describe('processInvites', () => {
         // filterSentInvites
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
-                'aoc-bot': [{ id: { S: 'invite:5454:2021:5:50505' } }]
-                // invite:5858:2021:5:50505 is not here, because we simulate that
+                'aoc-bot': [{
+                    id: { S: 'invite' },
+                    sk: { S: '5454:2021:5:50505' }
+                }]
+                // invite 5858:2021:5:50505 is not here, because we simulate that
                 // the database record appeared while we were processing invites
             }
         });
@@ -210,16 +213,16 @@ describe('processInvites', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'aoc_user:nAmE31' } },
-                        { id: { S: 'aoc_user:nAmE32' } },
-                        { id: { S: 'aoc_user:nAmE51' } },
-                        { id: { S: 'aoc_user:nAmE52' } },
-                        { id: { S: 'aoc_user:nAmE53' } },
-                        { id: { S: 'aoc_user:nAmE54' } },
-                        { id: { S: 'aoc_user:nAmE55' } },
-                        { id: { S: 'aoc_user:nAmE56' } },
-                        { id: { S: 'aoc_user:nAmE57' } },
-                        { id: { S: 'aoc_user:nAmE58' } }
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE31' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE32' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE51' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE52' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE53' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE54' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE55' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE56' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE57' } },
+                        { id: { S: 'aoc_user' }, sk: { S: 'nAmE58' } }
                     ],
                     ProjectionExpression: 'aoc_user, telegram_user'
                 }
@@ -231,12 +234,12 @@ describe('processInvites', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'chat:2021:5' } },
-                        { id: { S: 'chat:2021:11' } },
-                        { id: { S: 'chat:2021:7' } },
-                        { id: { S: 'chat:2021:13' } },
-                        // chat:2021:17 is missing, nobody got 17 part 2
-                        { id: { S: 'chat:2021:25' } }
+                        { id: { S: 'chat' }, sk: { S: '2021:5' } },
+                        { id: { S: 'chat' }, sk: { S: '2021:11' } },
+                        { id: { S: 'chat' }, sk: { S: '2021:7' } },
+                        { id: { S: 'chat' }, sk: { S: '2021:13' } },
+                        // chat 2021:17 is missing, nobody got 17 part 2
+                        { id: { S: 'chat' }, sk: { S: '2021:25' } }
                     ],
                     ProjectionExpression: 'd, chat'
                 }
@@ -248,20 +251,20 @@ describe('processInvites', () => {
             RequestItems: {
                 'aoc-bot': {
                     Keys: [
-                        { id: { S: 'invite:3131:2021:5:50505' } },
-                        { id: { S: 'invite:3131:2021:11:111111' } },
-                        { id: { S: 'invite:3232:2021:7:70707' } },
-                        { id: { S: 'invite:3232:2021:13:131313' } },
-                        // invite:5151:2021:5:50505 is missing, user nAmE51 has no telegram account in db
-                        { id: { S: 'invite:5252:2021:5:50505' } },
-                        { id: { S: 'invite:5353:2021:5:50505' } },
-                        { id: { S: 'invite:5454:2021:5:50505' } },
-                        { id: { S: 'invite:5555:2021:5:50505' } },
-                        { id: { S: 'invite:5656:2021:5:50505' } },
-                        { id: { S: 'invite:5757:2021:25:252525' } },
-                        { id: { S: 'invite:5858:2021:5:50505' } }
+                        { id: { S: 'invite' }, sk: { S: '3131:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '3131:2021:11:111111' } },
+                        { id: { S: 'invite' }, sk: { S: '3232:2021:7:70707' } },
+                        { id: { S: 'invite' }, sk: { S: '3232:2021:13:131313' } },
+                        // invite 5151:2021:5:50505 is missing, user nAmE51 has no telegram account in db
+                        { id: { S: 'invite' }, sk: { S: '5252:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '5353:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '5454:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '5555:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '5656:2021:5:50505' } },
+                        { id: { S: 'invite' }, sk: { S: '5757:2021:25:252525' } },
+                        { id: { S: 'invite' }, sk: { S: '5858:2021:5:50505' } }
                     ],
-                    ProjectionExpression: 'id'
+                    ProjectionExpression: 'sk'
                 }
             }
         });
@@ -287,7 +290,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(1, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:3131:2021:5:50505' },
+                id: { S: 'invite' },
+                sk: { S: '3131:2021:5:50505' },
                 y: { N: '2021' },
                 d: { N: '5' },
                 chat: { N: '50505' }
@@ -297,7 +301,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:3131:2021:11:111111' },
+                id: { S: 'invite' },
+                sk: { S: '3131:2021:11:111111' },
                 y: { N: '2021' },
                 d: { N: '11' },
                 chat: { N: '111111' }
@@ -307,7 +312,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(3, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:3232:2021:7:70707' },
+                id: { S: 'invite' },
+                sk: { S: '3232:2021:7:70707' },
                 y: { N: '2021' },
                 d: { N: '7' },
                 chat: { N: '70707' }
@@ -317,7 +323,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(4, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:5555:2021:5:50505' },
+                id: { S: 'invite' },
+                sk: { S: '5555:2021:5:50505' },
                 y: { N: '2021' },
                 d: { N: '5' },
                 chat: { N: '50505' }
@@ -327,7 +334,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(5, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:5656:2021:5:50505' },
+                id: { S: 'invite' },
+                sk: { S: '5656:2021:5:50505' },
                 y: { N: '2021' },
                 d: { N: '5' },
                 chat: { N: '50505' }
@@ -337,7 +345,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(6, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:5757:2021:25:252525' },
+                id: { S: 'invite' },
+                sk: { S: '5757:2021:25:252525' },
                 y: { N: '2021' },
                 d: { N: '25' },
                 chat: { N: '252525' }
@@ -347,7 +356,8 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenNthCalledWith(7, {
             TableName: 'aoc-bot',
             Item: {
-                id: { S: 'invite:5858:2021:5:50505' },
+                id: { S: 'invite' },
+                sk: { S: '5858:2021:5:50505' },
                 y: { N: '2021' },
                 d: { N: '5' },
                 chat: { N: '50505' }
@@ -518,7 +528,10 @@ describe('processInvites', () => {
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(2, {
             RequestItems: {
                 'aoc-bot': {
-                    Keys: [{ id: { S: 'chat:2020:1' } }],
+                    Keys: [{
+                        id: { S: 'chat' },
+                        sk: { S: '2020:1' }
+                    }],
                     ProjectionExpression: 'd, chat'
                 }
             }

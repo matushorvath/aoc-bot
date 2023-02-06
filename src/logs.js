@@ -12,7 +12,10 @@ const enableLogs = async (chat) => {
     // Add chat to the set
     const params = {
         TableName: DB_TABLE,
-        Key: { id: { S: 'logs' } },
+        Key: {
+            id: { S: 'logs' },
+            sk: { S: '0' }
+        },
         UpdateExpression: 'ADD chats :c',
         ExpressionAttributeValues: {
             ':c': { NS: [String(chat)] }
@@ -30,7 +33,10 @@ const disableLogs = async (chat) => {
     // Add chat to the set
     const params = {
         TableName: DB_TABLE,
-        Key: { id: { S: 'logs' } },
+        Key: {
+            id: { S: 'logs' },
+            sk: { S: '0' }
+        },
         UpdateExpression: 'DELETE chats :c',
         ExpressionAttributeValues: {
             ':c': { NS: [String(chat)] }
@@ -69,7 +75,10 @@ const getChats = async () => {
     // Load list of years from db
     const params = {
         TableName: DB_TABLE,
-        Key: { id: { S: 'logs' } },
+        Key: {
+            id: { S: 'logs' },
+            sk: { S: '0' }
+        },
         ProjectionExpression: 'chats'
     };
 

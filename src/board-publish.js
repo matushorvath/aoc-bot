@@ -88,7 +88,10 @@ const mapChatsToMessages = async (chatData) => {
     for (let i = 0; i < chatData.length; i += WINDOW) {
         const keys = chatData
             .slice(i, i + WINDOW)
-            .map(({ chat }) => ({ id: { S: `board:${chat}` } }));
+            .map(({ chat }) => ({
+                id: { S: 'board' },
+                sk: { S: String(chat) }
+            }));
 
         const params = {
             RequestItems: {
@@ -117,7 +120,8 @@ const lockBoardMessage = async (chat) => {
     const params = {
         TableName: DB_TABLE,
         Item: {
-            id: { S: `board:${chat}` },
+            id: { S: 'board' },
+            sk: { S: String(chat) },
             chat: { N: String(chat) }
         },
         ConditionExpression: 'attribute_not_exists(id)'
@@ -143,7 +147,8 @@ const saveBoardMessage = async (chat, message, hash) => {
     const params = {
         TableName: DB_TABLE,
         Item: {
-            id: { S: `board:${chat}` },
+            id: { S: 'board' },
+            sk: { S: String(chat) },
             chat: { N: String(chat) },
             message: { N: String(message) },
             sha256: { S: hash }

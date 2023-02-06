@@ -146,7 +146,8 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
                 Item: {
-                    id: { S: 'chat:1980:13' },
+                    id: { S: 'chat' },
+                    sk: { S: '1980:13' },
                     y: { N: '1980' },
                     d: { N: '13' },
                     chat: { N: '-4242' }
@@ -173,7 +174,8 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
                 Item: {
-                    id: { S: 'chat:1980:13' },
+                    id: { S: 'chat' },
+                    sk: { S: '1980:13' },
                     y: { N: '1980' },
                     d: { N: '13' },
                     chat: { N: '-4242' }
@@ -221,7 +223,8 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
                 Item: {
-                    id: { S: 'chat:1980:13' },
+                    id: { S: 'chat' },
+                    sk: { S: '1980:13' },
                     y: { N: '1980' },
                     d: { N: '13' },
                     chat: { N: '-4242' }
@@ -351,7 +354,10 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
@@ -380,15 +386,18 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
                     ]
                 }
             });
@@ -413,7 +422,7 @@ describe('onTelegramUpdate', () => {
             dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
                 UnprocessedItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
                     ]
                 }
             });
@@ -423,15 +432,18 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
                     ]
                 }
             });
@@ -460,7 +472,10 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
@@ -487,15 +502,18 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
                     ]
                 }
             });
@@ -521,7 +539,7 @@ describe('onTelegramUpdate', () => {
             dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
                 UnprocessedItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
                     ]
                 }
             });
@@ -531,15 +549,18 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
             expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
                 RequestItems: {
                     'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user:OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user:7878' } } } }
+                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
                     ]
                 }
             });
@@ -740,7 +761,10 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: {
+                    id: { S: 'telegram_user' },
+                    sk: { S: '7878' }
+                },
                 ProjectionExpression: 'aoc_user'
             });
 
@@ -764,7 +788,7 @@ describe('onTelegramUpdate', () => {
 
             expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
                 TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user:7878' } },
+                Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } },
                 ProjectionExpression: 'aoc_user'
             });
 

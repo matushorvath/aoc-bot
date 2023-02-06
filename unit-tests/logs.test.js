@@ -29,7 +29,7 @@ describe('logActivity', () => {
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'logs' } },
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
             ProjectionExpression: 'chats'
         });
         expect(network.sendTelegram).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe('logActivity', () => {
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'logs' } },
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
             ProjectionExpression: 'chats'
         });
 
@@ -69,7 +69,7 @@ describe('logActivity', () => {
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'logs' } },
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
             ProjectionExpression: 'chats'
         });
 
@@ -94,7 +94,7 @@ describe('enableLogs', () => {
 
         expect(dynamodb.DynamoDB.prototype.updateItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'logs' } },
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
             UpdateExpression: 'ADD chats :c',
             ExpressionAttributeValues: {
                 ':c': { NS: ['32'] }
@@ -117,7 +117,7 @@ describe('disableLogs', () => {
 
         expect(dynamodb.DynamoDB.prototype.updateItem).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            Key: { id: { S: 'logs' } },
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
             UpdateExpression: 'DELETE chats :c',
             ExpressionAttributeValues: {
                 ':c': { NS: ['76'] }

@@ -11,7 +11,10 @@ const getYears = async () => {
     // Load list of years from db
     const params = {
         TableName: DB_TABLE,
-        Key: { id: { S: 'years' } },
+        Key: {
+            id: { S: 'years' },
+            sk: { S: '0' }
+        },
         ProjectionExpression: 'years'
     };
 
@@ -28,7 +31,10 @@ const addYear = async (year) => {
     // Add year to the set
     const params = {
         TableName: DB_TABLE,
-        Key: { id: { S: 'years' } },
+        Key: {
+            id: { S: 'years' },
+            sk: { S: '0' }
+        },
         UpdateExpression: 'ADD years :y',
         ExpressionAttributeValues: {
             ':y': { NS: [String(year)] }
