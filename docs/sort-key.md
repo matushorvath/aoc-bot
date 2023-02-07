@@ -30,9 +30,6 @@ id: { S: `telegram_user:${telegramUser}` }
 id: { S: 'telegram_user' }, sk: { S: String(telegramUser) }
 ```
 
-// TODO probably can multiple objects for the whole year now, with sort key  
-// TODO logs and years can be refactored to use individual records, not one huge json  
-
 ## Edit Data
 
 ```sh
