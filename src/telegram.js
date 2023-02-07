@@ -1,6 +1,6 @@
 'use strict';
 
-const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
+const { sendTelegram, getLeaderboard } = require('./network');
 const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./board');
 const { addYear } = require('./years');
@@ -275,6 +275,7 @@ const onCommandBoard = async (chat, params) => {
         return;
     }
 
+    // TODO call times.js/loadTimes, with exact year day
     const startTimes = await getStartTimes();
     const board = formatBoard(selection.year, selection.day, leaderboard, startTimes);
 

@@ -1,27 +1,41 @@
 'use strict';
 
-// const { DynamoDB } = require('@aws-sdk/client-dynamodb');
-// const { v4: uuidv4 } = require('uuid');
+const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
-// const DB_TABLE = 'aoc-redirect';
-// const db = new DynamoDB({ apiVersion: '2012-08-10' });
+const DB_TABLE = 'aoc-bot';
+const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-// const saveTime = async (year, day, part, name, ts) => {
-//     const params = {
-//         Item: {
-//             day: { N: String(day) },
-//             name: { S: name },
-//             ts: { N: String(ts) },
-//             uuid: { S: uuidv4() },
-//             year: { N: String(year) },
-//             part: { N: String(part) }
-//         },
-//         TableName: DB_TABLE
-//     };
+const onStartTime = async (year, day, part, name, ts) => {
+    const params = {
+        Item: {
+            id: { S: 'times' },
+            sk: { S: `${year}:${day}:${part}:${name}` },
+            year: { N: String(year) },
+            day: { N: String(day) },
+            part: { N: String(part) },
+            name: { S: name },
+            ts: { N: String(ts) }
+        },
+        TableName: DB_TABLE,
+        ConditionExpression: 'attribute_not_exists(id)'
+    };
 
-//     await db.putItem(params);
-// };
+    try {
+        await db.putItem(params);
+    } catch (e) {
+        if (e.name === 'ConditionalCheckFailedException') {
+            console.log(`onStartTime: already have start time for ${year} ${day} ${part} ${name}`);
+            return false;
+        }
+        throw e;
+    }
 
+    console.log(`onStartTime: saved ${year} ${day} ${part} ${name} ${ts}`);
+    return true;
+};
+
+
+// TODO this should take year, day parameters, be called per day from a different place in code
 // const loadTimes = async () => {
 //     const params = {
 //         TableName: DB_TABLE
@@ -57,9 +71,5 @@
 // };
 
 // exports.loadTimes = loadTimes;
-
-
-const onStartTime = (/*year, day, part, name, ts*/) => {
-};
 
 exports.onStartTime = onStartTime;
