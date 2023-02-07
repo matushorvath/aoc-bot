@@ -8,7 +8,7 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 const onStartTime = async (year, day, part, name, ts) => {
     const params = {
         Item: {
-            id: { S: 'times' },
+            id: { S: 'start_time' },
             sk: { S: `${year}:${day}:${part}:${name}` },
             year: { N: String(year) },
             day: { N: String(day) },
@@ -35,35 +35,36 @@ const onStartTime = async (year, day, part, name, ts) => {
 };
 
 const loadStartTimes = async (year, day) => {
-    const params = {
+    const commonParams = {
         TableName: DB_TABLE,
         KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
         ExpressionAttributeValues: {
-            ':id': { S: 'times' },
+            ':id': { S: 'start_time' },
             ':sk': { S: `${year}:${day}` }
         },
         ProjectionExpression: 'name, part, ts',
         Limit: 10 // TODO remove this limit, it's just here to test paging
     };
 
-    const times = {};
+    const startTimes = {};
 
     let data;
     while (!data || data.LastEvaluatedKey) {
+        const params = { ...commonParams };
         if (data?.LastEvaluatedKey) {
             params.ExclusiveStartKey = data.LastEvaluatedKey;
         }
         data = await db.query(params);
 
         for (const item of data.Items) {
-            if (!times[item.name.S]) {
-                times[item.name.S] = {};
+            if (!startTimes[item.name.S]) {
+                startTimes[item.name.S] = {};
             }
-            times[item.name.S][item.part.N] = parseInt(item.ts.N, 10);
+            startTimes[item.name.S][item.part.N] = parseInt(item.ts.N, 10);
         }
     }
 
-    return times;
+    return startTimes;
 };
 
 exports.loadStartTimes = loadStartTimes;

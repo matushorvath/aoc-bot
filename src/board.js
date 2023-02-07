@@ -62,7 +62,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
     let line = `${result.name.padStart(16)} ${ots1d} ${ots2d} (${odiffd})`;
 
     if (dayStartTimes?.[1]) {
-        const start1 = Math.min(...dayStartTimes[1]);
+        const start1 = dayStartTimes[1];
         const ots1 = result.ts1 - start1;
         const ots2 = result.ts2 - start1;
 
@@ -72,7 +72,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
             line += ` [${nts1d} ${nts2d}`;
 
             if (dayStartTimes?.[2]) {
-                const start2 = Math.min(...dayStartTimes[2]);
+                const start2 = dayStartTimes[2];
                 const ndiff = result.ts2 - start2;
 
                 if (ndiff > 0) {
