@@ -34,42 +34,37 @@ const onStartTime = async (year, day, part, name, ts) => {
     return true;
 };
 
+const loadStartTimes = async (year, day) => {
+    const params = {
+        TableName: DB_TABLE,
+        KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+        ExpressionAttributeValues: {
+            ':id': { S: 'times' },
+            ':sk': { S: `${year}:${day}` }
+        },
+        ProjectionExpression: 'name, part, ts',
+        Limit: 10 // TODO remove this limit, it's just here to test paging
+    };
 
-// TODO this should take year, day parameters, be called per day from a different place in code
-// const loadTimes = async () => {
-//     const params = {
-//         TableName: DB_TABLE
-//     };
-//     const data = await db.scan(params);
+    const times = {};
 
-//     // TODO implement paging
-//     if (data.LastEvaluatedKey && data.LastEvaluatedKey !== '') {
-//         throw new Error('Too many records in db, someone will have to implement paging');
-//     }
+    let data;
+    while (!data || data.LastEvaluatedKey) {
+        if (data?.LastEvaluatedKey) {
+            params.ExclusiveStartKey = data.LastEvaluatedKey;
+        }
+        data = await db.query(params);
 
-//     const json = {};
+        for (const item of data.Items) {
+            if (!times[item.name.S]) {
+                times[item.name.S] = {};
+            }
+            times[item.name.S][item.part.N] = parseInt(item.ts.N, 10);
+        }
+    }
 
-//     for (const item of data.Items) {
-//         if (!json[item.year.N]) {
-//             json[item.year.N] = {};
-//         }
-//         if (!json[item.year.N][item.day.N]) {
-//             json[item.year.N][item.day.N] = {};
-//         }
-//         if (!json[item.year.N][item.day.N][item.name.S]) {
-//             json[item.year.N][item.day.N][item.name.S] = {};
-//         }
-//         if (!json[item.year.N][item.day.N][item.name.S][item.part.N]) {
-//             json[item.year.N][item.day.N][item.name.S][item.part.N] = [];
-//         }
+    return times;
+};
 
-//         const ts = parseInt(item.ts.N, 10);
-//         json[item.year.N][item.day.N][item.name.S][item.part.N].push(ts);
-//     }
-
-//     return json;
-// };
-
-// exports.loadTimes = loadTimes;
-
+exports.loadStartTimes = loadStartTimes;
 exports.onStartTime = onStartTime;

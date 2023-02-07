@@ -15,7 +15,7 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const footer = pre('\\* čistý čas zistený pluginom ') + `[${escape(pluginUrl)}](${pluginUrl})`;
 
     const body = results.map(result => pre(escape(formatOneLine(
-        result, startTs, startTimes?.[year][day][result.name]))));
+        result, startTs, startTimes[result.name]))));
 
     const board = [header, ...body, '``', footer].join('\n');
     return board;
@@ -37,7 +37,7 @@ const getResults = (year, day, leaderboard, startTimes) => {
     const leaderboardNames = new Set(Object.values(leaderboard.members).map(({ name }) => name));
     const leaderboardResultNames = new Set(leaderboardResults.map(({ name }) => name));
 
-    const startedResults = Object.keys(startTimes?.[year]?.[day] ?? {})
+    const startedResults = Object.keys(startTimes)
         .filter(name => leaderboardNames.has(name) && !leaderboardResultNames.has(name))
         .map(name => ({ name, ts1: Infinity, ts2: Infinity }));
 

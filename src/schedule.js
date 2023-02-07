@@ -28,14 +28,9 @@ const updateLeaderboards = async (selection = {}) => {
     }
 
     // Download start times and leaderboards in parallel
-    let [startTimes, ...leaderboards] = await Promise.all([
-        // TODO for start times, select just the years we need, or just the days we need,
-        // TODO or even move getting start times inside publishBoards, near formatBoard
-        // TODO probably in publishOneBoard and in onCommandBoard
-        // TODO also call times.js/loadTimes instead of getStartTimes, with param year day
-        getStartTimes(),
-        ...years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
-    ]);
+    let leaderboards = await Promise.all(
+        years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
+    );
 
     // Filter out empty leaderboards
     result.unretrieved = leaderboards.filter(leaderboard => leaderboard.data === undefined);
@@ -49,7 +44,7 @@ const updateLeaderboards = async (selection = {}) => {
             result.failed.push(...invites.failed);
         }),
         ...leaderboards.map(async ({ data }) => {
-            const boards = await publishBoards(data, startTimes, selection);
+            const boards = await publishBoards(data, selection);
             result.created.push(...boards.created);
             result.updated.push(...boards.updated);
         })
