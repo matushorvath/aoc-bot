@@ -37,12 +37,11 @@ const onStartTime = async (year, day, part, name, ts) => {
 const loadStartTimes = async (year, day) => {
     const commonParams = {
         TableName: DB_TABLE,
-        KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+        KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
         ExpressionAttributeValues: {
             ':id': { S: 'start_time' },
             ':sk': { S: `${year}:${day}` }
         },
-        ProjectionExpression: 'name, part, ts',
         Limit: 10 // TODO remove this limit, it's just here to test paging
     };
 

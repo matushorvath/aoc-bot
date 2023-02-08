@@ -62,12 +62,11 @@ describe('loadStartTimes', () => {
 
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10
         });
     });
@@ -87,12 +86,11 @@ describe('loadStartTimes', () => {
 
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10
         });
     });
@@ -117,12 +115,11 @@ describe('loadStartTimes', () => {
 
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10
         });
     });
@@ -146,12 +143,11 @@ describe('loadStartTimes', () => {
 
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenCalledWith({
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10
         });
     });
@@ -185,22 +181,20 @@ describe('loadStartTimes', () => {
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenCalledTimes(2);
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenNthCalledWith(1, {
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10
         });
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
-            KeyConditionExpression: 'id = :id AND begins_with(sk = :sk)',
+            KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            ProjectionExpression: 'name, part, ts',
             Limit: 10,
             ExclusiveStartKey: {
                 id: { S: 'start_time' },
