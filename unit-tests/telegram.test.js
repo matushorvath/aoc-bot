@@ -8,8 +8,11 @@ jest.mock('@aws-sdk/client-dynamodb');
 const network = require('../src/network');
 jest.mock('../src/network');
 
-const boardFormat = require('../src/board-format');
-jest.mock('../src/board-format');
+const times = require('../src/times');
+jest.mock('../src/times');
+
+const boardFormat = require('../src/board');
+jest.mock('../src/board');
 
 const schedule = require('../src/schedule');
 jest.mock('../src/schedule');
@@ -48,7 +51,7 @@ describe('onTelegramUpdate', () => {
         expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
-        expect(network.getStartTimes).not.toHaveBeenCalled();
+        expect(times.loadStartTimes).not.toHaveBeenCalled();
     });
 
     describe('onMyChatMember', () => {
@@ -69,7 +72,7 @@ describe('onTelegramUpdate', () => {
             expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('ignores non-group/non-supergroup membership', async () => {
@@ -89,7 +92,7 @@ describe('onTelegramUpdate', () => {
             expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('ignores membership in a supergroup with no title', async () => {
@@ -109,7 +112,7 @@ describe('onTelegramUpdate', () => {
             expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('ignores membership in a supergroup with invalid title', async () => {
@@ -129,7 +132,7 @@ describe('onTelegramUpdate', () => {
             expect(years.addYear).not.toHaveBeenCalled();
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('fails if dynamodb throws', async () => {
@@ -262,7 +265,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('ignores message with no text', async () => {
@@ -281,7 +284,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('ignores message with no sender', async () => {
@@ -300,7 +303,7 @@ describe('onTelegramUpdate', () => {
 
             expect(network.sendTelegram).not.toHaveBeenCalled();
             expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
         });
 
         test('handles message with unknown command', async () => {
@@ -688,7 +691,7 @@ describe('onTelegramUpdate', () => {
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
             expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
-            expect(network.getStartTimes).not.toHaveBeenCalled();
+            expect(times.loadStartTimes).not.toHaveBeenCalled();
             expect(boardFormat.formatBoard).not.toHaveBeenCalled();
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
@@ -724,13 +727,13 @@ describe('onTelegramUpdate', () => {
                 };
 
                 network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
-                network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+                times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
                 boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
 
                 await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
                 expect(network.getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
-                expect(network.getStartTimes).toHaveBeenCalledWith();
+                expect(times.loadStartTimes).toHaveBeenCalledWith(expectedSelection.year, expectedSelection.day);
                 expect(boardFormat.formatBoard).toHaveBeenCalledWith(
                     expectedSelection.year, expectedSelection.day, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
 
@@ -742,7 +745,7 @@ describe('onTelegramUpdate', () => {
             });
         });
 
-        // TODO test errors from getLeaderboard, getStartTimes, formatBoard
+        // TODO test errors from getLeaderboard, loadStartTimes, formatBoard
     });
 
     describe('onMessage /status', () => {

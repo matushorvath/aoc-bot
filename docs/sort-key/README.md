@@ -30,14 +30,16 @@ id: { S: `telegram_user:${telegramUser}` }
 id: { S: 'telegram_user' }, sk: { S: String(telegramUser) }
 ```
 
-// TODO probably can multiple objects for the whole year now, with sort key  
-// TODO logs and years can be refactored to use individual records, not one huge json  
-
 ## Edit Data
 
 ```sh
 for f in data/*.gz ; do mv $f data/orig.$(basename $f) ; done
-node sort-key.js
+node sort-key-bot.js
+```
+
+```sh
+for f in data/*.gz ; do mv $f data/orig.$(basename $f) ; done
+node sort-key-redirect.js
 ```
 
 ## Import Data
@@ -50,3 +52,5 @@ npm i copy-dynamodb-table
 code copy.js
 AWS_PROFILE=private AWS_REGION=eu-central-1 node copy.js
 ```
+
+Repeat for both aoc-bot and aoc-redirect imported data.

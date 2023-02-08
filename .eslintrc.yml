@@ -12,6 +12,7 @@ rules:
   no-multi-spaces: [error, { ignoreEOLComments: true }]
   no-multiple-empty-lines: error
   no-shadow: error
+  no-unused-vars: [error, { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }]
   object-curly-spacing: [error, always]
   quotes: [error, single, { avoidEscape: true }]
   semi: error

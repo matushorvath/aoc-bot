@@ -1,12 +1,10 @@
 'use strict';
 
 // TODO
-
 // - reg (invalid arguments, valid arguments)
 // - reg with new user, already known user
 // - unreg when regged, when not regged
 // - logs (no params, invalid params, enable for user, disable for user, when enabled/disabled both
-
 // - somehow test sending invites
 
 const { TelegramClient } = require('./telegram-client');

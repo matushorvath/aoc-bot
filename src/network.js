@@ -34,17 +34,6 @@ const getLeaderboard = async (year) => {
     return response.data;
 };
 
-const getStartTimes = async () => {
-    console.log('getStartTimes: start');
-
-    const url = 'https://rb5ncgzaxj.execute-api.eu-central-1.amazonaws.com/Prod/data';
-    const response = await axios.get(url);
-
-    console.log('getStartTimes: done');
-
-    return response.data;
-};
-
 const sendTelegram = async (api, params = {}) => {
     // console.debug(`sendTelegram: api ${api} params ${JSON.stringify(params)}`);
 
@@ -56,5 +45,4 @@ const sendTelegram = async (api, params = {}) => {
 };
 
 exports.getLeaderboard = getLeaderboard;
-exports.getStartTimes = getStartTimes;
 exports.sendTelegram = sendTelegram;

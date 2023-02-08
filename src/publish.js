@@ -1,8 +1,9 @@
 'use strict';
 
-const { formatBoard } = require('./board-format');
+const { formatBoard } = require('./board');
 const { sendTelegram } = require('./network');
 const { mapDaysToChats } = require('./invites');
+const { loadStartTimes } = require('./times');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const crypto = require('crypto');
@@ -10,13 +11,15 @@ const crypto = require('crypto');
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const publishOneBoard = async (day, chat, message, oldHash, leaderboard, startTimes) => {
+const publishOneBoard = async (day, chat, message, oldHash, leaderboard) => {
     console.log(`publishOneBoard: start ${leaderboard.event} ${day}`);
 
     const created = [];
     const updated = [];
 
     const year = Number(leaderboard.event);
+
+    const startTimes = await loadStartTimes(year, day);
     const board = formatBoard(year, day, leaderboard, startTimes);
 
     // Telegram does not allow us to update messages with exactly the same text,
@@ -173,7 +176,7 @@ const saveBoardMessage = async (chat, message, hash) => {
     return true;
 };
 
-const publishBoards = async (leaderboard, startTimes, selection = {}) => {
+const publishBoards = async (leaderboard, selection = {}) => {
     console.log('publishBoards: start');
 
     const year = Number(leaderboard.event);
@@ -204,7 +207,7 @@ const publishBoards = async (leaderboard, startTimes, selection = {}) => {
 
     const results = await Promise.allSettled(messageData
         .map(async ({ day, chat, message, sha256 }) =>
-            await publishOneBoard(day, chat, message, sha256, leaderboard, startTimes))
+            await publishOneBoard(day, chat, message, sha256, leaderboard))
     );
 
     const created = [];

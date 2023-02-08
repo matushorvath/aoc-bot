@@ -1,10 +1,11 @@
 'use strict';
 
-const { sendTelegram, getLeaderboard, getStartTimes } = require('./network');
+const { sendTelegram, getLeaderboard } = require('./network');
 const { updateLeaderboards } = require('./schedule');
-const { formatBoard } = require('./board-format');
+const { formatBoard } = require('./board');
 const { addYear } = require('./years');
 const { enableLogs, disableLogs, logActivity } = require('./logs');
+const { loadStartTimes } = require('./times');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const luxon = require('luxon');
@@ -275,7 +276,7 @@ const onCommandBoard = async (chat, params) => {
         return;
     }
 
-    const startTimes = await getStartTimes();
+    const startTimes = await loadStartTimes(selection.year, selection.day);
     const board = formatBoard(selection.year, selection.day, leaderboard, startTimes);
 
     await sendTelegram('sendMessage', {

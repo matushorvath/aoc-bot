@@ -1,8 +1,8 @@
 'use strict';
 
 const { processInvites } = require('./invites');
-const { getLeaderboard, getStartTimes } = require('./network');
-const { publishBoards } = require('./board-publish');
+const { getLeaderboard } = require('./network');
+const { publishBoards } = require('./publish');
 const { getYears } = require('./years');
 const { logActivity } = require('./logs');
 
@@ -28,10 +28,9 @@ const updateLeaderboards = async (selection = {}) => {
     }
 
     // Download start times and leaderboards in parallel
-    let [startTimes, ...leaderboards] = await Promise.all([
-        getStartTimes(),
-        ...years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
-    ]);
+    let leaderboards = await Promise.all(
+        years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
+    );
 
     // Filter out empty leaderboards
     result.unretrieved = leaderboards.filter(leaderboard => leaderboard.data === undefined);
@@ -45,7 +44,7 @@ const updateLeaderboards = async (selection = {}) => {
             result.failed.push(...invites.failed);
         }),
         ...leaderboards.map(async ({ data }) => {
-            const boards = await publishBoards(data, startTimes, selection);
+            const boards = await publishBoards(data, selection);
             result.created.push(...boards.created);
             result.updated.push(...boards.updated);
         })

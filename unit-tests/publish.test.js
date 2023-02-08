@@ -1,15 +1,18 @@
 'use strict';
 
-const { publishBoards } = require('../src/board-publish');
+const { publishBoards } = require('../src/publish');
 
-const boardFormat = require('../src/board-format');
-jest.mock('../src/board-format');
+const boardFormat = require('../src/board');
+jest.mock('../src/board');
 
 const network = require('../src/network');
 jest.mock('../src/network');
 
 const invites = require('../src/invites');
 jest.mock('../src/invites');
+
+const times = require('../src/times');
+jest.mock('../src/times');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
@@ -23,6 +26,7 @@ describe('publishBoards', () => {
         invites.mapDaysToChats.mockReset();
         boardFormat.formatBoard.mockReset();
         network.sendTelegram.mockReset();
+        times.loadStartTimes.mockReset();
 
         dynamodb.DynamoDB.mockReset();
         dynamodb.DynamoDB.prototype.batchGetItem.mockReset();
@@ -55,6 +59,10 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444, 6: 666 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 4 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 6 });
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI='
@@ -82,18 +90,24 @@ describe('publishBoards', () => {
         // Return message id of the message created in chat 111
         network.sendTelegram.mockResolvedValueOnce({ result: { message_id: 999999 } });
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
+        await expect(publishBoards(leaderboard)).resolves.toEqual({
             created: [{ year: 1918, day: 1 }],
             updated: [{ year: 1918, day: 4 }]
         });
 
         expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 5, 4, 6]);
 
+        expect(times.loadStartTimes).toHaveBeenCalledTimes(4);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 4);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(4, 1918, 6);
+
         expect(boardFormat.formatBoard).toHaveBeenCalledTimes(4);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: true });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: true });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: true });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: 4 });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: 6 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -182,6 +196,11 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 3: 333 });
+
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 3 });
+
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd333');    // ''
@@ -209,17 +228,22 @@ describe('publishBoards', () => {
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
+        await expect(publishBoards(leaderboard)).resolves.toEqual({
             created: [],
             updated: []
         });
 
         expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 3]);
 
+        expect(times.loadStartTimes).toHaveBeenCalledTimes(3);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 3);
+
         expect(boardFormat.formatBoard).toHaveBeenCalledTimes(3);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: true });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: true });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 3, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 3, leaderboard, { sTaRtTiMeS: 3 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -283,6 +307,7 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
@@ -295,15 +320,18 @@ describe('publishBoards', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
+        await expect(publishBoards(leaderboard)).resolves.toEqual({
             created: [],
             updated: []
         });
 
         expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
 
+        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+
         expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -345,6 +373,7 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
@@ -362,15 +391,18 @@ describe('publishBoards', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true })).resolves.toEqual({
+        await expect(publishBoards(leaderboard)).resolves.toEqual({
             created: [],
             updated: []
         });
 
         expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
 
+        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+
         expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -416,6 +448,7 @@ describe('publishBoards', () => {
         };
 
         invites.mapDaysToChats.mockResolvedValueOnce({ 9: 999 });
+        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 9 });
         boardFormat.formatBoard.mockReturnValueOnce('bOaRd999');
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
@@ -431,15 +464,18 @@ describe('publishBoards', () => {
             }
         });
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true }, { year: 1918, day: 9 })).resolves.toEqual({
+        await expect(publishBoards(leaderboard, { year: 1918, day: 9 })).resolves.toEqual({
             created: [],
             updated: [{ year: 1918, day: 9 }]
         });
 
         expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [9]);
 
+        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 9);
+
         expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 9, leaderboard, { sTaRtTiMeS: true });
+        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 9, leaderboard, { sTaRtTiMeS: 9 });
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(1);
         expect(network.sendTelegram).toHaveBeenCalledWith('editMessageText', {
@@ -466,7 +502,7 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        await expect(publishBoards(leaderboard, { sTaRtTiMeS: true }, selection)).resolves.toEqual({
+        await expect(publishBoards(leaderboard, selection)).resolves.toEqual({
             created: [],
             updated: []
         });

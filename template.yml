@@ -14,7 +14,7 @@ Parameters:
     Description: Package version
 
 Resources:
-  # Scheduled function that regularly processes the leaderboard
+  # Scheduled function to processes leaderboards and invites
   AocBotScheduleFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -41,18 +41,18 @@ Resources:
         Variables:
           AWS_SDK_LOAD_CONFIG: 1
 
-  # Webhook function to process Telegram updates
-  AocBotWebhookFunction:
+  # API function to process HTTP requests
+  AocBotApiFunction:
     Type: AWS::Serverless::Function
     DependsOn:
       - AocBotTable
     Properties:
-      FunctionName: !Sub ${AWS::StackName}_AocBotWebhook
+      FunctionName: !Sub ${AWS::StackName}_AocBotApi
       Description: !Ref Version
       CodeUri:
         Bucket: !Ref Bucket
         Key: !Ref Package
-      Handler: src/webhook.handler
+      Handler: src/api.handler
       Runtime: nodejs16.x
       Timeout: 300
       Policies:
@@ -84,6 +84,8 @@ Resources:
         - AttributeName: sk
           KeyType: RANGE
       TableName: aoc-bot
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
   # Rule to regularly trigger AocBotScheduleFunction in December
   AocBotDecemberRule:
@@ -123,11 +125,11 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !GetAtt AocBotNotDecemberRule.Arn
 
-  # API Gateway to handle Telegram webhooks
+  # API Gateway to handle HTTP requests
   AocBotApi:
     Type: AWS::Serverless::Api
     DependsOn:
-      - AocBotWebhookFunction
+      - AocBotApiFunction
     Properties:
       StageName: Prod
       DefinitionBody:
@@ -143,19 +145,30 @@ Resources:
               x-amazon-apigateway-integration:
                 uri: !Sub
                   "arn:aws:apigateway:${AWS::Region}:lambda:path\
-                  /2015-03-31/functions/${AocBotWebhookFunction.Arn}/invocations"
+                  /2015-03-31/functions/${AocBotApiFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+          /start:
+            post:
+              security:
+                - CustomAuthorizer: []
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
+                  /2015-03-31/functions/${AocBotApiFunction.Arn}/invocations"
                 passthroughBehavior: when_no_match
                 httpMethod: POST
                 type: aws_proxy
         x-amazon-apigateway-binary-media-types:
           - "*/*"
 
-  # Permission that allows API Gateway to call AocBotWebhookFunction
-  AocBotWebhookPerms:
+  # Permission that allows API Gateway to call AocBotApiFunction
+  AocBotApiPerms:
     Type: AWS::Lambda::Permission
     DependsOn:
       - AocBotApi
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AocBotWebhookFunction
+      FunctionName: !Ref AocBotApiFunction
       Principal: apigateway.amazonaws.com

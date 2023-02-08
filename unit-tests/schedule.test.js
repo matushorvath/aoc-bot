@@ -8,8 +8,8 @@ jest.mock('../src/invites');
 const network = require('../src/network');
 jest.mock('../src/network');
 
-const boardPublish = require('../src/board-publish');
-jest.mock('../src/board-publish');
+const boardPublish = require('../src/publish');
+jest.mock('../src/publish');
 
 const years = require('../src/years');
 jest.mock('../src/years');
@@ -19,7 +19,6 @@ jest.mock('../src/logs');
 
 beforeEach(() => {
     network.getLeaderboard.mockReset();
-    network.getStartTimes.mockReset();
     invites.processInvites.mockReset();
     boardPublish.publishBoards.mockReset();
     years.getYears.mockReset();
@@ -29,7 +28,6 @@ beforeEach(() => {
 describe('schedule.handler', () => {
     test('succeeds updating the leaderboard', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
@@ -43,7 +41,6 @@ describe('schedule.handler', () => {
         await expect(handler()).resolves.toBeUndefined();
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -54,10 +51,8 @@ describe('schedule.handler', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
@@ -68,7 +63,6 @@ describe('schedule.handler', () => {
         await expect(handler()).rejects.toThrow('gEtYeArSeRrOr');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
 
         expect(invites.processInvites).not.toHaveBeenCalled();
@@ -83,26 +77,7 @@ describe('schedule.handler', () => {
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
 
-        expect(network.getStartTimes).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
-        expect(invites.processInvites).not.toHaveBeenCalled();
-        expect(boardPublish.publishBoards).not.toHaveBeenCalled();
-        expect(logs.logActivity).not.toHaveBeenCalled();
-    });
-
-    test('fails loading start times', async () => {
-        years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockRejectedValueOnce(new Error('sTaRtTiMeErRoR'));
-
-        await expect(handler()).rejects.toThrow('sTaRtTiMeErRoR');
-
-        expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
-
-        expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
-        expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
-        expect(network.getLeaderboard).toHaveBeenNthCalledWith(2, 2020);
-
         expect(invites.processInvites).not.toHaveBeenCalled();
         expect(boardPublish.publishBoards).not.toHaveBeenCalled();
         expect(logs.logActivity).not.toHaveBeenCalled();
@@ -115,7 +90,6 @@ describe('schedule.handler', () => {
         await expect(handler()).rejects.toThrow('nEtWoRkErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -128,7 +102,6 @@ describe('schedule.handler', () => {
 
     test('skips an undefined leaderboard after an HTTP error', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce(undefined);
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
@@ -139,7 +112,6 @@ describe('schedule.handler', () => {
         await expect(handler()).resolves.toBeUndefined();
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -149,15 +121,13 @@ describe('schedule.handler', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            1, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2020: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails processing invites', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
@@ -171,7 +141,6 @@ describe('schedule.handler', () => {
         await expect(handler()).rejects.toThrow('pRoCeSsErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -182,17 +151,14 @@ describe('schedule.handler', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
     test('fails publishing boards', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
@@ -206,7 +172,6 @@ describe('schedule.handler', () => {
         await expect(handler()).rejects.toThrow('pUbLiShErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(2);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -217,15 +182,12 @@ describe('schedule.handler', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(2);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, {});
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            2, { lEaDeRbOaRd2020: true }, { sTaRtTiMeS: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, {});
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(2, { lEaDeRbOaRd2020: true }, {});
     });
 
     test('sends logs after certain changes', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
 
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
@@ -269,7 +231,6 @@ describe('schedule.updateLeaderboards', () => {
         });
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).not.toHaveBeenCalled();
 
         expect(network.getLeaderboard).not.toHaveBeenCalled();
         expect(invites.processInvites).not.toHaveBeenCalled();
@@ -282,8 +243,6 @@ describe('schedule.updateLeaderboards', () => {
         ['date', { year: 2021, day: 19 }]
     ])('selected %s is applied', async (_description, selection) => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
-
-        network.getStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
         network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2021: true });
 
         invites.processInvites.mockResolvedValueOnce({ sent: [], failed: [] });
@@ -294,7 +253,6 @@ describe('schedule.updateLeaderboards', () => {
         });
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
-        expect(network.getStartTimes).toHaveBeenCalledTimes(1);
 
         expect(network.getLeaderboard).toHaveBeenCalledTimes(1);
         expect(network.getLeaderboard).toHaveBeenNthCalledWith(1, 2021);
@@ -303,7 +261,6 @@ describe('schedule.updateLeaderboards', () => {
         expect(invites.processInvites).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, selection);
 
         expect(boardPublish.publishBoards).toHaveBeenCalledTimes(1);
-        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(
-            1, { lEaDeRbOaRd2021: true }, { sTaRtTiMeS: true }, selection);
+        expect(boardPublish.publishBoards).toHaveBeenNthCalledWith(1, { lEaDeRbOaRd2021: true }, selection);
     });
 });

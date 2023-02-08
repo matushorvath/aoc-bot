@@ -15,7 +15,7 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const footer = pre('\\* čistý čas zistený pluginom ') + `[${escape(pluginUrl)}](${pluginUrl})`;
 
     const body = results.map(result => pre(escape(formatOneLine(
-        result, startTs, startTimes?.[year][day][result.name]))));
+        result, startTs, startTimes[result.name]))));
 
     const board = [header, ...body, '``', footer].join('\n');
     return board;
@@ -37,7 +37,7 @@ const getResults = (year, day, leaderboard, startTimes) => {
     const leaderboardNames = new Set(Object.values(leaderboard.members).map(({ name }) => name));
     const leaderboardResultNames = new Set(leaderboardResults.map(({ name }) => name));
 
-    const startedResults = Object.keys(startTimes?.[year]?.[day] ?? {})
+    const startedResults = Object.keys(startTimes)
         .filter(name => leaderboardNames.has(name) && !leaderboardResultNames.has(name))
         .map(name => ({ name, ts1: Infinity, ts2: Infinity }));
 
@@ -62,7 +62,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
     let line = `${result.name.padStart(16)} ${ots1d} ${ots2d} (${odiffd})`;
 
     if (dayStartTimes?.[1]) {
-        const start1 = Math.min(...dayStartTimes[1]);
+        const start1 = dayStartTimes[1];
         const ots1 = result.ts1 - start1;
         const ots2 = result.ts2 - start1;
 
@@ -72,7 +72,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
             line += ` [${nts1d} ${nts2d}`;
 
             if (dayStartTimes?.[2]) {
-                const start2 = Math.min(...dayStartTimes[2]);
+                const start2 = dayStartTimes[2];
                 const ndiff = result.ts2 - start2;
 
                 if (ndiff > 0) {
