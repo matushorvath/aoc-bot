@@ -135,6 +135,13 @@ Resources:
       Cors:
         AllowHeaders: "'Content-Type'"
         AllowOrigin: "'*'"
+      TracingEnabled: true
+      MethodSettings:
+        - DataTraceEnabled: false
+          HttpMethod: "*"
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          ResourcePath: "/*"
       DefinitionBody:
         openapi: "3.0.1"
         info:
