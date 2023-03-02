@@ -132,6 +132,9 @@ Resources:
       - AocBotApiFunction
     Properties:
       StageName: Prod
+      Cors:
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
       DefinitionBody:
         openapi: "3.0.1"
         info:
@@ -162,6 +165,10 @@ Resources:
                 type: aws_proxy
         x-amazon-apigateway-binary-media-types:
           - "*/*"
+        x-amazon-apigateway-gateway-responses:
+          DEFAULT_4XX:
+            responseParameters:
+              gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
 
   # Permission that allows API Gateway to call AocBotApiFunction
   AocBotApiPerms:

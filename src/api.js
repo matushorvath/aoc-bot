@@ -58,6 +58,7 @@ const parseBody = (body) => {
         // JSON.parse only throws SyntaxError, but we handle other errors as well for completeness
         // istanbul ignore else
         if (error instanceof SyntaxError) {
+            console.warn('Error while parsing body', error);
             throw new ResultError(400, 'Bad Request', { details: 'Invalid JSON syntax' });
         } else {
             throw error;
@@ -106,6 +107,9 @@ const makeResponse = (result) => {
             Expires: 0,
             Pragma: 'no-cache',
             'Surrogate-Control': 'no-store',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST',
             ...contentTypeHeaders,
             ...result.headers
         },

@@ -26,6 +26,9 @@ describe('API handler', () => {
                 Expires: 0,
                 Pragma: 'no-cache',
                 'Surrogate-Control': 'no-store',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
                 'Content-Type': 'application/json'
             }
         });
@@ -140,7 +143,10 @@ describe('POST /telegram API', () => {
                 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
                 Expires: 0,
                 Pragma: 'no-cache',
-                'Surrogate-Control': 'no-store'
+                'Surrogate-Control': 'no-store',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST'
             }
         });
 
