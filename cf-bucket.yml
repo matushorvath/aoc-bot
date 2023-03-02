@@ -1,0 +1,12 @@
+# aws cloudformation deploy --region <...> --capabilities CAPABILITY_IAM \
+# --template cf-bucket.yml --stack-name cf-bucket
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: CloudFormation Deployment Bucket
+
+Resources:
+  CloudFormationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub cf.${AWS::AccountId}.${AWS::Region}
