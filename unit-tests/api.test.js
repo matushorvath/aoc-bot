@@ -155,6 +155,24 @@ describe('POST /telegram API', () => {
     });
 });
 
+describe('OPTIONS /start API', () => {
+    test('works', async () => {
+        const event = {
+            resource: '/start',
+            httpMethod: 'OPTIONS'
+        };
+
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 204,
+            headers: {
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST'
+            }
+        });
+    });
+});
+
 describe('POST /start API', () => {
     test.each([
         ['missing body', {}, 'Invalid JSON syntax'],
@@ -244,7 +262,14 @@ body: {
         });
     });
 
-    test.each([1, 2])('works with name and part %s', async (part) => {
+    test.each([
+        [1, 'a new', true, 201],
+        [2, 'a new', true, 201],
+        [1, 'an existing', false, 200],
+        [2, 'an existing', false, 200]
+    ])('works with name, part %s and %s record', async (part, _desciption, created, statusCode) => {
+        times.onStartTime.mockResolvedValueOnce(created);
+
         const event = {
             resource: '/start',
             httpMethod: 'POST',
@@ -256,7 +281,7 @@ body: {
                 name: 'FiRsT SeCoNdNaMe'
             })
         };
-        await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
+        await expect(handler(event)).resolves.toMatchObject({ statusCode });
 
         expect(times.onStartTime).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', expect.any(Number));
     });

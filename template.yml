@@ -132,15 +132,11 @@ Resources:
       - AocBotApiFunction
     Properties:
       StageName: Prod
-      Cors:
-        AllowHeaders: "'Content-Type'"
-        AllowOrigin: "'*'"
-      TracingEnabled: true
       MethodSettings:
         - DataTraceEnabled: false
           HttpMethod: "*"
           LoggingLevel: INFO
-          MetricsEnabled: true
+          MetricsEnabled: false
           ResourcePath: "/*"
       DefinitionBody:
         openapi: "3.0.1"
@@ -150,8 +146,6 @@ Resources:
         paths:
           /telegram:
             post:
-              security:
-                - CustomAuthorizer: []
               x-amazon-apigateway-integration:
                 uri: !Sub
                   "arn:aws:apigateway:${AWS::Region}:lambda:path\
@@ -160,9 +154,15 @@ Resources:
                 httpMethod: POST
                 type: aws_proxy
           /start:
+            options:
+              x-amazon-apigateway-integration:
+                uri: !Sub
+                  "arn:aws:apigateway:${AWS::Region}:lambda:path\
+                  /2015-03-31/functions/${AocBotApiFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
             post:
-              security:
-                - CustomAuthorizer: []
               x-amazon-apigateway-integration:
                 uri: !Sub
                   "arn:aws:apigateway:${AWS::Region}:lambda:path\
@@ -171,11 +171,7 @@ Resources:
                 httpMethod: POST
                 type: aws_proxy
         x-amazon-apigateway-binary-media-types:
-          - "*/*"
-        x-amazon-apigateway-gateway-responses:
-          DEFAULT_4XX:
-            responseParameters:
-              gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          - "application/json"
 
   # Permission that allows API Gateway to call AocBotApiFunction
   AocBotApiPerms:
