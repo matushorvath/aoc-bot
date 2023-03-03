@@ -96,11 +96,11 @@ const postStart = async (event) => {
     }
 
     const ts = Math.floor(Date.now() / 1000);
-    await onStartTime(year, day, part, name, ts);
+    const created = await onStartTime(year, day, part, name, ts);
 
     console.log('postStart: done');
 
-    return { status: 201 };
+    return { status: created ? 201 : 200 };
 };
 
 const makeResponse = (result) => {
