@@ -27,8 +27,7 @@ const postTelegram = async (event) => {
 
     await validateSecret(event);
 
-    const body = parseBody(event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body);
-    await onTelegramUpdate(body);
+    await onTelegramUpdate(parseBody(event));
 
     console.log('postTelegram: done');
 
@@ -51,7 +50,9 @@ const explainError = (details) => {
     };
 };
 
-const parseBody = (body) => {
+const parseBody = (event) => {
+    const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
+
     try {
         return JSON.parse(body);
     } catch (error) {
@@ -66,12 +67,17 @@ const parseBody = (body) => {
     }
 };
 
+// TODO This should be done in AWS API GateWay configuration, but I can't get that to work
+const optionsStart = async (_event) => {
+    console.log('optionsStart');
+
+    return { status: 204 };
+};
+
 const postStart = async (event) => {
     console.log('postStart: start');
 
-    const body = parseBody(event.body);
-
-    const { version, year, day, part, name } = body;
+    const { version, year, day, part, name } = parseBody(event);
     if (version === undefined || version !== 1) {
         throw new ResultError(400, 'Bad Request', explainError("Expecting 'version' parameter to be 1"));
     }
@@ -124,7 +130,9 @@ const processEvent = async (event) => {
         }
         throw new ResultError(405, 'Method Not Allowed');
     } else if (event.resource === '/start') {
-        if (event.httpMethod === 'POST') {
+        if (event.httpMethod === 'OPTIONS') {
+            return optionsStart(event);
+        } else if (event.httpMethod === 'POST') {
             return postStart(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
