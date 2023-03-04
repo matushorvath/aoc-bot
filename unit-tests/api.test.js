@@ -100,6 +100,23 @@ describe('POST /telegram API', () => {
         expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
     });
 
+    test('handles invalid payload', async () => {
+        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+
+        const event = {
+            resource: '/telegram', httpMethod: 'POST',
+            queryStringParameters: { gOoDsEcReT: '' },
+            body: '$%^&'
+        };
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 400,
+            body: '{"error":"Bad Request","details":"Invalid JSON syntax"}'
+        });
+
+        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+    });
+
     test('processes plain payload', async () => {
         secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
 
@@ -177,7 +194,8 @@ describe('POST /start API', () => {
     test.each([
         ['missing body', {}, 'Invalid JSON syntax'],
         ['empty body', { body: '' }, 'Invalid JSON syntax'],
-        ['wrong JSON', { body: ']' }, 'Invalid JSON syntax']
+        ['wrong JSON', { body: ']' }, 'Invalid JSON syntax'],
+        ['non-object JSON', { body: '0' }, 'Missing or invalid request body']
     ])('fails with %s', async (description, eventPart, errorMatch) => {
         const event = {
             resource: '/start',
