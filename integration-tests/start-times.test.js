@@ -30,7 +30,7 @@ describe('POST /start', () => {
                 status: 400,
                 data: {
                     error: 'Bad Request',
-                    details: 'Missing request body',
+                    details: 'Missing or invalid request body',
                     usage:
 `POST https://<hostname>/start
 body: {
@@ -50,7 +50,7 @@ body: {
             response: {
                 status: 400,
                 data: {
-                    details: 'Missing request body'
+                    details: 'Missing or invalid request body'
                 }
             }
         });
