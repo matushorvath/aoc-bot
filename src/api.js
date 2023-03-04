@@ -50,7 +50,11 @@ const explainError = (details) => {
     };
 };
 
-const parseBody = (event) => {
+const parseBody = (event, formatError) => {
+    if (!formatError) {
+        formatError = details => ({ details });
+    }
+
     const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString('utf8') : event.body;
 
     try {
@@ -60,7 +64,7 @@ const parseBody = (event) => {
         // istanbul ignore else
         if (error instanceof SyntaxError) {
             console.warn('Error while parsing body', error);
-            throw new ResultError(400, 'Bad Request', { details: 'Invalid JSON syntax' });
+            throw new ResultError(400, 'Bad Request', formatError('Invalid JSON syntax'));
         } else {
             throw error;
         }
@@ -77,7 +81,13 @@ const optionsStart = async (_event) => {
 const postStart = async (event) => {
     console.log('postStart: start');
 
-    const { version, year, day, part, name } = parseBody(event);
+    const body = parseBody(event, explainError);
+    if (!body || typeof(body) !== 'object') {
+        throw new ResultError(400, 'Bad Request', explainError('Missing or invalid request body'));
+    }
+
+    const { version, year, day, part, name } = body;
+
     if (version === undefined || version !== 1) {
         throw new ResultError(400, 'Bad Request', explainError("Expecting 'version' parameter to be 1"));
     }
