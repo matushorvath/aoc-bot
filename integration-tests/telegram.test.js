@@ -110,9 +110,7 @@ describe('chat membership', () => {
     });
 
     test('add bot to chat as admin', async () => {
-        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toMatchObject([
-            '@AocElfBot is online, AoC 1980 Day 13'
-        ]);
+        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBe('@AocElfBot is online, AoC 1980 Day 13');
     });
 
     test('remove bot from chat', async () => {
