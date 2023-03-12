@@ -137,7 +137,7 @@ class TelegramClient {
         let onUpdate;
         return new Promise(resolve => {
             onUpdate = (update) => {
-                // console.debug(JSON.stringify(update, undefined, 2));
+                console.debug(JSON.stringify(update, undefined, 2));
                 if (filter(update)) {
                     updates.push(update);
                 }
@@ -188,8 +188,22 @@ class TelegramClient {
         return (await updatesPromise).map(update => update?.message?.content?.text?.text);
     }
 
-    async addChatMember(userId, chatId) {
-        const status = await this.clientInvoke({
+    async createSupergroup(title, description) {
+        const chat = await this.client.invoke({
+                _: 'createNewSupergroupChat',
+                title,
+                description
+        });
+
+        if (!chat?._id) {
+            throw new Error(`Invalid response: ${chat}`);
+        }
+
+        return chat._id;
+    }
+
+    async addChatAdmin(userId, chatId) {
+        let status = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
