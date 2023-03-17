@@ -43,10 +43,20 @@ jobs:
           annotations: none
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+  deploy-mutex:
+    name: Wait for previous deployments
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: mktcode/consecutive-workflow-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
   deploy:
     name: Deploy to AWS
     runs-on: ubuntu-22.04
-    needs: test
+    needs: [ test, deploy-mutex ]
     if: github.ref == 'refs/heads/main'
 
     steps:
