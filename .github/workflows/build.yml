@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: mktcode/consecutive-workflow-action@v1
+      - uses: mktcode/consecutive-workflow-action@24a659994f3de78680585a8263641bd352b463d0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
