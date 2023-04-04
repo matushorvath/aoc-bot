@@ -27,6 +27,7 @@ jobs:
 
       - name: Retrieve configuration
         run: |
+          yq --version
           yq -ny '{ apiId: ${{ secrets.TDLIB_API_ID }}, apiHash: "${{ secrets.TDLIB_API_HASH }}" }' \
             > integration-tests/credentials.yaml
           cat integration-tests/credentials.yaml
