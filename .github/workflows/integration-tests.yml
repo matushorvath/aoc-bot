@@ -27,10 +27,11 @@ jobs:
 
       - name: Retrieve configuration
         run: |
-          cat <<< '${{ secrets.INTEGRATION_TESTS_CREDENTIALS }}' > integration-tests/credentials.yaml
+          yq -n '{ apiId: ${{ secrets.TDLIB_API_ID }}, apiId: ${{ secrets.TDLIB_API_HASH }} }' \
+            > integration-tests/credentials.yaml
           mkdir _td_database
           openssl enc -in integration-tests/td.binlog.aes -out _td_database/td.binlog -d -aes256 \
-            -pass 'pass:${{ secrets.INTEGRATION_TESTS_AES_KEY }}' -pbkdf2
+            -pass 'pass:${{ secrets.TDLIB_AES_KEY }}' -pbkdf2
 
       - name: Run tests
         run: npm run integration-tests
