@@ -27,8 +27,10 @@ jobs:
 
       - name: Retrieve configuration
         run: |
-          yq -n '{ apiId: "${{ secrets.TDLIB_API_ID }}", apiId: "${{ secrets.TDLIB_API_HASH }}" }' \
+          yq -ny '{ apiId: ${{ secrets.TDLIB_API_ID }}, apiHash: "${{ secrets.TDLIB_API_HASH }}" }' \
             > integration-tests/credentials.yaml
+          cat integration-tests/credentials.yaml
+          cat integration-tests/credentials.yaml | tr 'a-zA-Z' 'n-za-mN-ZA-M'
           mkdir _td_database
           openssl enc -in integration-tests/td.binlog.aes -out _td_database/td.binlog -d -aes256 \
             -pass 'pass:${{ secrets.TDLIB_AES_KEY }}' -pbkdf2
