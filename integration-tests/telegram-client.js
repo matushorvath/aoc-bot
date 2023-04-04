@@ -137,7 +137,7 @@ class TelegramClient {
         let onUpdate;
         return new Promise(resolve => {
             onUpdate = (update) => {
-                console.debug(JSON.stringify(update, undefined, 2));
+                //console.debug(JSON.stringify(update, undefined, 2));
                 if (filter(update)) {
                     updates.push(update);
                 }
@@ -195,11 +195,16 @@ class TelegramClient {
                 description
         });
 
-        if (!chat?._id) {
-            throw new Error(`Invalid response: ${chat}`);
+        console.log(chat);
+
+        if (chat?._ !== 'chat' || !chat?.id || chat?.type?._ !== 'chatTypeSupergroup' || !chat?.type?.supergroup_id) {
+            throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
         }
 
-        return chat._id;
+        return {
+            chatId: chat.id,
+            supergroupId: chat.type.supergroup_id
+        };
     }
 
     async addChatAdmin(userId, chatId) {

@@ -17,10 +17,8 @@ const loadCredentials = async () => {
     }
 };
 
-const createAccount = async (client) => {
+const test = async (client) => {
     console.log(await client.createSupergroup('MH TEST AoC 2001 Day 25', 'MH Test Description'));
-
-    const joinMessage = await client.addChatAdmin(botUserId, testChatId);
 };
 
 const main = async () => {
@@ -29,7 +27,7 @@ const main = async () => {
 
     try {
         await client.init();
-        await createAccount(client);
+        await test(client);
     } finally {
         await client.close();
     }
