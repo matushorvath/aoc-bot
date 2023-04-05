@@ -33,6 +33,9 @@ if [ -z "$SKIP_SECRETS" ] ; then
     }
 
     put_secret "advent-of-code-secret" "$ADVENT_OF_CODE_SECRET"
+    put_secret "tdlib-api-id" "$TDLIB_API_ID"
+    put_secret "tdlib-api-hash" "$TDLIB_API_HASH"
+    put_secret "tdlib-aes-key" "$TDLIB_AES_KEY"
     put_secret "telegram-secret" "$TELEGRAM_SECRET"
     put_secret "webhook-secret" "$WEBHOOK_SECRET"
 fi

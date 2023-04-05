@@ -31,7 +31,8 @@
     "deployFiles": [
         "package.json",
         "package-lock.json",
-        "node_modules/"
+        "node_modules/",
+        "td.binlog.aes"
     ],
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.418.0",

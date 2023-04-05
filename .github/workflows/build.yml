@@ -67,5 +67,8 @@ jobs:
           ADVENT_OF_CODE_SECRET: ${{ secrets.ADVENT_OF_CODE_SECRET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TDLIB_API_ID: ${{ secrets.TDLIB_API_ID }}
+          TDLIB_API_HASH: ${{ secrets.TDLIB_API_HASH }}
+          TDLIB_AES_KEY: ${{ secrets.TDLIB_AES_KEY }}
           TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
