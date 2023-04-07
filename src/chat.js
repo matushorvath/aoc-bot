@@ -10,8 +10,8 @@ const getTelegramClient = async () => {
     }
 
     // Create and initialize the tdlib-based Telegram client
-    const secrets = await getTdLibSecrets();
-    cachedClient = new TelegramClient(secrets);
+    const { apiId, apiHash, aesKey } = await getTdLibSecrets();
+    cachedClient = new TelegramClient(apiId, apiHash, aesKey);
 
     try {
         await cachedClient.init();

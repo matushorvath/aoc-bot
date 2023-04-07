@@ -61,7 +61,7 @@ class TelegramClient {
         const filesDirectory = path.join(tmpDirectory, '_td_files');
         await fs.mkdir(filesDirectory, { recursive: true });
 
-        const encryptedName = path.join(__dirname, 'td.binlog.aes');
+        const encryptedName = path.join(__dirname, '..', 'td.binlog.aes');
         const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
         // Create the td.binlog unless it already exists
