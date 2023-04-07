@@ -1,7 +1,7 @@
 'use strict';
 
 const tdl = require('tdl');
-const { getTdjson } = require('prebuilt-tdlib');
+const { getTdjson } = require('prebuilt-tdlib-amazon-linux-2');
 
 const crypto = require ('crypto');
 const fs = require('fs/promises');
