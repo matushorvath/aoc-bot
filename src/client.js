@@ -190,9 +190,9 @@ class TelegramClient {
 
     async createSupergroup(title, description) {
         const chat = await this.client.invoke({
-                _: 'createNewSupergroupChat',
-                title,
-                description
+            _: 'createNewSupergroupChat',
+            title,
+            description
         });
 
         console.log(chat);

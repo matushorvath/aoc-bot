@@ -38,6 +38,12 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/advent-of-code-secret
         - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-api-id
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-api-hash
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-aes-key
+        - SSMParameterReadPolicy:
             ParameterName: aoc-bot/telegram-secret
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/webhook-secret
@@ -68,6 +74,12 @@ Resources:
             TableName: !Ref AocBotTable
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/advent-of-code-secret
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-api-id
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-api-hash
+        - SSMParameterReadPolicy:
+            ParameterName: aoc-bot/tdlib-aes-key
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/telegram-secret
         - SSMParameterReadPolicy:

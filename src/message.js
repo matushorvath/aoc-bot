@@ -5,6 +5,7 @@ const { updateLeaderboards } = require('./leaderboards');
 const { formatBoard } = require('./board');
 const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
 const { loadStartTimes } = require('./times');
+const { createNewChat } = require('./chat');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const luxon = require('luxon');
@@ -43,6 +44,8 @@ const onMessage = async (message) => {
         await onCommandUpdate(message.chat.id, message.from, params?.trim());
     } else if (command === 'board') {
         await onCommandBoard(message.chat.id, params?.trim());
+    } else if (command === 'tmp') {
+        await onCommandTmp(message.chat.id, params?.trim());
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
     } else {
@@ -252,6 +255,15 @@ const onCommandBoard = async (chat, params) => {
     });
 
     console.log('onCommandBoard: done');
+};
+
+// TODO remove
+const onCommandTmp = async (_chat, _params) => {
+    console.log('onCommandTmp: start');
+
+    await createNewChat();
+
+    console.log('onCommandTmp: done');
 };
 
 const onCommandStatus = async (chat, telegramUser) => {
