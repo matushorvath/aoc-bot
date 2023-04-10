@@ -137,7 +137,7 @@ class TelegramClient {
         let onUpdate;
         return new Promise(resolve => {
             onUpdate = (update) => {
-                //console.debug(JSON.stringify(update, undefined, 2));
+                // console.debug(JSON.stringify(update, undefined, 2));
                 if (filter(update)) {
                     updates.push(update);
                 }
@@ -189,13 +189,11 @@ class TelegramClient {
     }
 
     async createSupergroup(title, description) {
-        const chat = await this.client.invoke({
+        const chat = await this.clientInvoke({
             _: 'createNewSupergroupChat',
             title,
             description
         });
-
-        console.log(chat);
 
         if (chat?._ !== 'chat' || !chat?.id || chat?.type?._ !== 'chatTypeSupergroup' || !chat?.type?.supergroup_id) {
             throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
@@ -264,6 +262,29 @@ class TelegramClient {
             status: {
                 _: 'chatMemberStatusLeft'
             }
+        });
+
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async canTransferChatOwnership() {
+        const result = await this.clientInvoke({
+            _: 'canTransferOwnership'
+        });
+
+        return {
+            canTransfer: result?._ === 'canTransferOwnershipResultOk',
+            result: result?._
+        };
+    }
+
+    async transferChatOwnership(chatId, newOwnerUserId) {
+        const status = await this.clientInvoke({
+            _: 'transferChatOwnership',
+            chat_id: chatId,
+            user_id: newOwnerUserId
         });
 
         if (status?._ !== 'ok') {
