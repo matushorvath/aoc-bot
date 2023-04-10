@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# TODO add shellcheck for all scripts
+
 set -e
 
 version=$(<package.json jq -re .version)
@@ -17,19 +19,20 @@ bucket=cf.009116496185.$region
 
 # Update SSM secrets using values from GitHub
 if [ -z "$SKIP_SECRETS" ] ; then
-    aws ssm put-parameter \
-        --overwrite \
-        --region $region \
-        --name /aoc-bot/advent-of-code-secret \
-        --type SecureString \
-        --value "$ADVENT_OF_CODE_SECRET"
+    put_secret() {
+        local param_name="$1"
+        local param_value="$2"
 
-    aws ssm put-parameter \
-        --overwrite \
-        --region $region \
-        --name /aoc-bot/telegram-secret \
-        --type SecureString \
-        --value "$TELEGRAM_SECRET"
+        aws ssm put-parameter \
+            --overwrite \
+            --region $region \
+            --name "/aoc-bot/$param_name" \
+            --type SecureString \
+            --value "$param_value"
+    }
+
+    put_secret "advent-of-code-secret" "$ADVENT_OF_CODE_SECRET"
+    put_secret "telegram-secret" "$TELEGRAM_SECRET"
 fi
 
 # Upload and deploy the package

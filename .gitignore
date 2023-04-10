@@ -1,7 +1,7 @@
 .DS_Store
-coverage/
-node_modules/
+/coverage
+/node_modules
 aoc-bot-*.zip
-_td_files
-_td_database
-integration-tests/credentials.yaml
+/_td_files
+/_td_database
+/integration-tests/credentials.yaml
