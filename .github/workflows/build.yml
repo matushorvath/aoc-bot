@@ -39,8 +39,8 @@ jobs:
           annotations: none
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    name: Deploy to AWS
+  build-container:
+    name: Prepare the Build Container
     runs-on: ubuntu-22.04
     needs: test
     if: github.ref == 'refs/heads/main'
@@ -48,9 +48,37 @@ jobs:
     environment: production
     concurrency: deployment
 
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+
+      - name: Login to the Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          tags: ghcr.io/matushorvath/aoc-bot-build:latest
+          push: true
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-22.04
+    container: ghcr.io/matushorvath/aoc-bot-build
+    needs: [ test, build-container ]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
 
       - name: Setup node.js
         uses: actions/setup-node@v3
