@@ -17,7 +17,7 @@ jest.setTimeout(15 * 1000);
 
 // Telegram ids to use for testing
 const botUserId = 5071613978;
-const testChatId = -1001842149447;
+const testChatId = -1001842149447;      // id of the 'AoC 1980 Day 13' test chat
 
 const loadCredentials = async () => {
     try {
@@ -69,7 +69,7 @@ describe('/board command', () => {
 
     test('with year and day', async () => {
         await expect(client.sendMessage(botUserId, '/board 2022 13')).resolves.toMatchObject([
-            expect.stringMatching(/^Deň 13 @ [^]*TrePe0\/aoc-plugin$/)
+            expect.stringMatching(/^Deň 13 @[^]*TrePe0\/aoc-plugin$/)
         ]);
     });
 });
@@ -110,7 +110,9 @@ describe('chat membership', () => {
     });
 
     test('add bot to chat as admin', async () => {
-        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBe('@AocElfBot is online, AoC 1980 Day 13');
+        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBe(
+            '@AocElfBot is online, AoC 1980 Day 13'
+        );
     });
 
     test('remove bot from chat', async () => {

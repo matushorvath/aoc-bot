@@ -7,10 +7,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  FORCE_COLOR: 1
-  TERM: xterm-color
-
 jobs:
   test:
     name: Build and Test
@@ -78,7 +74,7 @@ jobs:
       - name: Deploy to AWS
         run: npm run deploy
         env:
+          ADVENT_OF_CODE_SECRET: ${{ secrets.ADVENT_OF_CODE_SECRET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          ADVENT_OF_CODE_SECRET: ${{ secrets.ADVENT_OF_CODE_SECRET }}
           TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
