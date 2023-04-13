@@ -64,27 +64,36 @@ const onMyChatMember = async (my_chat_member) => {
 };
 
 const initializeChat = async (chatId, year, day) => {
-    // In parallel set up various properties on the new chat, and trigger a leaderboard update
-    const results = await Promise.allSettled([
-        updateLeaderboards({ year, day }),
-        setChatProperties(chatId, year, day)
-    ]);
+    console.log('initializeChat: start');
 
-    const rejects = results.filter(r => r.status === 'rejected');
-    if (rejects.length > 0) {
-        throw new AggregateError(rejects.map(reject => new Error(reject.reason)),
-            'initializeChat: Error while initializing the chat');
-    }
-};
-
-const setChatProperties = async (chatId, year, day) => {
     // Setup chat properties
     await sendTelegram('setChatDescription', {
         chat_id: chatId,
         description: `Advent of Code ${year} day ${day} discussion`
     });
 
+    console.debug('initializeChat: setChatDescription done');
+
     // Setup chat photo
+    await setChatPhoto(chatId, year, day);
+    console.debug('initializeChat: setChatPhoto done');
+
+    // Write a message to the new chat
+    await sendTelegram('sendMessage', {
+        chat_id: chatId,
+        text: `@AocElfBot is online, AoC ${year} Day ${day}`,
+        disable_notification: true
+    });
+
+    console.debug('initializeChat: sendMessage done');
+
+    // Update leaderboard for this day and send invites
+    await updateLeaderboards({ year, day }),
+
+    console.log('initializeChat: done');
+};
+
+const setChatPhoto = async (chatId, year, day) => {
     try {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
         const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
@@ -97,18 +106,11 @@ const setChatProperties = async (chatId, year, day) => {
         });
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.warn(`setupNewChat: No icon found for day ${day}`);
+            console.warn(`setChatPhoto: No icon found for day ${day}`);
         } else {
             throw error;
         }
     }
-
-    // Write a message to the new chat
-    await sendTelegram('sendMessage', {
-        chat_id: chatId,
-        text: `@AocElfBot is online, AoC ${year} Day ${day}`,
-        disable_notification: true
-    });
 };
 
 const onMessage = async (message) => {
