@@ -24,6 +24,7 @@ const logs = require('../src/logs');
 jest.mock('../src/logs');
 
 const fsp = require('fs/promises');
+const fs = require('fs');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
@@ -190,7 +191,7 @@ describe('onTelegramUpdate', () => {
             expect(network.sendTelegram).not.toHaveBeenCalled();
         });
 
-        test('fails if sendTelegram throws', async () => {
+        test('fails if sendTelegram throws for setChatDescription', async () => {
             const update = {
                 my_chat_member: {
                     new_chat_member: { status: 'administrator' },
@@ -200,15 +201,94 @@ describe('onTelegramUpdate', () => {
 
             dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
             years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));
+            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatDescription
 
             await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: -4242,
-                text: '@AocElfBot is online, AoC 1980 Day 13',
-                disable_notification: true
-            });
+            expect(network.sendTelegram).toHaveBeenCalledTimes(1);
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
+        });
+
+        test('succeeds if createReadStream throws ENOENT', async () => {
+            const mockCreateReadStream = jest.spyOn(fs, 'createReadStream');
+            const mockConsoleWarn = jest.spyOn(console, 'warn');
+            try {
+                const update = {
+                    my_chat_member: {
+                        new_chat_member: { status: 'administrator' },
+                        chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+                    }
+                };
+
+                dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+                years.addYear.mockResolvedValueOnce(undefined);
+                network.sendTelegram.mockResolvedValue(undefined);
+
+                mockCreateReadStream.mockImplementation(() => { throw { message: 'fSeRrOr', code: 'ENOENT' }; });
+
+                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+
+                expect(mockCreateReadStream).toHaveBeenCalled();
+                expect(mockConsoleWarn).toHaveBeenCalledWith('setChatPhoto: No icon found for day 13');
+            } finally {
+                mockConsoleWarn.mockRestore();
+                mockCreateReadStream.mockRestore();
+            }
+        });
+
+        test('fails if sendTelegram throws for setChatPhoto', async () => {
+            const update = {
+                my_chat_member: {
+                    new_chat_member: { status: 'administrator' },
+                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+                }
+            };
+
+            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+            years.addYear.mockResolvedValueOnce(undefined);
+            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPhoto
+
+            await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
+
+            expect(network.sendTelegram).toHaveBeenCalledTimes(2);
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
+        });
+
+        test('fails if sendTelegram throws for sendMessage', async () => {
+            const update = {
+                my_chat_member: {
+                    new_chat_member: { status: 'administrator' },
+                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+                }
+            };
+
+            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+            years.addYear.mockResolvedValueOnce(undefined);
+            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
+            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // sendMessage
+
+            await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
+
+            expect(network.sendTelegram).toHaveBeenCalledTimes(3);
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', expect.anything());
+        });
+
+        test('fails if updateLeaderboards throws', async () => {
+            const update = {
+                my_chat_member: {
+                    new_chat_member: { status: 'administrator' },
+                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+                }
+            };
+
+            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+            years.addYear.mockResolvedValueOnce(undefined);
+            network.sendTelegram.mockResolvedValue(undefined);
+            schedule.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
+
+            await expect(onTelegramUpdate(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
         });
 
         test.each(['group', 'supergroup'])('succeeds for admin membership in %s', async (chatType) => {
@@ -220,7 +300,7 @@ describe('onTelegramUpdate', () => {
             };
 
             dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValueOnce(undefined);
+            network.sendTelegram.mockResolvedValue(undefined);
 
             await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
 
@@ -237,11 +317,27 @@ describe('onTelegramUpdate', () => {
 
             expect(years.addYear).toHaveBeenCalledWith(1980);
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            expect(network.sendTelegram).toHaveBeenCalledTimes(3);
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', {
+                chat_id: -4242,
+                description: 'Advent of Code 1980 day 13 discussion'
+            });
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
+                chat_id: -4242,
+                photo: expect.anything() // TODO { path: 'path to the img }
+            }, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: -4242,
                 text: '@AocElfBot is online, AoC 1980 Day 13',
                 disable_notification: true
             });
+
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
 
             expect(logs.logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
         });

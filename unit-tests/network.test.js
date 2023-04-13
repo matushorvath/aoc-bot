@@ -88,30 +88,30 @@ describe('sendTelegram', () => {
         axios.post.mockResolvedValueOnce({ data: { fAkEtElEgRaMdAtA: true } });
         secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
 
-        await expect(sendTelegram('aPi', { pAramS: true })).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
+        await expect(sendTelegram('aPi', { dAtA: true }, { cOnFiG: true })).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', { pAramS: true }
+            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', { dAtA: true }, { cOnFiG: true }
         );
     });
 
-    test('sends a request without params', async () => {
+    test('sends a request without config', async () => {
         axios.post.mockResolvedValueOnce({ data: { fAkEtElEgRaMdAtA: true } });
         secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
 
-        await expect(sendTelegram('aPi')).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
+        await expect(sendTelegram('aPi', { dAtA: true })).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', {}
+            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', { dAtA: true }, undefined
         );
     });
 
     test('fails on missing secret', async () => {
         secrets.getTelegramSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
-        await expect(sendTelegram('aPi', { pAramS: true })).rejects.toThrow('sEcReTeRrOr');
+        await expect(sendTelegram('aPi', { dAtA: true })).rejects.toThrow('sEcReTeRrOr');
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).not.toHaveBeenCalled();
@@ -121,11 +121,11 @@ describe('sendTelegram', () => {
         axios.post.mockRejectedValueOnce(new Error('aXiOsErRoR'));
         secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
 
-        await expect(sendTelegram('aPi', { pAramS: true })).rejects.toThrow('aXiOsErRoR');
+        await expect(sendTelegram('aPi', { dAtA: true })).rejects.toThrow('aXiOsErRoR');
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', { pAramS: true }
+            'https://api.telegram.org/bottElEgRaMsEcReT/aPi', { dAtA: true }, undefined
         );
     });
 });
