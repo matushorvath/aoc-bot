@@ -23,6 +23,7 @@
         "node": "^18"
     },
     "files": [
+        "images/aoc*.png",
         "src/*.js",
         "src/help.txt",
         "template.yml"

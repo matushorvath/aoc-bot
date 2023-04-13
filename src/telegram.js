@@ -10,6 +10,7 @@ const { loadStartTimes } = require('./times');
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const luxon = require('luxon');
 
+const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 
@@ -51,18 +52,63 @@ const onMyChatMember = async (my_chat_member) => {
 
     console.log('onMyChatMember: chat stored in db');
 
+    // Remember that we have at least one chat for this year
     await addYear(year);
 
-    // Initialize the group
-    await sendTelegram('sendMessage', {
-        chat_id: my_chat_member.chat.id,
-        text: `@AocElfBot is online, AoC ${year} Day ${day}`,
-        disable_notification: true
-    });
+    // Initialize the chat
+    await initializeChat(my_chat_member.chat.id, year, day);
 
     await logActivity(`Added to chat '${my_chat_member.chat.title}' (${year}/${day})`);
 
     console.log('onMyChatMember: done');
+};
+
+const initializeChat = async (chatId, year, day) => {
+    // In parallel set up various properties on the new chat, and trigger a leaderboard update
+    const results = await Promise.allSettled([
+        updateLeaderboards({ year, day }),
+        setChatProperties(chatId, year, day)
+    ]);
+
+    const rejects = results.filter(r => r.status === 'rejected');
+    if (rejects.length > 0) {
+        throw new AggregateError(rejects.map(reject => new Error(reject.reason)),
+            'initializeChat: Error while initializing the chat');
+    }
+};
+
+const setChatProperties = async (chatId, year, day) => {
+    // Setup chat properties
+    await sendTelegram('setChatDescription', {
+        chat_id: chatId,
+        description: `Advent of Code ${year} day ${day} discussion`
+    });
+
+    // Setup chat photo
+    try {
+        const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
+        const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
+
+        await sendTelegram('setChatPhoto', {
+            chat_id: chatId,
+            photo: photo
+        }, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.warn(`setupNewChat: No icon found for day ${day}`);
+        } else {
+            throw error;
+        }
+    }
+
+    // Write a message to the new chat
+    await sendTelegram('sendMessage', {
+        chat_id: chatId,
+        text: `@AocElfBot is online, AoC ${year} Day ${day}`,
+        disable_notification: true
+    });
 };
 
 const onMessage = async (message) => {

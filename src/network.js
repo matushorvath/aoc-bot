@@ -34,12 +34,10 @@ const getLeaderboard = async (year) => {
     return response.data;
 };
 
-const sendTelegram = async (api, params = {}) => {
-    // console.debug(`sendTelegram: api ${api} params ${JSON.stringify(params)}`);
-
+const sendTelegram = async (api, data, config = undefined) => {
     const secret = await getTelegramSecret();
     const url = `https://api.telegram.org/bot${secret}/${api}`;
-    const response = await axios.post(url, params);
+    const response = await axios.post(url, data, config);
 
     return response.data;
 };
