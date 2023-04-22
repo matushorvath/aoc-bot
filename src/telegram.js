@@ -119,7 +119,7 @@ const onMessage = async (message) => {
         return;
     }
 
-    let m = message.text.match(/^\s*\/(reg|unreg|logs|status|update|board|start|help)(?:\s+(.+))?\s*$/);
+    let m = message.text.match(/^\s*\/([a-z0-9]+)(?:\s+(.+))?\s*$/);
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);

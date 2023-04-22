@@ -31,8 +31,8 @@ const loadCredentials = async () => {
 let client;
 
 beforeAll(async () => {
-    const credentials = await loadCredentials();
-    client = new TelegramClient(credentials);
+    const { apiId, apiHash } = await loadCredentials();
+    client = new TelegramClient(apiId, apiHash);
 
     try {
         await client.init();
@@ -110,9 +110,21 @@ describe('chat membership', () => {
     });
 
     test('add bot to chat as admin', async () => {
-        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBe(
-            '@AocElfBot is online, AoC 1980 Day 13'
-        );
+        // Start receiving bot messages
+        const filter = update =>
+            update?._ === 'updateNewMessage'
+            && update?.message?.sender_id?._ === 'messageSenderUser'
+            && update?.message?.sender_id?.user_id === botUserId
+            && update?.message?.chat_id === testChatId;
+        const updatesPromise = client.waitForUpdates(filter);
+
+        // Expect the bot to be added to chat
+        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBeUndefined();
+
+        // Expect the bot to notify the chat with a message
+        await expect(updatesPromise).resolves.toMatchObject([{
+            message: { content: { text: { text: '@AocElfBot is online, AoC 1980 Day 13' } } }
+        }]);
     });
 
     test('remove bot from chat', async () => {

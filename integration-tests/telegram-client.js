@@ -5,13 +5,20 @@ const { TDLib } = require('tdl-tdlib-addon');
 const { getTdjson } = require('prebuilt-tdlib');
 
 class TelegramClient {
-    constructor(credentials) {
-        this.credentials = credentials;
+    constructor(apiId, apiHash) {
+        this.apiId = apiId;
+        this.apiHash = apiHash;
     }
 
     async init() {
+        const options = {
+            apiId: this.apiId,
+            apiHash: this.apiHash,
+            skipOldUpdates: true
+        };
+
         const tdlib = new TDLib(getTdjson());
-        this.client = new Client(tdlib, { skipOldUpdates: true, ...this.credentials });
+        this.client = new Client(tdlib, options);
         this.client.on('error', console.error);
 
         const connectionReadyFilter = (update) => {
@@ -57,7 +64,7 @@ class TelegramClient {
         });
 
         if (chat?._ !== 'chat') {
-            throw new Error(`Invalid response: ${chat}`);
+            throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
         }
 
         const messageFromBotFilter = (update) => {
@@ -81,30 +88,22 @@ class TelegramClient {
         });
 
         if (message?._ !== 'message' || message?.sending_state?._ !== 'messageSendingStatePending') {
-            throw new Error(`Invalid response: ${message}`);
+            throw new Error(`Invalid response: ${JSON.stringify(message)}`);
         }
 
         return (await updatesPromise).map(update => update?.message?.content?.text?.text);
     }
 
     async addChatAdmin(userId, chatId) {
-        const added = await this.client.invoke({
+        const statusAdd = await this.client.invoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
         });
 
-        if (added?._ !== 'ok') {
-            throw new Error(`Invalid response: ${added}`);
+        if (statusAdd?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(statusAdd)}`);
         }
-
-        const messageFromBotFilter = (update) => {
-            return update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === userId
-                && update?.message?.chat_id === chatId;
-        };
-        const updatesPromise = this.waitForUpdates(messageFromBotFilter);
 
         const statusSet = await this.client.invoke({
             _: 'setChatMemberStatus',
@@ -130,14 +129,12 @@ class TelegramClient {
         });
 
         if (statusSet?._ !== 'ok') {
-            throw new Error(`Invalid response: ${statusSet}`);
+            throw new Error(`Invalid response: ${JSON.stringify(statusSet)}`);
         }
-
-        return (await updatesPromise)[0]?.message?.content?.text?.text;
     }
 
     async removeChatMember(userId, chatId) {
-        const statusSet = await this.client.invoke({
+        const status = await this.client.invoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
@@ -149,8 +146,8 @@ class TelegramClient {
             }
         });
 
-        if (statusSet?._ !== 'ok') {
-            throw new Error(`Invalid response: ${statusSet}`);
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
     }
 }
