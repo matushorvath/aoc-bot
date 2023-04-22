@@ -46,9 +46,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     environment: production
-    concurrency:
-      group: deployment
-      cancel-in-progress: true
+    concurrency: deployment
 
     steps:
       - name: Checkout sources

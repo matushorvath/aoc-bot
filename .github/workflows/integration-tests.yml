@@ -3,8 +3,7 @@ name: Integration Tests
 on:
   workflow_dispatch:
 
-concurrency:
-  group: integration-tests
+concurrency: integration-tests
 
 jobs:
   test:
