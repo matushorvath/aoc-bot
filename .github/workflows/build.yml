@@ -39,21 +39,16 @@ jobs:
           annotations: none
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy-mutex:
-    name: Wait for previous deployments
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: mktcode/consecutive-workflow-action@bda2f16146ed555c04779c7b575af992afc7e851
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-
   deploy:
     name: Deploy to AWS
     runs-on: ubuntu-22.04
-    needs: [ test, deploy-mutex ]
+    needs: test
     if: github.ref == 'refs/heads/main'
+
+    environment: production
+    concurrency:
+      group: deployment
+      cancel-in-progress: true
 
     steps:
       - name: Checkout sources
