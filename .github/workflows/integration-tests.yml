@@ -3,9 +3,8 @@ name: Integration Tests
 on:
   workflow_dispatch:
 
-env:
-  FORCE_COLOR: 1
-  TERM: xterm-color
+concurrency:
+  group: integration-tests
 
 jobs:
   test:
