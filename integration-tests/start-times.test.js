@@ -1,7 +1,10 @@
 'use strict';
 
 const axios = require('axios');
+<<<<<<< Updated upstream
 require('./expect-one-of');
+=======
+>>>>>>> Stashed changes
 
 jest.setTimeout(15 * 1000);
 
@@ -24,6 +27,7 @@ describe('POST /start', () => {
         });
     });
 
+<<<<<<< Updated upstream
     test('returns correct error response', async () => {
         await expect(axios.post(url)).rejects.toMatchObject({
             response: {
@@ -45,12 +49,20 @@ body: {
         });
     });
 
+=======
+>>>>>>> Stashed changes
     test('with no payload', async () => {
         await expect(axios.post(url)).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: {
+<<<<<<< Updated upstream
                     details: 'Missing or invalid request body'
+=======
+                    error: 'Bad Request',
+                    details: 'Missing request body',
+                    usage: expect.any(String)
+>>>>>>> Stashed changes
                 }
             }
         });
@@ -61,7 +73,13 @@ body: {
             response: {
                 status: 400,
                 data: {
+<<<<<<< Updated upstream
                     details: 'Invalid JSON syntax'
+=======
+                    error: 'Bad Request',
+                    details: 'Invalid JSON syntax',
+                    usage: expect.any(String)
+>>>>>>> Stashed changes
                 }
             }
         });
@@ -72,7 +90,26 @@ body: {
             response: {
                 status: 400,
                 data: {
+<<<<<<< Updated upstream
                     details: "Expecting 'version' parameter to be 1"
+=======
+                    error: 'Bad Request',
+                    details: 'Invalid JSON syntax',
+                    usage: expect.any(String)
+                }
+            }
+        });
+    });
+
+    test('with invalid Content-Type', async () => {
+        await expect(axios.post(url, validData, { headers: { 'Content-Type': 'text/plain' } })).rejects.toMatchObject({
+            response: {
+                status: 400,
+                data: {
+                    error: 'Bad Request',
+                    details: 'Invalid JSON syntax',
+                    usage: expect.any(String)
+>>>>>>> Stashed changes
                 }
             }
         });
@@ -84,6 +121,7 @@ body: {
         return copy;
     };
 
+<<<<<<< Updated upstream
     test.each([
         ['missing version', without(validData, 'version'), "Expecting 'version' parameter to be 1"],
         ['invalid version', { ...validData, version: '1' }, "Expecting 'version' parameter to be 1"],
@@ -104,10 +142,25 @@ body: {
             response: {
                 status: 400,
                 data: { details }
+=======
+    // TODO missing/incorrect each field
+    test.each([
+        ['missing version', without(validData, 'version')]
+    ])('with %s', async (_description, data) => {
+        await expect(axios.post(url, data, { headers: { 'Content-Type': 'application/json' } })).rejects.toMatchObject({
+            response: {
+                status: 400,
+                data: {
+                    error: 'Bad Request',
+                    details: "Expecting 'version' parameter to be 1",
+                    usage: expect.any(String)
+                }
+>>>>>>> Stashed changes
             }
         });
     });
 
+<<<<<<< Updated upstream
     test('with defaults', async () => {
         await expect(axios.post(url, validData)).resolves.toMatchObject({
             status: expect.toBeOneOf(200, 201)
@@ -160,3 +213,9 @@ body: {
         });
     });
 });
+=======
+    // correct field (200 or 201)
+});
+
+// OPTIONS + CORS
+>>>>>>> Stashed changes

@@ -64,6 +64,10 @@ const parseBody = (event, formatError) => {
         // istanbul ignore else
         if (error instanceof SyntaxError) {
             console.warn('Error while parsing body', error);
+<<<<<<< Updated upstream
+=======
+            console.debug(body);
+>>>>>>> Stashed changes
             throw new ResultError(400, 'Bad Request', formatError('Invalid JSON syntax'));
         } else {
             throw error;
@@ -82,8 +86,13 @@ const postStart = async (event) => {
     console.log('postStart: start');
 
     const body = parseBody(event, explainError);
+<<<<<<< Updated upstream
     if (!body || typeof(body) !== 'object') {
         throw new ResultError(400, 'Bad Request', explainError('Missing or invalid request body'));
+=======
+    if (!body) {
+        throw new ResultError(400, 'Bad Request', explainError('Missing request body'));
+>>>>>>> Stashed changes
     }
 
     const { version, year, day, part, name } = body;
