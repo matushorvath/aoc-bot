@@ -45,6 +45,6 @@
         "prebuilt-tdlib": "^0.1008000.0",
         "tdl": "^7.2.0",
         "tdl-tdlib-addon": "^1.2.2",
-        "yaml": "^2.2.1"
+        "yaml": "^2.2.2"
     }
 }
