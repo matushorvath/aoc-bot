@@ -5,15 +5,19 @@ const { handler } = require('../src/api');
 const secrets = require('../src/secrets');
 jest.mock('../src/secrets');
 
-const telegram = require('../src/telegram');
-jest.mock('../src/telegram');
+const member = require('../src/member');
+jest.mock('../src/member');
+
+const message = require('../src/message');
+jest.mock('../src/message');
 
 const times = require('../src/times');
 jest.mock('../src/times');
 
 beforeEach(() => {
     secrets.getTelegramSecret.mockReset();
-    telegram.onTelegramUpdate.mockReset();
+    member.onMyChatMember.mockReset();
+    message.onMessage.mockReset();
     times.onStartTime.mockReset();
 });
 
@@ -34,7 +38,8 @@ describe('API handler', () => {
         });
 
         expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('rejects unknown resource path', async () => {
@@ -42,14 +47,16 @@ describe('API handler', () => {
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 403, body: '{"error":"Forbidden"}' });
 
         expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test.each(['/telegram', '/start'])('rejects unknown method for %s', async (resource) => {
         const event = { resource, httpMethod: 'GET' };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 405, body: '{"error":"Method Not Allowed"}' });
 
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
         expect(times.onStartTime).not.toHaveBeenCalled();
     });
 });
@@ -62,7 +69,8 @@ describe('POST /telegram API', () => {
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles request with missing secret', async () => {
@@ -72,7 +80,8 @@ describe('POST /telegram API', () => {
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles request with invalid secret', async () => {
@@ -82,22 +91,38 @@ describe('POST /telegram API', () => {
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
-    test('handles onTelegramUpdate throwing', async () => {
+    test('handles onMyChatMember throwing', async () => {
         secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
-        telegram.onTelegramUpdate.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
+        member.onMyChatMember.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
             queryStringParameters: { gOoDsEcReT: '' },
-            body: '{"bOdY":true}'
+            body: '{"my_chat_member":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
+        expect(member.onMyChatMember).toHaveBeenCalledWith(true);
+    });
+
+    test('handles onMessage throwing', async () => {
+        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        message.onMessage.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
+
+        const event = {
+            resource: '/telegram', httpMethod: 'POST',
+            queryStringParameters: { gOoDsEcReT: '' },
+            body: '{"message":true}'
+        };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
+
+        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('handles invalid payload', async () => {
@@ -114,10 +139,11 @@ describe('POST /telegram API', () => {
         });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).not.toHaveBeenCalled();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
     });
 
-    test('processes plain payload', async () => {
+    test('processes an ignored update', async () => {
         secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
@@ -128,7 +154,22 @@ describe('POST /telegram API', () => {
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
+    });
+
+    test('processes plain payload', async () => {
+        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+
+        const event = {
+            resource: '/telegram', httpMethod: 'POST',
+            queryStringParameters: { gOoDsEcReT: '' },
+            body: '{"message":true}'
+        };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
+
+        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('processes base64 payload', async () => {
@@ -138,12 +179,12 @@ describe('POST /telegram API', () => {
             resource: '/telegram', httpMethod: 'POST',
             queryStringParameters: { gOoDsEcReT: '' },
             isBase64Encoded: true,
-            body: 'eyJiT2RZIjp0cnVlfQ=='
+            body: 'eyJtZXNzYWdlIjp0cnVlfQ=='        // {"message":true} encoded with base64
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
+        expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('returns correct headers with successful request', async () => {
@@ -153,7 +194,7 @@ describe('POST /telegram API', () => {
             resource: '/telegram', httpMethod: 'POST',
             queryStringParameters: { gOoDsEcReT: '' },
             isBase64Encoded: false,
-            body: '{"bOdY":true}'
+            body: '{"message":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({
             headers: {
@@ -168,7 +209,7 @@ describe('POST /telegram API', () => {
         });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
-        expect(telegram.onTelegramUpdate).toHaveBeenCalledWith({ bOdY: true });
+        expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 });
 

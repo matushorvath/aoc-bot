@@ -1,6 +1,6 @@
 'use strict';
 
-const { onTelegramUpdate } = require('../src/telegram');
+const { onMessage } = require('../src/message');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
@@ -17,961 +17,608 @@ jest.mock('../src/board');
 const schedule = require('../src/schedule');
 jest.mock('../src/schedule');
 
-const years = require('../src/years');
-jest.mock('../src/years');
-
 const logs = require('../src/logs');
 jest.mock('../src/logs');
 
 const fsp = require('fs/promises');
-const fs = require('fs');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.batchWriteItem.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
-    years.addYear.mockReset();
     logs.enableLogs.mockReset();
     logs.disableLogs.mockReset();
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
     schedule.updateLeaderboards.mockReset();
-    logs.logActivity.mockReset();
 });
 
-describe('onTelegramUpdate', () => {
-    test('ignores unknown updates', async () => {
-        const update = { nOnSeNsE: true };
-        await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+describe('onMessage generic', () => {
+    test('ignores non-private message', async () => {
+        const update = {
+            text: 'tExT',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'tYpE', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
         expect(network.getLeaderboard).not.toHaveBeenCalled();
         expect(times.loadStartTimes).not.toHaveBeenCalled();
     });
 
-    describe('onMyChatMember', () => {
-        test('ignores non-admin chat member update', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'sTaTuS' },
-                    chat: { type: 'supergroup', title: 'tItLe' }
-                }
-            };
+    test('ignores message with no text', async () => {
+        const update = {
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+        await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-            expect(years.addYear).not.toHaveBeenCalled();
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(times.loadStartTimes).not.toHaveBeenCalled();
+    });
+
+    test('ignores message with no sender', async () => {
+        const update = {
+            text: 'tExT',
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(times.loadStartTimes).not.toHaveBeenCalled();
+    });
+
+    test('handles message with unknown command', async () => {
+        const update = {
+            text: 'tExT',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Sorry, I don't understand that command"
+        });
+    });
+});
+
+describe('onMessage /reg', () => {
+    test('without parameters', async () => {
+        const update = {
+            text: '/reg',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Sorry, I don't understand that command"
+        });
+    });
+
+    test('with new user', async () => {
+        const update = {
+            text: '/reg New User',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('ignores non-group/non-supergroup membership', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { type: 'sTuFf', title: 'tItLe' }
-                }
-            };
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'New User'");
 
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "You are now registered as AoC user 'New User'", disable_notification: true
+        });
+    });
 
-            expect(years.addYear).not.toHaveBeenCalled();
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
+    test('with existing user', async () => {
+        const update = {
+            text: '/reg Existing User',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
+        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('ignores membership in a supergroup with no title', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { type: 'supergroup' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-            expect(years.addYear).not.toHaveBeenCalled();
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
-        });
-
-        test('ignores membership in a supergroup with invalid title', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { type: 'supergroup', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-            expect(years.addYear).not.toHaveBeenCalled();
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
-        });
-
-        test('fails if dynamodb throws', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('dYnAmOeRrOr');
-
-            expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
-                Item: {
-                    id: { S: 'chat' },
-                    sk: { S: '1980:13' },
-                    y: { N: '1980' },
-                    d: { N: '13' },
-                    chat: { N: '-4242' }
-                },
-                TableName: 'aoc-bot'
-            });
-
-            expect(years.addYear).not.toHaveBeenCalled();
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-        });
-
-        test('fails if addYear throws', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockRejectedValueOnce(new Error('aDdYeArErRoR'));
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('aDdYeArErRoR');
-
-            expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
-                Item: {
-                    id: { S: 'chat' },
-                    sk: { S: '1980:13' },
-                    y: { N: '1980' },
-                    d: { N: '13' },
-                    chat: { N: '-4242' }
-                },
-                TableName: 'aoc-bot'
-            });
-
-            expect(years.addYear).toHaveBeenCalledWith(1980);
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-        });
-
-        test('fails if sendTelegram throws for setChatDescription', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatDescription
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
-
-            expect(network.sendTelegram).toHaveBeenCalledTimes(1);
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
-        });
-
-        test('succeeds if createReadStream throws ENOENT', async () => {
-            const mockCreateReadStream = jest.spyOn(fs, 'createReadStream');
-            const mockConsoleWarn = jest.spyOn(console, 'warn');
-            try {
-                const update = {
-                    my_chat_member: {
-                        new_chat_member: { status: 'administrator' },
-                        chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                    }
-                };
-
-                dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-                years.addYear.mockResolvedValueOnce(undefined);
-                network.sendTelegram.mockResolvedValue(undefined);
-
-                mockCreateReadStream.mockImplementation(() => { throw { message: 'fSeRrOr', code: 'ENOENT' }; });
-
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-                expect(mockCreateReadStream).toHaveBeenCalled();
-                expect(mockConsoleWarn).toHaveBeenCalledWith('setChatPhoto: No icon found for day 13');
-            } finally {
-                mockConsoleWarn.mockRestore();
-                mockCreateReadStream.mockRestore();
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
+            RequestItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
+                ]
             }
         });
 
-        test('fails if sendTelegram throws for setChatPhoto', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
+        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
 
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPhoto
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
-
-            expect(network.sendTelegram).toHaveBeenCalledTimes(2);
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
-        });
-
-        test('fails if sendTelegram throws for sendMessage', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-            network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
-            network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // sendMessage
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('tElEgRaMeRrOr');
-
-            expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', expect.anything());
-        });
-
-        test('fails if updateLeaderboards throws', async () => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValue(undefined);
-            schedule.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
-
-            await expect(onTelegramUpdate(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
-        });
-
-        test.each(['group', 'supergroup'])('succeeds for admin membership in %s', async (chatType) => {
-            const update = {
-                my_chat_member: {
-                    new_chat_member: { status: 'administrator' },
-                    chat: { id: -4242, type: chatType, title: 'AoC 1980 Day 13' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValue(undefined);
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
-                Item: {
-                    id: { S: 'chat' },
-                    sk: { S: '1980:13' },
-                    y: { N: '1980' },
-                    d: { N: '13' },
-                    chat: { N: '-4242' }
-                },
-                TableName: 'aoc-bot'
-            });
-
-            expect(years.addYear).toHaveBeenCalledWith(1980);
-
-            expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', {
-                chat_id: -4242,
-                description: 'Advent of Code 1980 day 13 discussion'
-            });
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
-                chat_id: -4242,
-                photo: expect.anything() // TODO { path: 'path to the img }
-            }, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
-                chat_id: -4242,
-                text: '@AocElfBot is online, AoC 1980 Day 13',
-                disable_notification: true
-            });
-
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
         });
     });
 
-    describe('onMessage generic', () => {
-        test('ignores non-private message', async () => {
-            const update = {
-                message: {
-                    text: 'tExT',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'tYpE', title: 'tItLe' }
-                }
-            };
+    test('when some user records fail to delete', async () => {
+        const update = {
+            text: '/reg Existing User',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
+        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
+            UnprocessedItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
+                ]
+            }
         });
 
-        test('ignores message with no text', async () => {
-            const update = {
-                message: {
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+        // Expect it to succeed, we just log a warning that some records remained
+        await expect(onMessage(update)).resolves.toBeUndefined();
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('ignores message with no sender', async () => {
-            const update = {
-                message: {
-                    text: 'tExT',
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-            expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).not.toHaveBeenCalled();
-            expect(network.getLeaderboard).not.toHaveBeenCalled();
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
+            RequestItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
+                ]
+            }
         });
 
-        test('handles message with unknown command', async () => {
-            const update = {
-                message: {
-                    text: 'tExT',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
+        });
+    });
+});
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "Sorry, I don't understand that command"
-            });
+describe('onMessage /unreg', () => {
+    test('with unknown user', async () => {
+        const update = {
+            text: '/unreg',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
+        });
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: 'You are not registered', disable_notification: true
         });
     });
 
-    describe('onMessage /reg', () => {
-        test('without parameters', async () => {
-            const update = {
-                message: {
-                    text: '/reg',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+    test('with existing user', async () => {
+        const update = {
+            text: '/unreg',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
+        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "Sorry, I don't understand that command"
-            });
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('with new user', async () => {
-            const update = {
-                message: {
-                    text: '/reg New User',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'New User'");
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: "You are now registered as AoC user 'New User'", disable_notification: true
-            });
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
+            RequestItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
+                ]
+            }
         });
 
-        test('with existing user', async () => {
-            const update = {
-                message: {
-                    text: '/reg Existing User',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+        expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
 
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-            dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-                RequestItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                    ]
-                }
-            });
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
-            });
-        });
-
-        test('when some user records fail to delete', async () => {
-            const update = {
-                message: {
-                    text: '/reg Existing User',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-            dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
-                UnprocessedItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
-                    ]
-                }
-            });
-
-            // Expect it to succeed, we just log a warning that some records remained
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-                RequestItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                    ]
-                }
-            });
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
-            });
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
         });
     });
 
-    describe('onMessage /unreg', () => {
-        test('with unknown user', async () => {
-            const update = {
-                message: {
-                    text: '/unreg',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+    test('when some user records fail to delete', async () => {
+        const update = {
+            text: '/unreg',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: 'You are not registered', disable_notification: true
-            });
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
+        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
+            UnprocessedItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
+                ]
+            }
         });
 
-        test('with existing user', async () => {
-            const update = {
-                message: {
-                    text: '/unreg',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+        // Expect it to succeed, we just log a warning that some records remained
+        await expect(onMessage(update)).resolves.toBeUndefined();
 
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-            dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-                RequestItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                    ]
-                }
-            });
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
-            });
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('when some user records fail to delete', async () => {
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
+            RequestItems: {
+                'aoc-bot': [
+                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
+                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
+                ]
+            }
+        });
+
+        expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
+        });
+    });
+});
+
+describe('onMessage /logs', () => {
+    test('without parameters', async () => {
+        const update = {
+            text: '/logs',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.enableLogs).not.toHaveBeenCalled();
+        expect(logs.disableLogs).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Sorry, I don't understand that command"
+        });
+    });
+
+    test('with an invalid parameter', async () => {
+        const update = {
+            text: '/logs xxx',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.enableLogs).not.toHaveBeenCalled();
+        expect(logs.disableLogs).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop"
+        });
+    });
+
+    test('enabling logs for a user', async () => {
+        const update = {
+            text: '/logs on',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.enableLogs).toHaveBeenCalledWith(2323);
+        expect(logs.disableLogs).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Activity logs will now be sent to this chat'
+        });
+    });
+
+    test('disabling logs for a user', async () => {
+        const update = {
+            text: '/logs off',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.enableLogs).not.toHaveBeenCalled();
+        expect(logs.disableLogs).toHaveBeenCalledWith(2323);
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Activity logs will now be no longer sent to this chat'
+        });
+    });
+});
+
+describe('onMessage /board', () => {
+    test('with invalid parameters', async () => {
+        const update = {
+            text: '/board xyz abc 123',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Invalid parameters (see /help)'
+        });
+    });
+
+    test('with empty leaderboard', async () => {
+        const update = {
+            text: '/board 1980 24',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        network.getLeaderboard.mockResolvedValueOnce(undefined);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
+        expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(boardFormat.formatBoard).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: 'Could not retrieve leaderboard data'
+        });
+    });
+
+    describe.each([
+        ['no parameters', '/board', { year: 1980, day: 13 }],
+        ['the "today" parameter', '/board today', { year: 1980, day: 13 }],
+        ['specific date selection, year first', '/board 2001 11', { year: 2001, day: 11 }],
+        ['specific date selection, day first', '/board 11 2001', { year: 2001, day: 11 }],
+        ['specific date selection, without a year', '/board 19', { year: 1980, day: 19 }]
+    ])('with %s', (_description, command, expectedSelection) => {
+        beforeEach(() => {
+            jest.useFakeTimers('modern');
+            // Intentionally use time that falls into different dates in UTC and in EST
+            jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
+        test('generates the board', async () => {
             const update = {
-                message: {
-                    text: '/unreg',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
+                text: command,
+                from: { id: 7878 },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-            dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
-                UnprocessedItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
-                    ]
-                }
-            });
+            network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
+            times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+            boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
 
-            // Expect it to succeed, we just log a warning that some records remained
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+            await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-                RequestItems: {
-                    'aoc-bot': [
-                        { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                        { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                    ]
-                }
-            });
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+            expect(network.getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
+            expect(times.loadStartTimes).toHaveBeenCalledWith(expectedSelection.year, expectedSelection.day);
+            expect(boardFormat.formatBoard).toHaveBeenCalledWith(
+                expectedSelection.year, expectedSelection.day, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
 
             expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
+                chat_id: 2323, parse_mode: 'MarkdownV2',
+                disable_notification: true, disable_web_page_preview: true,
+                text: 'bOaRd'
             });
         });
     });
 
-    describe('onMessage /logs', () => {
-        test('without parameters', async () => {
-            const update = {
-                message: {
-                    text: '/logs',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+    // TODO test errors from getLeaderboard, loadStartTimes, formatBoard
+});
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+describe('onMessage /status', () => {
+    test('with unknown user', async () => {
+        const update = {
+            text: '/status',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            expect(logs.enableLogs).not.toHaveBeenCalled();
-            expect(logs.disableLogs).not.toHaveBeenCalled();
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "Sorry, I don't understand that command"
-            });
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: {
+                id: { S: 'telegram_user' },
+                sk: { S: '7878' }
+            },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('with an invalid parameter', async () => {
-            const update = {
-                message: {
-                    text: '/logs xxx',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(logs.enableLogs).not.toHaveBeenCalled();
-            expect(logs.disableLogs).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop"
-            });
-        });
-
-        test('enabling logs for a user', async () => {
-            const update = {
-                message: {
-                    text: '/logs on',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(logs.enableLogs).toHaveBeenCalledWith(2323);
-            expect(logs.disableLogs).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Activity logs will now be sent to this chat'
-            });
-        });
-
-        test('disabling logs for a user', async () => {
-            const update = {
-                message: {
-                    text: '/logs off',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(logs.enableLogs).not.toHaveBeenCalled();
-            expect(logs.disableLogs).toHaveBeenCalledWith(2323);
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Activity logs will now be no longer sent to this chat'
-            });
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: 'You are not registered', disable_notification: true
         });
     });
 
-    describe('onMessage /board', () => {
-        test('with invalid parameters', async () => {
-            const update = {
-                message: {
-                    text: '/board xyz abc 123',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
+    test('with existing user', async () => {
+        const update = {
+            text: '/status',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'Existing User' } } });
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Invalid parameters (see /help)'
-            });
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } },
+            ProjectionExpression: 'aoc_user'
         });
 
-        test('with empty leaderboard', async () => {
-            const update = {
-                message: {
-                    text: '/board 1980 24',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            network.getLeaderboard.mockResolvedValueOnce(undefined);
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
-            expect(times.loadStartTimes).not.toHaveBeenCalled();
-            expect(boardFormat.formatBoard).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
-                text: 'Could not retrieve leaderboard data'
-            });
-        });
-
-        describe.each([
-            ['no parameters', '/board', { year: 1980, day: 13 }],
-            ['the "today" parameter', '/board today', { year: 1980, day: 13 }],
-            ['specific date selection, year first', '/board 2001 11', { year: 2001, day: 11 }],
-            ['specific date selection, day first', '/board 11 2001', { year: 2001, day: 11 }],
-            ['specific date selection, without a year', '/board 19', { year: 1980, day: 19 }]
-        ])('with %s', (_description, command, expectedSelection) => {
-            beforeEach(() => {
-                jest.useFakeTimers('modern');
-                // Intentionally use time that falls into different dates in UTC and in EST
-                jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
-            });
-
-            afterAll(() => {
-                jest.useRealTimers();
-            });
-
-            test('generates the board', async () => {
-                const update = {
-                    message: {
-                        text: command,
-                        from: { id: 7878 },
-                        chat: { id: 2323, type: 'private', title: 'tItLe' }
-                    }
-                };
-
-                network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
-                times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
-                boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
-
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-                expect(network.getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
-                expect(times.loadStartTimes).toHaveBeenCalledWith(expectedSelection.year, expectedSelection.day);
-                expect(boardFormat.formatBoard).toHaveBeenCalledWith(
-                    expectedSelection.year, expectedSelection.day, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
-
-                expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                    chat_id: 2323, parse_mode: 'MarkdownV2',
-                    disable_notification: true, disable_web_page_preview: true,
-                    text: 'bOaRd'
-                });
-            });
-        });
-
-        // TODO test errors from getLeaderboard, loadStartTimes, formatBoard
-    });
-
-    describe('onMessage /status', () => {
-        test('with unknown user', async () => {
-            const update = {
-                message: {
-                    text: '/status',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: {
-                    id: { S: 'telegram_user' },
-                    sk: { S: '7878' }
-                },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, text: 'You are not registered', disable_notification: true
-            });
-        });
-
-        test('with existing user', async () => {
-            const update = {
-                message: {
-                    text: '/status',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'Existing User' } } });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-                TableName: 'aoc-bot',
-                Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } },
-                ProjectionExpression: 'aoc_user'
-            });
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: "You are registered as AoC user 'Existing User'"
-            });
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "You are registered as AoC user 'Existing User'"
         });
     });
+});
 
-    describe('onMessage /update', () => {
-        describe.each([
-            ['defaults (outside of December)', '/update'],
-            ['the "all" parameter', '/update all']
-        ])('with %s', (_description, command) => {
-            beforeEach(() => {
-                jest.useFakeTimers('modern');
-                jest.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
+describe('onMessage /update', () => {
+    describe.each([
+        ['defaults (outside of December)', '/update'],
+        ['the "all" parameter', '/update all']
+    ])('with %s', (_description, command) => {
+        beforeEach(() => {
+            jest.useFakeTimers('modern');
+            jest.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
+        });
+
+        test('with no updates', async () => {
+            const update = {
+                text: command,
+                from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
+            };
+
+            schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [], sent: [], created: [], updated: []
             });
 
-            afterAll(() => {
-                jest.useRealTimers();
+            await expect(onMessage(update)).resolves.toBeUndefined();
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Processing leaderboards and invites (all years)'
             });
 
-            test('with no updates', async () => {
-                const update = {
-                    message: {
-                        text: command,
-                        from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
-                        chat: { id: 2323, type: 'private', title: 'tItLe' }
-                    }
-                };
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                schedule.updateLeaderboards.mockResolvedValueOnce({
-                    unretrieved: [], sent: [], created: [], updated: []
-                });
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (all years)");
 
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Leaderboards updated\n(no changes)\n'
+            });
+        });
 
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites (all years)'
-                });
+        test('with updates', async () => {
+            const update = {
+                text: '/update all',
+                from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
+            };
 
-                expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
-
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (all years)");
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: 'Leaderboards updated\n(no changes)\n'
-                });
+            schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [{ year: 1984 }, { year: 2345 }],
+                sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
+                created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
+                updated: [{ year: 1918, day: 14 }, { year: 2063, day: 5 }]
             });
 
-            test('with updates', async () => {
-                const update = {
-                    message: {
-                        text: '/update all',
-                        from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
-                        chat: { id: 2323, type: 'private', title: 'tItLe' }
-                    }
-                };
+            await expect(onMessage(update)).resolves.toBeUndefined();
 
-                schedule.updateLeaderboards.mockResolvedValueOnce({
-                    unretrieved: [{ year: 1984 }, { year: 2345 }],
-                    sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
-                    created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
-                    updated: [{ year: 1918, day: 14 }, { year: 2063, day: 5 }]
-                });
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Processing leaderboards and invites (all years)'
+            });
 
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
 
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: 'Processing leaderboards and invites (all years)'
-                });
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (all years)");
 
-                expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
-
-                expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (all years)");
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: `Leaderboards updated
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: `Leaderboards updated
 • could not retrieve data for year 1984
 • could not retrieve data for year 2345
 • invited AoCu1 to 1980 day 13
@@ -981,188 +628,175 @@ describe('onTelegramUpdate', () => {
 • updated board for 1918 day 14
 • updated board for 2063 day 5
 ` });
-            });
-        });
-
-        describe.each([
-            ['defaults (in December)', '/update', { year: 1980, day: 13 }, 'year 1980 day 13'],
-            ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
-            ['specific date selection, year first', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
-            ['specific date selection, day first', '/update 11 2001', { year: 2001, day: 11 }, 'year 2001 day 11'],
-            ['specific date selection, without a year', '/update 19', { year: 1980, day: 19 }, 'year 1980 day 19'],
-            ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
-        ])('with %s', (_description, command, expectedSelection, selectionString) => {
-            beforeEach(() => {
-                jest.useFakeTimers('modern');
-                // Intentionally use time that falls into different dates in UTC and in EST
-                jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
-            });
-
-            afterAll(() => {
-                jest.useRealTimers();
-            });
-
-            test('with no updates', async () => {
-                const update = {
-                    message: {
-                        text: command,
-                        from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
-                        chat: { id: 2323, type: 'private', title: 'tItLe' }
-                    }
-                };
-
-                schedule.updateLeaderboards.mockResolvedValueOnce({
-                    unretrieved: [], sent: [], created: [], updated: []
-                });
-
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: `Processing leaderboards and invites (${selectionString})`
-                });
-
-                expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
-
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: 'Leaderboards updated\n(no changes)\n'
-                });
-            });
-
-            test('with updates', async () => {
-                const update = {
-                    message: {
-                        text: command,
-                        from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
-                        chat: { id: 2323, type: 'private', title: 'tItLe' }
-                    }
-                };
-
-                schedule.updateLeaderboards.mockResolvedValueOnce({
-                    unretrieved: [],
-                    sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }],
-                    created: [{ year: 1980, day: 13 }],
-                    updated: []
-                });
-
-                await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: `Processing leaderboards and invites (${selectionString})`
-                });
-
-                expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
-
-                expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
-
-                expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
-                    chat_id: 2323, disable_notification: true,
-                    text: `Leaderboards updated
-• invited AoCu1 to 1980 day 13
-• created board for 1980 day 13
-` });
-            });
-        });
-
-        test.each([
-            'asdf', 'jkl poi', '1980 a', '1122 11 17',
-            '1980 1980', '13 14', '123'
-        ])('with invalid parameters "%s"', async (params) => {
-            const update = {
-                message: {
-                    text: `/update ${params}`,
-                    from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            schedule.updateLeaderboards.mockResolvedValueOnce({
-                unretrieved: [], sent: [], created: [], updated: []
-            });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
-                chat_id: 2323, disable_notification: true,
-                text: 'Invalid parameters (see /help)'
-            });
-
-            expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
-            expect(logs.logActivity).not.toHaveBeenCalled();
-        });
-
-        test('with no first or last name', async () => {
-            const update = {
-                message: {
-                    text: '/update all',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
-            };
-
-            schedule.updateLeaderboards.mockResolvedValueOnce({
-                unretrieved: [], sent: [], created: [], updated: []
-            });
-
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (all years)");
         });
     });
 
-    describe('onMessage /help', () => {
-        let readFileSpy;
-
+    describe.each([
+        ['defaults (in December)', '/update', { year: 1980, day: 13 }, 'year 1980 day 13'],
+        ['the "today" parameter', '/update today', { year: 1980, day: 13 }, 'year 1980 day 13'],
+        ['specific date selection, year first', '/update 2001 11', { year: 2001, day: 11 }, 'year 2001 day 11'],
+        ['specific date selection, day first', '/update 11 2001', { year: 2001, day: 11 }, 'year 2001 day 11'],
+        ['specific date selection, without a year', '/update 19', { year: 1980, day: 19 }, 'year 1980 day 19'],
+        ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
+    ])('with %s', (_description, command, expectedSelection, selectionString) => {
         beforeEach(() => {
-            readFileSpy = jest.spyOn(fsp, 'readFile');
+            jest.useFakeTimers('modern');
+            // Intentionally use time that falls into different dates in UTC and in EST
+            jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
         });
 
-        afterEach(() => {
-            readFileSpy.mockRestore();
+        afterAll(() => {
+            jest.useRealTimers();
         });
 
-        test('displays help, first time from help.txt', async () => {
+        test('with no updates', async () => {
             const update = {
-                message: {
-                    text: '/help',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
+                text: command,
+                from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
+            schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [], sent: [], created: [], updated: []
+            });
 
-            expect(readFileSpy).toHaveBeenCalledWith(expect.stringMatching(/\/help\.txt$/), 'utf-8');
+            await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2',
-                disable_notification: true, disable_web_page_preview: true,
-                text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: `Processing leaderboards and invites (${selectionString})`
+            });
+
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+
+            expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: 'Leaderboards updated\n(no changes)\n'
             });
         });
 
-        test('displays help, second time from the cache', async () => {
+        test('with updates', async () => {
             const update = {
-                message: {
-                    text: '/help',
-                    from: { id: 7878 },
-                    chat: { id: 2323, type: 'private', title: 'tItLe' }
-                }
+                text: command,
+                from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            await expect(onTelegramUpdate(update)).resolves.toBeUndefined();
-
-            expect(readFileSpy).not.toHaveBeenCalled();
-
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-                chat_id: 2323, parse_mode: 'MarkdownV2',
-                disable_notification: true, disable_web_page_preview: true,
-                text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
+            schedule.updateLeaderboards.mockResolvedValueOnce({
+                unretrieved: [],
+                sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }],
+                created: [{ year: 1980, day: 13 }],
+                updated: []
             });
+
+            await expect(onMessage(update)).resolves.toBeUndefined();
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: `Processing leaderboards and invites (${selectionString})`
+            });
+
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+
+            expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+                chat_id: 2323, disable_notification: true,
+                text: `Leaderboards updated
+• invited AoCu1 to 1980 day 13
+• created board for 1980 day 13
+` });
+        });
+    });
+
+    test.each([
+        'asdf', 'jkl poi', '1980 a', '1122 11 17',
+        '1980 1980', '13 14', '123'
+    ])('with invalid parameters "%s"', async (params) => {
+        const update = {
+            text: `/update ${params}`,
+            from: { id: 7878, first_name: 'OnLyFiRsTnAmE' },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        schedule.updateLeaderboards.mockResolvedValueOnce({
+            unretrieved: [], sent: [], created: [], updated: []
+        });
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Invalid parameters (see /help)'
+        });
+
+        expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+        expect(logs.logActivity).not.toHaveBeenCalled();
+    });
+
+    test('with no first or last name', async () => {
+        const update = {
+            text: '/update all',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        schedule.updateLeaderboards.mockResolvedValueOnce({
+            unretrieved: [], sent: [], created: [], updated: []
+        });
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (all years)");
+    });
+});
+
+describe('onMessage /help', () => {
+    let readFileSpy;
+
+    beforeEach(() => {
+        readFileSpy = jest.spyOn(fsp, 'readFile');
+    });
+
+    afterEach(() => {
+        readFileSpy.mockRestore();
+    });
+
+    test('displays help, first time from help.txt', async () => {
+        const update = {
+            text: '/help',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(readFileSpy).toHaveBeenCalledWith(expect.stringMatching(/\/help\.txt$/), 'utf-8');
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, parse_mode: 'MarkdownV2',
+            disable_notification: true, disable_web_page_preview: true,
+            text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
+        });
+    });
+
+    test('displays help, second time from the cache', async () => {
+        const update = {
+            text: '/help',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(readFileSpy).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, parse_mode: 'MarkdownV2',
+            disable_notification: true, disable_web_page_preview: true,
+            text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\\\.\n$/)
         });
     });
 });
