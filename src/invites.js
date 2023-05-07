@@ -146,8 +146,8 @@ const filterUsersInChat = async (chats) => {
             const member = await sendTelegram('getChatMember', { chat_id: chat, user_id: telegramUser });
             return member.ok && member.result.status === 'left';
         } catch (error) {
-            const error_code = error.response?.data?.error_code;
-            if (error.isAxiosError && error_code >= 400 && error_code < 500) {
+            const code = error.response?.data?.error_code;
+            if (error.isAxiosError && code >= 400 && code < 500) {
                 console.warn(`filterUsersInChat: user not found ${telegramUser}`);
                 return false;
             }
@@ -221,10 +221,10 @@ const sendInvites = async (changes) => {
                 success = true;
                 console.log(`sendInvites: sent to aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
             } catch (error) {
-                const error_code = error.response?.data?.error_code;
-                if (error.isAxiosError && error_code >= 400 && error_code < 500) {
+                const code = error.response?.data?.error_code;
+                if (error.isAxiosError && code >= 400 && code < 500) {
                     // This often means we are not allowed to contact the user
-                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day} code ${error_code}`);
+                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day} code ${code}`);
                     continue;
                 }
 

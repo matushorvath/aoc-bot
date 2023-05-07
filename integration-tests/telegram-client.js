@@ -95,17 +95,19 @@ class TelegramClient {
     }
 
     async addChatAdmin(userId, chatId) {
-        const statusAdd = await this.client.invoke({
+        let status;
+
+        status = await this.client.invoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
         });
 
-        if (statusAdd?._ !== 'ok') {
-            throw new Error(`Invalid response: ${JSON.stringify(statusAdd)}`);
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
 
-        const statusSet = await this.client.invoke({
+        status = await this.client.invoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
@@ -128,8 +130,8 @@ class TelegramClient {
             }
         });
 
-        if (statusSet?._ !== 'ok') {
-            throw new Error(`Invalid response: ${JSON.stringify(statusSet)}`);
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
     }
 

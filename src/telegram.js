@@ -67,11 +67,7 @@ const initializeChat = async (chatId, year, day) => {
     console.log('initializeChat: start');
 
     // Setup chat properties
-    await sendTelegram('setChatDescription', {
-        chat_id: chatId,
-        description: `Advent of Code ${year} day ${day} discussion`
-    });
-
+    await setChatDescription(chatId, year, day);
     console.debug('initializeChat: setChatDescription done');
 
     // Setup chat photo
@@ -91,6 +87,25 @@ const initializeChat = async (chatId, year, day) => {
     await updateLeaderboards({ year, day }),
 
     console.log('initializeChat: done');
+};
+
+const setChatDescription = async (chatId, year, day) => {
+    try {
+        await sendTelegram('setChatDescription', {
+            chat_id: chatId,
+            description: `Advent of Code ${year} day ${day} discussion`
+        });
+    } catch (error) {
+        // Setting chat description to the same value results in a 400 error
+        const code = error.response?.data?.error_code;
+        const description = error.response?.data?.description;
+
+        if (error.isAxiosError && code === 400) {
+            console.warn(`setChatDescription: Could not set chat description: ${description}`);
+        } else {
+            throw error;
+        }
+    }
 };
 
 const setChatPhoto = async (chatId, year, day) => {
