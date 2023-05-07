@@ -29,6 +29,8 @@ const postTelegram = async (event) => {
     await validateSecret(event);
 
     const update = parseBody(event);
+    console.debug(`postTelegram: update ${JSON.stringify(update)}`);
+
     if (update.my_chat_member) {
         await onMyChatMember(update.my_chat_member);
     } else if (update.message) {
