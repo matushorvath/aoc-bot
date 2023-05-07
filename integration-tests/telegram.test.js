@@ -116,14 +116,29 @@ describe('chat membership', () => {
             && update?.message?.sender_id?._ === 'messageSenderUser'
             && update?.message?.sender_id?.user_id === botUserId
             && update?.message?.chat_id === testChatId;
-        const updatesPromise = client.waitForUpdates(filter);
+        const updatesPromise = client.waitForUpdates(filter, 2);
 
         // Expect the bot to be added to chat
         await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBeUndefined();
 
         // Expect the bot to notify the chat with a message
         await expect(updatesPromise).resolves.toMatchObject([{
-            message: { content: { text: { text: '@AocElfBot is online, AoC 1980 Day 13' } } }
+            message: {
+                content: {
+                    _: 'messageChatChangePhoto',
+                    photo: {
+                        _: 'chatPhoto'
+                    }
+                }
+            }
+        }, {
+            message: {
+                content: {
+                    text: {
+                        text: '@AxocElfBot is online, AoC 1980 Day 13'
+                    }
+                }
+            }
         }]);
     });
 

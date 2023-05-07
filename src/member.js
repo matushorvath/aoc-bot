@@ -127,27 +127,39 @@ const setChatPhoto = async (chatId, day) => {
 };
 
 const setChatPermissions = async (chatId) => {
-    await sendTelegram('setChatPermissions', {
-        chat_id: chatId,
-        permissions: {
-            can_send_messages: true,
-            can_send_audios: true,
-            can_send_documents: true,
-            can_send_photos: true,
-            can_send_videos: true,
-            can_send_video_notes: true,
-            can_send_voice_notes: true,
-            can_send_polls: true,
-            can_send_other_messages: true,
-            can_add_web_page_previews: true,
+    try {
+        await sendTelegram('setChatPermissions', {
+            chat_id: chatId,
+            permissions: {
+                can_send_messages: true,
+                can_send_audios: true,
+                can_send_documents: true,
+                can_send_photos: true,
+                can_send_videos: true,
+                can_send_video_notes: true,
+                can_send_voice_notes: true,
+                can_send_polls: true,
+                can_send_other_messages: true,
+                can_add_web_page_previews: true,
 
-            can_change_info: false,
-            can_invite_users: false,
-            can_pin_messages: false,
+                can_change_info: false,
+                can_invite_users: false,
+                can_pin_messages: false,
 
-            can_manage_topics: true
+                can_manage_topics: true
+            }
+        });
+    } catch (error) {
+        // Setting chat permissions to the same value results in a 400 error
+        const code = error.response?.data?.error_code;
+        const description = error.response?.data?.description;
+
+        if (error.isAxiosError && code === 400) {
+            console.warn(`setChatDescription: Could not set chat description: ${description}`);
+        } else {
+            throw error;
         }
-    });
+    }
 };
 
 exports.onMyChatMember = onMyChatMember;
