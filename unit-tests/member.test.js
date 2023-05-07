@@ -225,6 +225,27 @@ describe('onMyChatMember', () => {
         expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
     });
 
+    test('succeeds if sendTelegram returns HTTP 400 for setChatPermissions', async () => {
+        const update = {
+            new_chat_member: { status: 'administrator' },
+            chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
+        };
+
+        dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
+        years.addYear.mockResolvedValueOnce(undefined);
+        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
+        network.sendTelegram.mockRejectedValueOnce({
+            isAxiosError: true,
+            response: { data: { error_code: 400 } }
+        });     // setChatPermissions
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
+        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
+    });
+
     test('fails if sendTelegram throws for setChatPermissions', async () => {
         const update = {
             new_chat_member: { status: 'administrator' },

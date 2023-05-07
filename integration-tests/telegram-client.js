@@ -4,6 +4,8 @@ const { Client } = require('tdl');
 const { TDLib } = require('tdl-tdlib-addon');
 const { getTdjson } = require('prebuilt-tdlib');
 
+const { setTimeout } = require('timers/promises');
+
 class TelegramClient {
     constructor(apiId, apiHash) {
         this.apiId = apiId;
@@ -37,6 +39,29 @@ class TelegramClient {
         }
     }
 
+    async clientInvoke(...params) {
+        // Call client.invoke while handling throttling error messages
+        try {
+            return await this.client.invoke(...params);
+        } catch (error) {
+            if (error._ !== 'error' || error.code !== 429) {
+                throw error;
+            }
+
+            const match = error.message.match(/Too Many Requests: retry after ([0-9]+)/);
+            if (!match) {
+                throw error;
+            }
+
+            // Telegram is asking us to throttle. Wait for requested time, then try again.
+            const delay = Number(match[1]);
+            console.log(`Throttling for ${delay} milliseconds...`);
+            await setTimeout(delay);
+
+            return await this.client.invoke(...params);
+        }
+    }
+
     async waitForUpdates(filter, count = 1) {
         const updates = [];
 
@@ -58,7 +83,7 @@ class TelegramClient {
     }
 
     async sendMessage(userId, text, responseCount = 1) {
-        const chat = await this.client.invoke({
+        const chat = await this.clientInvoke({
             _: 'createPrivateChat',
             user_id: userId
         });
@@ -75,7 +100,7 @@ class TelegramClient {
         };
         const updatesPromise = this.waitForUpdates(messageFromBotFilter, responseCount);
 
-        const message = await this.client.invoke({
+        const message = await this.clientInvoke({
             _: 'sendMessage',
             chat_id: chat.id,
             input_message_content: {
@@ -97,7 +122,7 @@ class TelegramClient {
     async addChatAdmin(userId, chatId) {
         let status;
 
-        status = await this.client.invoke({
+        status = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
@@ -107,7 +132,7 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
 
-        status = await this.client.invoke({
+        status = await this.clientInvoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
@@ -136,7 +161,7 @@ class TelegramClient {
     }
 
     async removeChatMember(userId, chatId) {
-        const status = await this.client.invoke({
+        const status = await this.clientInvoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
@@ -151,6 +176,68 @@ class TelegramClient {
         if (status?._ !== 'ok') {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
+    }
+
+    async setChatDescription(chatId, description) {
+        const status = await this.clientInvoke({
+            _: 'setChatDescription',
+            chat_id: chatId,
+            description: description
+        });
+
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async removeChatPhoto(chatId) {
+        const status = await this.clientInvoke({
+            _: 'setChatPhoto',
+            chat_id: chatId,
+            photo: {
+                _: 'inputChatPhotoStatic',
+                photo: null
+            }
+        });
+
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async setFullChatPermissions(chatId) {
+        const status = await this.clientInvoke({
+            _: 'setChatPermissions',
+            chat_id: chatId,
+            permissions: {
+                _: 'chatPermissions',
+                can_send_messages: true,
+                can_send_media_messages: true,
+                can_send_polls: true,
+                can_send_other_messages: true,
+                can_add_web_page_previews: true,
+                can_change_info: true,
+                can_invite_users: true,
+                can_pin_messages: true
+            }
+        });
+
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async getChat(chatId) {
+        const chat = await this.clientInvoke({
+            _: 'getChat',
+            chat_id: chatId
+        });
+
+        if (chat?._ !== 'chat') {
+            throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
+        }
+
+        return chat;
     }
 }
 

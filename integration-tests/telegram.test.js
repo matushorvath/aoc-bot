@@ -109,25 +109,81 @@ describe('chat membership', () => {
         await client.removeChatMember(botUserId, testChatId);
     });
 
-    test('add bot to chat as admin', async () => {
-        // Start receiving bot messages
-        const filter = update =>
-            update?._ === 'updateNewMessage'
-            && update?.message?.sender_id?._ === 'messageSenderUser'
-            && update?.message?.sender_id?.user_id === botUserId
-            && update?.message?.chat_id === testChatId;
-        const updatesPromise = client.waitForUpdates(filter);
-
-        // Expect the bot to be added to chat
-        await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBeUndefined();
-
-        // Expect the bot to notify the chat with a message
-        await expect(updatesPromise).resolves.toMatchObject([{
-            message: { content: { text: { text: '@AocElfBot is online, AoC 1980 Day 13' } } }
-        }]);
+    test('reset chat properties', async () => {
+        await expect(client.setChatDescription(testChatId, '')).resolves.toBeUndefined();
+        await expect(client.removeChatPhoto(testChatId)).resolves.toBeUndefined();
+        await expect(client.setFullChatPermissions(testChatId)).resolves.toBeUndefined();
     });
 
-    test('remove bot from chat', async () => {
-        await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
+    // First add and remove the bot when the chat does not have a description, photo or restrictions set.
+    // Then run the same test again, but this time do not reset chat properties, so the description, photo
+    // and restrictions are already initialized. Telegram API returns HTTP 400 errors if you set properties
+    // that already have the requested value, and this tests for correct handling of such cases.
+    describe.each(['default', 'pre-initialized'])('with %s chat status', () => {
+        test ('add bot to chat', async () => {
+            // Start receiving bot messages
+            const filter = update =>
+                update?._ === 'updateNewMessage'
+                && update?.message?.sender_id?._ === 'messageSenderUser'
+                && update?.message?.sender_id?.user_id === botUserId
+                && update?.message?.chat_id === testChatId;
+            const updatesPromise = client.waitForUpdates(filter, 2);
+
+            // Expect the bot to be added to chat
+            await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBeUndefined();
+
+            // Expect the bot to notify the chat with a message
+            await expect(updatesPromise).resolves.toMatchObject([{
+                message: {
+                    content: {
+                        _: 'messageChatChangePhoto',
+                        photo: {
+                            _: 'chatPhoto'
+                        }
+                    }
+                }
+            }, {
+                message: {
+                    content: {
+                        _: 'messageText',
+                        text: {
+                            text: '@AocElfBot is online, AoC 1980 Day 13'
+                        }
+                    }
+                }
+            }]);
+        });
+
+        test('validate chat properties', async () => {
+            // Description is available using getSupergroupFullInfo, but it is a cached value,
+            // so it does not update quickly enough for this test
+
+            await expect(client.getChat(testChatId)).resolves.toMatchObject({
+                _: 'chat',
+                type: {
+                    _: 'chatTypeSupergroup'
+                },
+                photo: {
+                    _: 'chatPhotoInfo'
+                },
+                permissions: {
+                    _: 'chatPermissions',
+
+                    can_send_messages: true,
+                    can_send_media_messages: true,
+                    can_send_polls: true,
+                    can_send_other_messages: true,
+                    can_add_web_page_previews: true,
+
+                    can_change_info: false,
+                    can_invite_users: false,
+                    can_pin_messages: false
+                }
+            });
+        });
+
+        test('remove bot from chat', async () => {
+            await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
+        });
     });
 });
