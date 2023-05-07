@@ -27,7 +27,7 @@ const updateLeaderboards = async (selection = {}) => {
         return result;
     }
 
-    // Download start times and leaderboards in parallel
+    // Download leaderboards in parallel
     let leaderboards = await Promise.all(
         years.map(async (year) => ({ year, data: await getLeaderboard(year) }))
     );

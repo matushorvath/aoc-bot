@@ -1,7 +1,8 @@
 'use strict';
 
 const { getTelegramSecret } = require('./secrets');
-const { onTelegramUpdate } = require('./telegram');
+const { onMyChatMember } = require('./member');
+const { onMessage } = require('./message');
 const { onStartTime } = require('./times');
 
 class ResultError extends Error {
@@ -27,7 +28,12 @@ const postTelegram = async (event) => {
 
     await validateSecret(event);
 
-    await onTelegramUpdate(parseBody(event));
+    const update = parseBody(event);
+    if (update.my_chat_member) {
+        await onMyChatMember(update.my_chat_member);
+    } else if (update.message) {
+        await onMessage(update.message);
+    }
 
     console.log('postTelegram: done');
 

@@ -61,8 +61,8 @@ const logActivity = async (message) => {
                 disable_notification: true
             });
         } catch (error) {
-            const error_code = error.response?.data?.error_code;
-            if (error.isAxiosError && error_code >= 400 && error_code < 500) {
+            const code = error.response?.data?.error_code;
+            if (error.isAxiosError && code >= 400 && code < 500) {
                 console.warn(`logActivity: could not send logs to chat ${chat}`);
             } else {
                 console.error(`logActivity: unexpected error ${error}`);

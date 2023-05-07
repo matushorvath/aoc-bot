@@ -3,7 +3,6 @@
 const { sendTelegram, getLeaderboard } = require('./network');
 const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./board');
-const { addYear } = require('./years');
 const { enableLogs, disableLogs, logActivity } = require('./logs');
 const { loadStartTimes } = require('./times');
 
@@ -16,62 +15,13 @@ const path = require('path');
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onMyChatMember = async (my_chat_member) => {
-    // Only do something if we were made an admin in a group
-    if (my_chat_member.new_chat_member?.status !== 'administrator'
-        || (my_chat_member.chat.type !== 'group' && my_chat_member.chat.type !== 'supergroup')
-        || !my_chat_member.chat.title) {
-        return;
-    }
-
-    // Guess AoC day based on group title
-    const m = my_chat_member.chat.title.match(/AoC ([0-9]{4}) Day ([0-9]{1,2})/);
-    if (!m) {
-        console.warn(`onMyChatMember: chat title '${my_chat_member.chat.title}' did not match`);
-        return;
-    }
-
-    const year = Number(m[1]);
-    const day = Number(m[2]);
-
-    console.log(`onMyChatMember: admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
-
-    // Store the group info in db
-    const params = {
-        Item: {
-            id: { S: 'chat' },
-            sk: { S: `${year}:${day}` },
-            y: { N: String(year) },
-            d: { N: String(day) },
-            chat: { N: String(my_chat_member.chat.id) }
-        },
-        TableName: DB_TABLE
-    };
-    await db.putItem(params);
-
-    console.log('onMyChatMember: chat stored in db');
-
-    await addYear(year);
-
-    // Initialize the group
-    await sendTelegram('sendMessage', {
-        chat_id: my_chat_member.chat.id,
-        text: `@AocElfBot is online, AoC ${year} Day ${day}`,
-        disable_notification: true
-    });
-
-    await logActivity(`Added to chat '${my_chat_member.chat.title}' (${year}/${day})`);
-
-    console.log('onMyChatMember: done');
-};
-
 const onMessage = async (message) => {
     // Only handle private messages
     if (message.chat.type !== 'private' || !message.text || !message.from) {
         return;
     }
 
-    let m = message.text.match(/^\s*\/(reg|unreg|logs|status|update|board|start|help)(?:\s+(.+))?\s*$/);
+    let m = message.text.match(/^\s*\/([a-z0-9]+)(?:\s+(.+))?\s*$/);
     if (!m) {
         console.log(`onMessage: text '${message.text}' did not match`);
         await onCommandUnknown(message.chat.id, message.text);
@@ -457,14 +407,4 @@ const onCommandUnknown = async (chat) => {
     });
 };
 
-const onTelegramUpdate = async (update) => {
-    console.debug(`onTelegramUpdate: start, update ${JSON.stringify(update)}`);
-
-    if (update.my_chat_member) {
-        await onMyChatMember(update.my_chat_member);
-    } else if (update.message) {
-        await onMessage(update.message);
-    }
-};
-
-exports.onTelegramUpdate = onTelegramUpdate;
+exports.onMessage = onMessage;
