@@ -70,9 +70,11 @@ const initializeChat = async (chatId, year, day) => {
     await setChatDescription(chatId, year, day);
     console.debug('initializeChat: setChatDescription done');
 
-    // Setup chat photo
-    await setChatPhoto(chatId, year, day);
+    await setChatPhoto(chatId, day);
     console.debug('initializeChat: setChatPhoto done');
+
+    await setChatPermissions(chatId);
+    console.debug('initializeChat: setChatPermissions done');
 
     // Write a message to the new chat
     await sendTelegram('sendMessage', {
@@ -108,7 +110,7 @@ const setChatDescription = async (chatId, year, day) => {
     }
 };
 
-const setChatPhoto = async (chatId, year, day) => {
+const setChatPhoto = async (chatId, day) => {
     try {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
         const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
@@ -126,6 +128,30 @@ const setChatPhoto = async (chatId, year, day) => {
             throw error;
         }
     }
+};
+
+const setChatPermissions = async (chatId) => {
+    await sendTelegram('setChatPermissions', {
+        chat_id: chatId,
+        permissions: {
+            can_send_messages: true,
+            can_send_audios: true,
+            can_send_documents: true,
+            can_send_photos: true,
+            can_send_videos: true,
+            can_send_video_notes: true,
+            can_send_voice_notes: true,
+            can_send_polls: true,
+            can_send_other_messages: true,
+            can_add_web_page_previews: true,
+
+            can_change_info: false,
+            can_invite_users: false,
+            can_pin_messages: false,
+
+            can_manage_topics: true
+        }
+    });
 };
 
 const onMessage = async (message) => {
@@ -520,6 +546,8 @@ const onCommandUnknown = async (chat) => {
     });
 };
 
+// TODO split file to chat member and command parts
+// TODO move onTelegramUpdate to api.js
 const onTelegramUpdate = async (update) => {
     console.debug(`onTelegramUpdate: start, update ${JSON.stringify(update)}`);
 
