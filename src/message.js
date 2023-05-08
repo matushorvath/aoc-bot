@@ -214,6 +214,9 @@ const onCommandBoard = async (chat, params) => {
         return;
     }
 
+    // Display feedback to the user, since this is a slow command
+    await sendTelegram('sendChatAction', { chat_id: chat, action: 'upload_document' });
+
     const leaderboard = await getLeaderboard(selection.year);
     if (!leaderboard) {
         console.log('onCommandBoard: no leaderboard data');
@@ -294,6 +297,9 @@ const onCommandUpdate = async (chat, from, params) => {
         disable_notification: true
     });
 
+    // Display feedback to the user, since this is a slow command
+    await sendTelegram('sendChatAction', { chat_id: chat, action: 'typing' });
+
     const { unretrieved, sent, created, updated } = await updateLeaderboards(selection);
 
     let info = '';
@@ -329,14 +335,18 @@ const parseYearDaySelection = (params, singleDay = false) => {
     // Current time in EST time zone
     const today = luxon.DateTime.now().setZone('EST');
 
+    // Calculate year of the most recent competition
+    const latestYear = today.month === 12 ? today.year : today.year - 1;
+
+    // In december, default to selecting a single day even if not requested
     const defaultToOneDay = singleDay || (today.month === 12 && today.day <= 25);
 
     if (params === 'today' || (params === undefined && defaultToOneDay)) {
         // Update today
         return { year: today.year, day: today.day };
-    } else if (!singleDay && (params === 'all' || params === undefined)) {
-        // Update everything
-        return {};
+    } else if (!singleDay && (params === 'year' || params === undefined)) {
+        // Update the year of the most recent competition
+        return { year: latestYear };
     } else {
         const m = params.match(/^\s*([0-9]+)(?:\s+([0-9]+))?\s*$/);
         if (!m) {
@@ -350,8 +360,8 @@ const parseYearDaySelection = (params, singleDay = false) => {
             // Update one selected day
             return { year, day };
         } else if (day && m[2] === undefined) {
-            // Update one selected in current year
-            return { year: today.year, day };
+            // Update one selected day within the most recent competiton
+            return { year: latestYear, day };
         } else if (!singleDay && year && m[2] === undefined) {
             // Update one selected year
             return { year };
@@ -372,6 +382,8 @@ const formatSenderName = (from) => {
 };
 
 const formatSelectionString = (selection) => {
+    // The 'all years' option is currently unused, but we keep it here for completeness
+    // istanbul ignore else
     if (selection.day) {
         return `year ${selection.year} day ${selection.day}`;
     } else if (selection.year) {

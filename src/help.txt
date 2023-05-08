@@ -21,8 +21,8 @@ Supported commands:
         Process today's leaderboard and invites \(default in December\)
 
     /update
-    /update all
-        Process all leaderboards and invites \(default outside of December\)
+    /update year
+        Process most recent year's leaderboards and invites \(default outside of December\)
 
     /update \<year\>
         Process leaderboards and invites for selected year
