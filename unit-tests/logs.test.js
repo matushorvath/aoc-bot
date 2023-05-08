@@ -1,6 +1,6 @@
 'use strict';
 
-const { logActivity, enableLogs, disableLogs } = require('../src/logs');
+const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('../src/logs');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
@@ -123,6 +123,37 @@ describe('disableLogs', () => {
                 ':c': { NS: ['76'] }
             },
             ReturnValues: 'ALL_NEW'
+        });
+    });
+});
+
+describe('getLogsStatus', () => {
+    test('fails if dynamodb throws', async () => {
+        dynamodb.DynamoDB.prototype.getItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
+        await expect(getLogsStatus(1234)).rejects.toThrow('dYnAmOeRrOr');
+    });
+
+    test('returns true if logs are enabled', async () => {
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { chats: { NS: ['111', '222', '333', '444'] } } });
+
+        await expect(getLogsStatus(333)).resolves.toBe(true);
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
+            ProjectionExpression: 'chats'
+        });
+    });
+
+    test('returns false if logs are disabled', async () => {
+        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { chats: { NS: ['111', '222', '333', '444'] } } });
+
+        await expect(getLogsStatus(999)).resolves.toBe(false);
+
+        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
+            TableName: 'aoc-bot',
+            Key: { id: { S: 'logs' }, sk: { S: '0' } },
+            ProjectionExpression: 'chats'
         });
     });
 });

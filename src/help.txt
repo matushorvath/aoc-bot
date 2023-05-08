@@ -52,6 +52,9 @@ Supported commands:
 /logs on\|off
     Enable/disable sending activity logs into your chat with the bot\.
 
+/logs
+    Find out whether sending activity logs is currently enabled or disabled for your chat with the bot\.
+
 /help
     Show this message\.
 
