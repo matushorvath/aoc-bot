@@ -50,6 +50,17 @@ const disableLogs = async (chat) => {
     console.log(`disableLogs: done, chats [${data.Attributes?.chats?.NS}]`);
 };
 
+const getLogsStatus = async (chat) => {
+    console.log(`getLogsStatus: start, chat ${chat}`);
+
+    const chats = await getChats();
+    const status = chats.has(chat);
+
+    console.log(`getLogsStatus: done, status ${status}`);
+
+    return status;
+};
+
 const logActivity = async (message) => {
     const chats = await getChats();
 
@@ -84,8 +95,8 @@ const getChats = async () => {
         ProjectionExpression: 'chats'
     };
 
-    const x = await db.getItem(params);
-    const chats = new Set(x?.Item?.chats?.NS?.map(Number));
+    const items = await db.getItem(params);
+    const chats = new Set(items?.Item?.chats?.NS?.map(Number));
 
     console.log(`getChats: done, found [${[...chats]}]`);
     return chats;
@@ -93,4 +104,5 @@ const getChats = async () => {
 
 exports.enableLogs = enableLogs;
 exports.disableLogs = disableLogs;
+exports.getLogsStatus = getLogsStatus;
 exports.logActivity = logActivity;

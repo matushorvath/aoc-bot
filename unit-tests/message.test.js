@@ -343,24 +343,6 @@ describe('onMessage /unreg', () => {
 });
 
 describe('onMessage /logs', () => {
-    test('without parameters', async () => {
-        const update = {
-            text: '/logs',
-            from: { id: 7878 },
-            chat: { id: 2323, type: 'private', title: 'tItLe' }
-        };
-
-        await expect(onMessage(update)).resolves.toBeUndefined();
-
-        expect(logs.enableLogs).not.toHaveBeenCalled();
-        expect(logs.disableLogs).not.toHaveBeenCalled();
-
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-            chat_id: 2323, disable_notification: true,
-            text: "Sorry, I don't understand that command"
-        });
-    });
-
     test('with an invalid parameter', async () => {
         const update = {
             text: '/logs xxx',
@@ -372,10 +354,11 @@ describe('onMessage /logs', () => {
 
         expect(logs.enableLogs).not.toHaveBeenCalled();
         expect(logs.disableLogs).not.toHaveBeenCalled();
+        expect(logs.getLogsStatus).not.toHaveBeenCalled();
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
-            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop"
+            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop. To find out your current setting, use '/logs' without a parameter."
         });
     });
 
@@ -390,6 +373,7 @@ describe('onMessage /logs', () => {
 
         expect(logs.enableLogs).toHaveBeenCalledWith(2323);
         expect(logs.disableLogs).not.toHaveBeenCalled();
+        expect(logs.getLogsStatus).not.toHaveBeenCalled();
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
@@ -408,10 +392,35 @@ describe('onMessage /logs', () => {
 
         expect(logs.enableLogs).not.toHaveBeenCalled();
         expect(logs.disableLogs).toHaveBeenCalledWith(2323);
+        expect(logs.getLogsStatus).not.toHaveBeenCalled();
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Activity logs will now be no longer sent to this chat'
+        });
+    });
+
+    test.each([
+        ['enabled', true],
+        ['disabled', false]
+    ])('getting logs status for a user, with %s logs', async (status, value) => {
+        const update = {
+            text: '/logs',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        logs.getLogsStatus.mockResolvedValueOnce(value);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(logs.enableLogs).not.toHaveBeenCalled();
+        expect(logs.disableLogs).not.toHaveBeenCalled();
+        expect(logs.getLogsStatus).toHaveBeenCalledWith(2323);
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: `Activity logs are ${status} for this chat`
         });
     });
 });

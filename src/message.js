@@ -3,7 +3,7 @@
 const { sendTelegram, getLeaderboard } = require('./network');
 const { updateLeaderboards } = require('./schedule');
 const { formatBoard } = require('./board');
-const { enableLogs, disableLogs, logActivity } = require('./logs');
+const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
 const { loadStartTimes } = require('./times');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
@@ -35,7 +35,7 @@ const onMessage = async (message) => {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'unreg') {
         await onCommandUnreg(message.chat.id, message.from.id);
-    } else if (command === 'logs' && params) {
+    } else if (command === 'logs') {
         await onCommandLogs(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'status') {
         await onCommandStatus(message.chat.id, message.from.id);
@@ -170,9 +170,20 @@ const deleteUserData = async (telegramUser) => {
 const onCommandLogs = async (chat, value) => {
     console.log(`onCommandLogs: start, value '${value}'`);
 
-    if (value === 'on') {
+    if (value === undefined) {
+        const enabled = await getLogsStatus(chat);
+        const status = enabled ? 'enabled' : 'disabled';
+
+        console.log(`onCommandLogs: logs are ${status}`);
+
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `Activity logs are ${status} for this chat`,
+            disable_notification: true
+        });
+    } else if (value === 'on') {
         enableLogs(chat);
-        console.log('onCommandLogs: logs enabled');
+        console.log('onCommandLogs: logs changed to enabled');
 
         await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -181,7 +192,7 @@ const onCommandLogs = async (chat, value) => {
         });
     } else if (value === 'off') {
         disableLogs(chat);
-        console.log('onCommandLogs: logs disabled');
+        console.log('onCommandLogs: logs changed to disabled');
 
         await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -192,7 +203,7 @@ const onCommandLogs = async (chat, value) => {
         console.log(`onCommandLogs: value is invalid: ${value}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
-            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop",
+            text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop. To find out your current setting, use '/logs' without a parameter.",
             disable_notification: true
         });
     }
