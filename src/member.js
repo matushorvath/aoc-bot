@@ -33,56 +33,53 @@ const onMyChatMember = async (my_chat_member) => {
 
     console.log(`onMyChatMember: admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
 
-    // Store the group info in db
-    const params = {
-        Item: {
-            id: { S: 'chat' },
-            sk: { S: `${year}:${day}` },
-            y: { N: String(year) },
-            d: { N: String(day) },
-            chat: { N: String(my_chat_member.chat.id) }
-        },
-        TableName: DB_TABLE
-    };
-    await db.putItem(params);
-
-    console.log('onMyChatMember: chat stored in db');
+    // Store chat info in db
+    await saveChat(my_chat_member.chat.id, year, day);
 
     // Remember that we have at least one chat for this year
     await addYear(year);
 
     // Initialize the chat
-    await initializeChat(my_chat_member.chat.id, year, day);
+    await initializeChat(my_chat_member.chat, year, day);
+
+    // Update leaderboard for this day and send invites
+    await updateLeaderboards({ year, day }),
 
     await logActivity(`Added to chat '${my_chat_member.chat.title}' (${year}/${day})`);
 
     console.log('onMyChatMember: done');
 };
 
-const initializeChat = async (chatId, year, day) => {
+const saveChat = async (chatId, year, day) => {
+    const params = {
+        Item: {
+            id: { S: 'chat' },
+            sk: { S: `${year}:${day}` },
+            y: { N: String(year) },
+            d: { N: String(day) },
+            chat: { N: String(chatId) }
+        },
+        TableName: DB_TABLE
+    };
+    await db.putItem(params);
+
+    console.log('saveChat: done');
+};
+
+const initializeChat = async (chat, year, day) => {
     console.log('initializeChat: start');
 
     // Setup chat properties
-    await setChatDescription(chatId, year, day);
-    console.debug('initializeChat: setChatDescription done');
-
-    await setChatPhoto(chatId, day);
-    console.debug('initializeChat: setChatPhoto done');
-
-    await setChatPermissions(chatId);
-    console.debug('initializeChat: setChatPermissions done');
+    await setChatDescription(chat.id, year, day);
+    await setChatPhoto(chat.id, day);
+    await setChatPermissions(chat.id);
 
     // Write a message to the new chat
     await sendTelegram('sendMessage', {
-        chat_id: chatId,
+        chat_id: chat.id,
         text: `@AocElfBot is online, AoC ${year} Day ${day}`,
         disable_notification: true
     });
-
-    console.debug('initializeChat: sendMessage done');
-
-    // Update leaderboard for this day and send invites
-    await updateLeaderboards({ year, day }),
 
     console.log('initializeChat: done');
 };
@@ -104,6 +101,8 @@ const setChatDescription = async (chatId, year, day) => {
             throw error;
         }
     }
+
+    console.debug('setChatDescription: done');
 };
 
 const setChatPhoto = async (chatId, day) => {
@@ -124,6 +123,8 @@ const setChatPhoto = async (chatId, day) => {
             throw error;
         }
     }
+
+    console.debug('setChatPhoto: done');
 };
 
 const setChatPermissions = async (chatId) => {
@@ -155,11 +156,13 @@ const setChatPermissions = async (chatId) => {
         const description = error.response?.data?.description;
 
         if (error.isAxiosError && code === 400) {
-            console.warn(`setChatDescription: Could not set chat description: ${description}`);
+            console.warn(`setChatPermissions: Could not set chat permissions: ${description}`);
         } else {
             throw error;
         }
     }
+
+    console.debug('setChatPermissions: done');
 };
 
 exports.onMyChatMember = onMyChatMember;
