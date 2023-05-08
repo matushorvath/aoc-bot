@@ -552,7 +552,7 @@ describe('onMessage /status', () => {
 describe('onMessage /update', () => {
     describe.each([
         ['defaults (outside of December)', '/update'],
-        ['the "all" parameter', '/update all']
+        ['the "year" parameter', '/update year']
     ])('with %s', (_description, command) => {
         beforeEach(() => {
             jest.useFakeTimers('modern');
@@ -578,14 +578,19 @@ describe('onMessage /update', () => {
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Processing leaderboards and invites (all years)'
+                text: 'Processing leaderboards and invites (year 1979)'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+                chat_id: 2323,
+                action: 'typing'
+            });
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (all years)");
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (year 1979)");
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Leaderboards updated\n(no changes)\n'
             });
@@ -593,7 +598,7 @@ describe('onMessage /update', () => {
 
         test('with updates', async () => {
             const update = {
-                text: '/update all',
+                text: command,
                 from: { id: 7878, first_name: 'FiRsTnAmE', last_name: 'LaStNaMe' },
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
@@ -609,14 +614,19 @@ describe('onMessage /update', () => {
 
             expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
-                text: 'Processing leaderboards and invites (all years)'
+                text: 'Processing leaderboards and invites (year 1979)'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({});
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+                chat_id: 2323,
+                action: 'typing'
+            });
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (all years)");
+            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (year 1979)");
+
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Leaderboards updated
 • could not retrieve data for year 1984
@@ -667,11 +677,16 @@ describe('onMessage /update', () => {
                 text: `Processing leaderboards and invites (${selectionString})`
             });
 
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+                chat_id: 2323,
+                action: 'typing'
+            });
+
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
             expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Leaderboards updated\n(no changes)\n'
             });
@@ -698,11 +713,16 @@ describe('onMessage /update', () => {
                 text: `Processing leaderboards and invites (${selectionString})`
             });
 
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+                chat_id: 2323,
+                action: 'typing'
+            });
+
             expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
             expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage', {
+            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Leaderboards updated
 • invited AoCu1 to 1980 day 13
@@ -738,7 +758,7 @@ describe('onMessage /update', () => {
 
     test('with no first or last name', async () => {
         const update = {
-            text: '/update all',
+            text: '/update 1993',
             from: { id: 7878 },
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
@@ -749,7 +769,7 @@ describe('onMessage /update', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (all years)");
+        expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (year 1993)");
     });
 });
 
