@@ -31,8 +31,8 @@ const loadCredentials = async () => {
 let client;
 
 beforeAll(async () => {
-    const { apiId, apiHash } = await loadCredentials();
-    client = new TelegramClient(apiId, apiHash);
+    const { apiId, apiHash, aesKey } = await loadCredentials();
+    client = new TelegramClient(apiId, apiHash, aesKey);
 
     try {
         await client.init();
