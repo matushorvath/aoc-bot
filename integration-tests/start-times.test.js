@@ -31,15 +31,16 @@ describe('POST /start', () => {
                 data: {
                     error: 'Bad Request',
                     details: 'Missing or invalid request body',
-                    usage:
-`POST https://<hostname>/start
-body: {
-    "version": 1,
-    "year": 2022,
-    "day": 13,
-    "part": 1,
-    "name": "John Smith"
-}`
+                    usage: [
+                        expect.stringMatching(/POST https:\/\/[\w.]+\/start/),
+                        'body: {',
+                        '    "version": 1,',
+                        '    "year": 2022,',
+                        '    "day": 13,',
+                        '    "part": 1,',
+                        '    "name": "John Smith"',
+                        '}'
+                    ]
                 }
             }
         });
