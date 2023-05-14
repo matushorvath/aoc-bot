@@ -32,7 +32,7 @@ describe('POST /start', () => {
                     error: 'Bad Request',
                     details: 'Missing or invalid request body',
                     usage: [
-                        expect.stringMatching(/POST https:\/\/[\w.]+\/start/),
+                        expect.stringMatching(/POST https:\/\/[\w.-]+\/start/),
                         'body: {',
                         '    "version": 1,',
                         '    "year": 2022,',
