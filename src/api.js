@@ -53,6 +53,13 @@ const processEvent = async (event) => {
             return postStart(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
+    } else if (event.resource === '/trigger') {
+        if (event.httpMethod === 'OPTIONS') {
+            return options(event);
+        } else if (event.httpMethod === 'POST') {
+            return postTrigger(event);
+        }
+        throw new ResultError(405, 'Method Not Allowed');
     }
     throw new ResultError(403, 'Forbidden');
 };
@@ -120,6 +127,14 @@ const postStart = async (event) => {
     return { status: created ? 201 : 200 };
 };
 
+const postTrigger = async (_event) => {
+    console.log('postTrigger: start');
+
+    console.log('postTrigger: done');
+
+    return { status: 501 };
+};
+
 // TODO This should be done in AWS API Gateway configuration, but I can't get that to work
 const options = async (_event) => {
     console.log('options');
@@ -168,7 +183,7 @@ const explainUsage = (event, error) => {
             ...`body: ${JSON.stringify(example, undefined, 4)}`.split('\n')
         ];
     } else {
-        error.body.usage = ['start'].map(resource => `POST https://${hostname}/${resource}`);
+        error.body.usage = ['start', 'trigger'].map(resource => `POST https://${hostname}/${resource}`);
     }
 };
 
