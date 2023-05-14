@@ -1,6 +1,6 @@
 'use strict';
 
-const { handler } = require('../src/api');
+const { handler, ResultError } = require('../src/api');
 
 const secrets = require('../src/secrets');
 jest.mock('../src/secrets');
@@ -44,16 +44,37 @@ describe('API handler', () => {
 
     test('rejects unknown resource path', async () => {
         const event = { resource: '/uNkNoWn', httpMethod: 'POST' };
-        await expect(handler(event)).resolves.toMatchObject({ statusCode: 403, body: '{"error":"Forbidden"}' });
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 403,
+            body: JSON.stringify({
+                error: 'Forbidden',
+                usage: ['POST https://<hostname>/start']
+            })
+        });
 
         expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
-    test.each(['/telegram', '/start'])('rejects unknown method for %s', async (resource) => {
-        const event = { resource, httpMethod: 'GET' };
-        await expect(handler(event)).resolves.toMatchObject({ statusCode: 405, body: '{"error":"Method Not Allowed"}' });
+    test('rejects unknown method for /telegram', async () => {
+        const event = { resource: '/telegram', httpMethod: 'GET' };
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 405,
+            body: '{"error":"Method Not Allowed"}'
+        });
+
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
+        expect(times.onStartTime).not.toHaveBeenCalled();
+    });
+
+    test('rejects unknown method for /start', async () => {
+        const event = { resource: '/start', httpMethod: 'GET' };
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 405,
+            body: expect.stringMatching(/{"error":"Method Not Allowed","usage":\[.*\]}/)
+        });
 
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
@@ -67,6 +88,17 @@ describe('POST /telegram API', () => {
 
         const event = { resource: '/telegram', httpMethod: 'POST' };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
+
+        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(member.onMyChatMember).not.toHaveBeenCalled();
+        expect(message.onMessage).not.toHaveBeenCalled();
+    });
+
+    test('handles request with missing queryStringParameters', async () => {
+        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+
+        const event = { resource: '/telegram', httpMethod: 'POST' };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
@@ -291,10 +323,13 @@ describe('POST /start API', () => {
         expect(times.onStartTime).not.toHaveBeenCalled();
     });
 
-    test('returns correct error message', async () => {
+    test('returns correct error message for HTTP 400', async () => {
         const event = {
             resource: '/start',
             httpMethod: 'POST',
+            requestContext: {
+                domainName: 'dOmAiN.nAmE'
+            },
             body: JSON.stringify({
                 version: 9999,
                 year: 2022,
@@ -303,20 +338,48 @@ describe('POST /start API', () => {
                 name: 'FiRsT SeCoNdNaMe'
             })
         };
+
         await expect(handler(event)).resolves.toMatchObject({
             statusCode: 400,
             body: JSON.stringify({
                 error: 'Bad Request',
                 details: "Expecting 'version' parameter to be 1",
-                usage:
-`POST https://<hostname>/start
-body: {
-    "version": 1,
-    "year": 2022,
-    "day": 13,
-    "part": 1,
-    "name": "John Smith"
-}`
+                usage: [
+                    'POST https://dOmAiN.nAmE/start',
+                    'body: {',
+                    '    "version": 1,',
+                    '    "year": 2022,',
+                    '    "day": 13,',
+                    '    "part": 1,',
+                    '    "name": "John Smith"',
+                    '}'
+                ]
+            })
+        });
+    });
+
+    test('returns correct error message for HTTP 500', async () => {
+        const event = {
+            resource: '/start',
+            httpMethod: 'POST',
+            requestContext: {
+                domainName: 'dOmAiN.nAmE'
+            },
+            body: JSON.stringify({
+                version: 1,
+                year: 2022,
+                day: 13,
+                part: 1,
+                name: 'FiRsT SeCoNdNaMe'
+            })
+        };
+
+        times.onStartTime.mockRejectedValueOnce(new ResultError(500, 'rEsUlT eRrOr 500'));
+
+        await expect(handler(event)).resolves.toMatchObject({
+            statusCode: 500,
+            body: JSON.stringify({
+                error: 'rEsUlT eRrOr 500'
             })
         });
     });
