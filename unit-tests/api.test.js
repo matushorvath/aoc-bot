@@ -48,7 +48,10 @@ describe('API handler', () => {
             statusCode: 403,
             body: JSON.stringify({
                 error: 'Forbidden',
-                usage: ['POST https://<hostname>/start']
+                usage: [
+                    'POST https://<hostname>/start',
+                    'POST https://<hostname>/trigger'
+                ]
             })
         });
 
