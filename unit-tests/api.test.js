@@ -94,7 +94,7 @@ describe('POST /telegram API', () => {
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
-    test('handles request with missing queryStringParameters', async () => {
+    test('handles request with missing headers', async () => {
         secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = { resource: '/telegram', httpMethod: 'POST' };
@@ -108,7 +108,7 @@ describe('POST /telegram API', () => {
     test('handles request with missing secret', async () => {
         secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
-        const event = { resource: '/telegram', httpMethod: 'POST', queryStringParameters: {} };
+        const event = { resource: '/telegram', httpMethod: 'POST', headers: {} };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
         expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
@@ -119,7 +119,10 @@ describe('POST /telegram API', () => {
     test('handles request with invalid secret', async () => {
         secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
-        const event = { resource: '/telegram', httpMethod: 'POST', queryStringParameters: { bAdSeCrEt: '' } };
+        const event = {
+            resource: '/telegram', httpMethod: 'POST',
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'bAdSeCrEt' }
+        };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
         expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
@@ -133,7 +136,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             body: '{"my_chat_member":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
@@ -148,7 +151,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             body: '{"message":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
@@ -162,7 +165,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             body: '$%^&'
         };
         await expect(handler(event)).resolves.toMatchObject({
@@ -180,7 +183,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             body: '{"bOdY":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
@@ -195,7 +198,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             body: '{"message":true}'
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
@@ -209,7 +212,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             isBase64Encoded: true,
             body: 'eyJtZXNzYWdlIjp0cnVlfQ=='        // {"message":true} encoded with base64
         };
@@ -224,7 +227,7 @@ describe('POST /telegram API', () => {
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
-            queryStringParameters: { gOoDsEcReT: '' },
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
             isBase64Encoded: false,
             body: '{"message":true}'
         };
