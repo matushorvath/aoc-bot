@@ -16,6 +16,7 @@ package=aoc-bot-$version-$uuid.zip
 
 region=eu-central-1
 bucket=cf.009116496185.$region
+stack=aoc-bot
 
 # Update SSM secrets using values from GitHub
 if [ -z "$SKIP_SECRETS" ] ; then
@@ -26,7 +27,7 @@ if [ -z "$SKIP_SECRETS" ] ; then
         aws ssm put-parameter \
             --overwrite \
             --region $region \
-            --name "/aoc-bot/$param_name" \
+            --name "/$stack/$param_name" \
             --type SecureString \
             --value "$param_value"
     }
@@ -46,10 +47,22 @@ aws s3 cp \
 aws cloudformation deploy \
     --region $region \
     --capabilities CAPABILITY_IAM \
-    --template template.yml --stack-name aoc-bot \
+    --template template.yml \
+    --stack-name $stack \
     --parameter-overrides \
         Bucket=$bucket \
         Package=$package \
         Version=$version
 
 rm -f $package
+
+# Register the Telegram webhook
+endpoint=$(aws cloudformation describe-stacks \
+    --region $region \
+    --stack-name $stack \
+    --query "Stacks[0].Outputs[?OutputKey=='Endpoint'].OutputValue" \
+    --output text \
+)
+echo Endpoint: $endpoint
+
+node src/register.js "${endpoint}telegram"

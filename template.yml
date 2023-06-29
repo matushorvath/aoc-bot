@@ -186,3 +186,9 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotApiFunction
       Principal: apigateway.amazonaws.com
+
+# Output the API endpoint, to be used for Telegram registration
+Outputs:
+  Endpoint:
+    Description: "API Endpoint"
+    Value: !Sub "https://${AocBotApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
