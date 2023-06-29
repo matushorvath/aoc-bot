@@ -13,7 +13,7 @@ const yaml = require('yaml');
 const fs = require('fs/promises');
 const path = require('path');
 
-jest.setTimeout(15 * 1000);
+jest.setTimeout(30 * 1000);
 
 // Telegram ids to use for testing
 const botUserId = 5071613978;
@@ -120,7 +120,7 @@ describe('chat membership', () => {
     // and restrictions are already initialized. Telegram API returns HTTP 400 errors if you set properties
     // that already have the requested value, and this tests for correct handling of such cases.
     describe.each(['default', 'pre-initialized'])('with %s chat status', () => {
-        test ('add bot to chat', async () => {
+        test('add bot to chat', async () => {
             // Start receiving bot messages
             const filter = update =>
                 update?._ === 'updateNewMessage'
