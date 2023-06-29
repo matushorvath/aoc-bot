@@ -77,7 +77,7 @@ const postTelegram = async (event) => {
 };
 
 const validateTelegramSecret = async (event) => {
-    const secret = await getTelegramSecret();
+    const secret = await getWebhookSecret();
 
     if (event.queryStringParameters?.[secret] !== '') {
         console.error('validateTelegramSecret: invalid secret');

@@ -33,6 +33,7 @@ if [ -z "$SKIP_SECRETS" ] ; then
 
     put_secret "advent-of-code-secret" "$ADVENT_OF_CODE_SECRET"
     put_secret "telegram-secret" "$TELEGRAM_SECRET"
+    put_secret "webhook-secret" "$WEBHOOK_SECRET"
 fi
 
 # Upload and deploy the package
