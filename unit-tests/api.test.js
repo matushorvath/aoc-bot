@@ -15,7 +15,7 @@ const times = require('../src/times');
 jest.mock('../src/times');
 
 beforeEach(() => {
-    secrets.getTelegramSecret.mockReset();
+    secrets.getWebhookSecret.mockReset();
     member.onMyChatMember.mockReset();
     message.onMessage.mockReset();
     times.onStartTime.mockReset();
@@ -37,7 +37,7 @@ describe('API handler', () => {
             }
         });
 
-        expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
+        expect(secrets.getWebhookSecret).not.toHaveBeenCalled();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
@@ -52,7 +52,7 @@ describe('API handler', () => {
             })
         });
 
-        expect(secrets.getTelegramSecret).not.toHaveBeenCalled();
+        expect(secrets.getWebhookSecret).not.toHaveBeenCalled();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
@@ -83,52 +83,52 @@ describe('API handler', () => {
 });
 
 describe('POST /telegram API', () => {
-    test('handles getTelegramSecret throwing', async () => {
-        secrets.getTelegramSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
+    test('handles getWebhookSecret throwing', async () => {
+        secrets.getWebhookSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
         const event = { resource: '/telegram', httpMethod: 'POST' };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles request with missing queryStringParameters', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = { resource: '/telegram', httpMethod: 'POST' };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles request with missing secret', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = { resource: '/telegram', httpMethod: 'POST', queryStringParameters: {} };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles request with invalid secret', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = { resource: '/telegram', httpMethod: 'POST', queryStringParameters: { bAdSeCrEt: '' } };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 401, body: '{"error":"Unauthorized"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('handles onMyChatMember throwing', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
         member.onMyChatMember.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
 
         const event = {
@@ -138,12 +138,12 @@ describe('POST /telegram API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).toHaveBeenCalledWith(true);
     });
 
     test('handles onMessage throwing', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
         message.onMessage.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
 
         const event = {
@@ -153,12 +153,12 @@ describe('POST /telegram API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('handles invalid payload', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
@@ -170,13 +170,13 @@ describe('POST /telegram API', () => {
             body: '{"error":"Bad Request","details":"Invalid JSON syntax"}'
         });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('processes an ignored update', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
@@ -185,13 +185,13 @@ describe('POST /telegram API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
     });
 
     test('processes plain payload', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
@@ -200,12 +200,12 @@ describe('POST /telegram API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('processes base64 payload', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
@@ -215,12 +215,12 @@ describe('POST /telegram API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode: 201 });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 
     test('returns correct headers with successful request', async () => {
-        secrets.getTelegramSecret.mockResolvedValueOnce('gOoDsEcReT');
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
 
         const event = {
             resource: '/telegram', httpMethod: 'POST',
@@ -240,7 +240,7 @@ describe('POST /telegram API', () => {
             }
         });
 
-        expect(secrets.getTelegramSecret).toHaveBeenCalledWith();
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(message.onMessage).toHaveBeenCalledWith(true);
     });
 });

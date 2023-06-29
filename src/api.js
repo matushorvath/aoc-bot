@@ -1,6 +1,6 @@
 'use strict';
 
-const { getTelegramSecret } = require('./secrets');
+const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./member');
 const { onMessage } = require('./message');
 const { onStartTime } = require('./times');

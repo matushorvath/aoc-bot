@@ -6,6 +6,7 @@ const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 
 let adventOfCodeSecret;
 let telegramSecret;
+let webhookSecret;
 
 const getSecrets = async () => {
     console.log('getSecrets: start');
@@ -50,7 +51,7 @@ const getWebhookSecret = async () => {
 };
 
 const resetCache = () => {
-    adventOfCodeSecret = telegramSecret = undefined;
+    adventOfCodeSecret = telegramSecret = webhookSecret = undefined;
 };
 
 exports.getAdventOfCodeSecret = getAdventOfCodeSecret;
