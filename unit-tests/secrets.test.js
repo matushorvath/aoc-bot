@@ -1,6 +1,6 @@
 'use strict';
 
-const { getAdventOfCodeSecret, getTelegramSecret, resetCache } = require('../src/secrets');
+const { getAdventOfCodeSecret, getTelegramSecret, getWebhookSecret, resetCache } = require('../src/secrets');
 
 const ssm = require('@aws-sdk/client-ssm');
 jest.mock('@aws-sdk/client-ssm');
@@ -12,7 +12,8 @@ beforeEach(() => {
 
 const functions = [
     ['getAdventOfCodeSecret', getAdventOfCodeSecret, 'aOcSeCrEt'],
-    ['getTelegramSecret', getTelegramSecret, 'tElEgRaMsEcReT']
+    ['getTelegramSecret', getTelegramSecret, 'tElEgRaMsEcReT'],
+    ['getWebhookSecret', getWebhookSecret, 'wEbHoOkSeCrEt']
 ];
 
 describe.each(functions)('%s', (_description, getSecretFunction, result) => {
@@ -21,6 +22,9 @@ describe.each(functions)('%s', (_description, getSecretFunction, result) => {
 
         const data = {
             Parameters: [{
+                Name: '/aoc-bot/webhook-secret',
+                Value: 'wEbHoOkSeCrEt'
+            }, {
                 Name: '/aoc-bot/telegram-secret',
                 Value: 'tElEgRaMsEcReT'
             }, {
@@ -35,7 +39,7 @@ describe.each(functions)('%s', (_description, getSecretFunction, result) => {
         await expect(getSecretFunction()).resolves.toEqual(result);
 
         expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret'],
+            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
             WithDecryption: true
         });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
@@ -58,7 +62,8 @@ describe.each(functions)('%s', (_description, getSecretFunction, result) => {
             }],
             InvalidParameters: [
                 '/aoc-bot/telegram-secret',
-                '/aoc-bot/advent-of-code-secret'
+                '/aoc-bot/advent-of-code-secret',
+                '/aoc-bot/webhook-secret'
             ]
         };
 
@@ -68,7 +73,7 @@ describe.each(functions)('%s', (_description, getSecretFunction, result) => {
         await expect(getSecretFunction()).rejects.toThrow(/getSecrets/);
 
         expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret'],
+            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
             WithDecryption: true
         });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
@@ -83,7 +88,7 @@ describe.each(functions)('%s', (_description, getSecretFunction, result) => {
         await expect(getSecretFunction()).rejects.toThrow('sSmErRoR');
 
         expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret'],
+            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
             WithDecryption: true
         });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });

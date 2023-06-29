@@ -6,12 +6,13 @@ const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 
 let adventOfCodeSecret;
 let telegramSecret;
+let webhookSecret;
 
 const getSecrets = async () => {
     console.log('getSecrets: start');
 
     const params = {
-        Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret'],
+        Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
         WithDecryption: true
     };
     const command = new GetParametersCommand(params);
@@ -23,6 +24,7 @@ const getSecrets = async () => {
 
     adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret').Value;
     telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret').Value;
+    webhookSecret = result.Parameters.find(p => p.Name === '/aoc-bot/webhook-secret').Value;
 
     console.log('getSecrets: done');
 };
@@ -41,10 +43,18 @@ const getTelegramSecret = async () => {
     return telegramSecret;
 };
 
+const getWebhookSecret = async () => {
+    if (webhookSecret === undefined) {
+        await getSecrets();
+    }
+    return webhookSecret;
+};
+
 const resetCache = () => {
-    adventOfCodeSecret = telegramSecret = undefined;
+    adventOfCodeSecret = telegramSecret = webhookSecret = undefined;
 };
 
 exports.getAdventOfCodeSecret = getAdventOfCodeSecret;
 exports.getTelegramSecret = getTelegramSecret;
+exports.getWebhookSecret = getWebhookSecret;
 exports.resetCache = resetCache;

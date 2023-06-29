@@ -1,6 +1,6 @@
 'use strict';
 
-const { getTelegramSecret } = require('./secrets');
+const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./member');
 const { onMessage } = require('./message');
 const { onStartTime } = require('./times');
@@ -77,7 +77,7 @@ const postTelegram = async (event) => {
 };
 
 const validateTelegramSecret = async (event) => {
-    const secret = await getTelegramSecret();
+    const secret = await getWebhookSecret();
 
     if (event.queryStringParameters?.[secret] !== '') {
         console.error('validateTelegramSecret: invalid secret');
