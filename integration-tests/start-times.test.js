@@ -3,7 +3,7 @@
 const axios = require('axios');
 require('./expect-one-of');
 
-jest.setTimeout(15 * 1000);
+jest.setTimeout(30 * 1000);
 
 const url = 'https://7b79gj2si4.execute-api.eu-central-1.amazonaws.com/Prod/start';
 
