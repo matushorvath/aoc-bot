@@ -44,7 +44,7 @@ const isRegistrationCorrect = (result, data) => {
         return false;
     }
 
-    if (result?.allowed_updates.length !== data.allowedUpdates.length
+    if (!result?.allowed_updates || result?.allowed_updates.length !== data.allowedUpdates.length
         || !result?.allowed_updates.every((v) => data.allowedUpdates.includes(v))) {
         console.log('webhook info allowed updates do not match');
         return false;
@@ -90,7 +90,13 @@ const main = async () => {
     return await register(secrets, data);
 };
 
-main().catch((error) => {
-    console.log(error);
-    process.exitCode = 1;
-});
+/* istanbul ignore next */
+if (process.env.JEST_WORKER_ID === undefined) {
+    main().catch((error) => {
+        console.log(error);
+        process.exitCode = 1;
+    });
+}
+
+module.exports.register = register;
+module.exports.main = main;
