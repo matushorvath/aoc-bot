@@ -1,7 +1,6 @@
 'use strict';
 
-const { Client } = require('tdl');
-const { TDLib } = require('tdl-tdlib-addon');
+const tdl = require('tdl');
 const { getTdjson } = require('prebuilt-tdlib');
 
 const crypto = require ('crypto');
@@ -13,6 +12,8 @@ const os = require('os');
 const { setTimeout } = require('timers/promises');
 
 const pbkdf2Async = util.promisify(crypto.pbkdf2);
+
+tdl.configure({ tdjson: getTdjson() });
 
 class TelegramClient {
     constructor(apiId, apiHash, aesKey) {
@@ -32,8 +33,7 @@ class TelegramClient {
             skipOldUpdates: true
         };
 
-        const tdlib = new TDLib(getTdjson());
-        this.client = new Client(tdlib, options);
+        this.client = tdl.createClient(options);
         this.client.on('error', console.error);
 
         const connectionReadyFilter = (update) => {
