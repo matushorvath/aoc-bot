@@ -121,6 +121,11 @@ describe('chat membership', () => {
     // that already have the requested value, and this tests for correct handling of such cases.
     describe.each(['default', 'pre-initialized'])('with %s chat status', () => {
         test('add bot to chat', async () => {
+            // Expect the bot to be added to chat
+            await expect(client.addChatMember(botUserId, testChatId)).resolves.toBeUndefined();
+        });
+
+        test('promote the bot to administrator', async () => {
             // Start receiving bot messages
             const filter = update =>
                 update?._ === 'updateNewMessage'
@@ -129,10 +134,10 @@ describe('chat membership', () => {
                 && update?.message?.chat_id === testChatId;
             const updatesPromise = client.waitForUpdates(filter, 2);
 
-            // Expect the bot to be added to chat
-            await expect(client.addChatAdmin(botUserId, testChatId)).resolves.toBeUndefined();
+            // Expect the bot to promoted to administrator
+            await expect(client.setMemberStatusAdministrator(botUserId, testChatId)).resolves.toBeUndefined();
 
-            // Expect the bot to notify the chat with a message
+            // Expect the bot to update the chat
             await expect(updatesPromise).resolves.toMatchObject([{
                 message: {
                     content: {

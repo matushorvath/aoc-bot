@@ -188,10 +188,8 @@ class TelegramClient {
         return (await updatesPromise).map(update => update?.message?.content?.text?.text);
     }
 
-    async addChatAdmin(userId, chatId) {
-        let status;
-
-        status = await this.clientInvoke({
+    async addChatMember(userId, chatId) {
+        const status = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
@@ -200,8 +198,10 @@ class TelegramClient {
         if (status?._ !== 'ok') {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
+    }
 
-        status = await this.clientInvoke({
+    async setMemberStatusAdministrator(userId, chatId) {
+        const status = await this.clientInvoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
