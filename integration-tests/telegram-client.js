@@ -188,10 +188,8 @@ class TelegramClient {
         return (await updatesPromise).map(update => update?.message?.content?.text?.text);
     }
 
-    async addChatAdmin(userId, chatId) {
-        let status;
-
-        status = await this.clientInvoke({
+    async addChatMember(userId, chatId) {
+        const status = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
@@ -200,8 +198,10 @@ class TelegramClient {
         if (status?._ !== 'ok') {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
         }
+    }
 
-        status = await this.clientInvoke({
+    async setMemberStatusAdministrator(userId, chatId) {
+        const status = await this.clientInvoke({
             _: 'setChatMemberStatus',
             chat_id: chatId,
             member_id: {
@@ -210,17 +210,22 @@ class TelegramClient {
             },
             status: {
                 _: 'chatMemberStatusAdministrator',
-                can_manage_chat: true,
-                can_change_info: true,
-                can_post_messages: true,
-                can_edit_messages: true,
-                can_delete_messages: true,
-                can_invite_users: true,
-                can_restrict_members: true,
-                can_pin_messages: true,
-                can_promote_members: false,
-                can_manage_video_chats: true,
-                is_anonymous: false
+                can_be_edited: true,
+                rights: {
+                    _: 'chatAdministratorRights',
+                    can_manage_chat: true,
+                    can_change_info: true,
+                    can_post_messages: true,
+                    can_edit_messages: true,
+                    can_delete_messages: true,
+                    can_invite_users: true,
+                    can_restrict_members: true,
+                    can_pin_messages: true,
+                    can_manage_topics: true,
+                    can_promote_members: false,
+                    can_manage_video_chats: true,
+                    is_anonymous: false
+                }
             }
         });
 
