@@ -50,7 +50,7 @@ describe('API handler', () => {
                 error: 'Forbidden',
                 usage: [
                     'POST https://<hostname>/start',
-                    'POST https://<hostname>/trigger'
+                    'POST https://<hostname>/stop'
                 ]
             })
         });

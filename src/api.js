@@ -53,11 +53,11 @@ const processEvent = async (event) => {
             return postStart(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
-    } else if (event.resource === '/trigger') {
+    } else if (event.resource === '/stop') {
         if (event.httpMethod === 'OPTIONS') {
             return options(event);
         } else if (event.httpMethod === 'POST') {
-            return postTrigger(event);
+            return postStop(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
     }
@@ -127,10 +127,40 @@ const postStart = async (event) => {
     return { status: created ? 201 : 200 };
 };
 
-const postTrigger = async (_event) => {
-    console.log('postTrigger: start');
+const postStop = async (event) => {
+    console.log('postStop: start');
 
-    console.log('postTrigger: done');
+    const body = parseBody(event);
+    if (!body || typeof(body) !== 'object') {
+        throw new ResultError(400, 'Bad Request', 'Missing or invalid request body');
+    }
+
+    // TODO maybe merge /start and /stop handling in api.js, it's literally the same code
+    const { version, year, day, part, name } = body;
+
+    if (version === undefined || version !== 1) {
+        throw new ResultError(400, 'Bad Request', "Expecting 'version' parameter to be 1");
+    }
+
+    if (typeof year !== 'number' || year < 2000 || year >= 2100) {
+        throw new ResultError(400, 'Bad Request', "Missing or invalid 'year' parameter");
+    }
+    if (typeof day !== 'number' || day < 1 || day > 25) {
+        throw new ResultError(400, 'Bad Request', "Missing or invalid 'day' parameter");
+    }
+    if (typeof part !== 'number' || (part !== 1 && part !== 2)) {
+        throw new ResultError(400, 'Bad Request', "Missing or invalid 'part' parameter");
+    }
+    if (typeof name !== 'string' && !(name instanceof String)) {
+        throw new ResultError(400, 'Bad Request', "Missing or invalid 'name' parameter");
+    }
+
+    const ts = Math.floor(Date.now() / 1000);
+
+    // TODO onStart and onStop, instead of onStartTime
+    const created = await onStartTime(year, day, part, name, ts);
+
+    console.log('postStop: done');
 
     return { status: 501 };
 };
@@ -183,7 +213,7 @@ const explainUsage = (event, error) => {
             ...`body: ${JSON.stringify(example, undefined, 4)}`.split('\n')
         ];
     } else {
-        error.body.usage = ['start', 'trigger'].map(resource => `POST https://${hostname}/${resource}`);
+        error.body.usage = ['start', 'stop'].map(resource => `POST https://${hostname}/${resource}`);
     }
 };
 

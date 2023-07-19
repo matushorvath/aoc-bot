@@ -330,7 +330,7 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
             chat_id: -4242,
-            photo: expect.anything() // TODO { path: 'path to the img }
+            photo: expect.anything() // TODO { path: 'path to the img' }
         }, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
