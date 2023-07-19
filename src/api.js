@@ -95,31 +95,9 @@ const validateTelegramSecret = async (event) => {
 const postStart = async (event) => {
     console.log('postStart: start');
 
-    const body = parseBody(event);
-    if (!body || typeof(body) !== 'object') {
-        throw new ResultError(400, 'Bad Request', 'Missing or invalid request body');
-    }
-
-    const { version, year, day, part, name } = body;
-
-    if (version === undefined || version !== 1) {
-        throw new ResultError(400, 'Bad Request', "Expecting 'version' parameter to be 1");
-    }
-
-    if (typeof year !== 'number' || year < 2000 || year >= 2100) {
-        throw new ResultError(400, 'Bad Request', "Missing or invalid 'year' parameter");
-    }
-    if (typeof day !== 'number' || day < 1 || day > 25) {
-        throw new ResultError(400, 'Bad Request', "Missing or invalid 'day' parameter");
-    }
-    if (typeof part !== 'number' || (part !== 1 && part !== 2)) {
-        throw new ResultError(400, 'Bad Request', "Missing or invalid 'part' parameter");
-    }
-    if (typeof name !== 'string' && !(name instanceof String)) {
-        throw new ResultError(400, 'Bad Request', "Missing or invalid 'name' parameter");
-    }
-
+    const { year, day, part, name } = parseStartStopBody(event);
     const ts = Math.floor(Date.now() / 1000);
+
     const created = await onStart(year, day, part, name, ts);
 
     console.log('postStart: done');
@@ -130,12 +108,22 @@ const postStart = async (event) => {
 const postStop = async (event) => {
     console.log('postStop: start');
 
+    const { year, day, part, name } = parseStartStopBody(event);
+    const ts = Math.floor(Date.now() / 1000);
+
+    const created = await onStart(year, day, part, name, ts);
+
+    console.log('postStop: done');
+
+    return { status: 501 };
+};
+
+const parseStartStopBody = (event) => {
     const body = parseBody(event);
     if (!body || typeof(body) !== 'object') {
         throw new ResultError(400, 'Bad Request', 'Missing or invalid request body');
     }
 
-    // TODO maybe merge /start and /stop handling in api.js, it's literally the same code
     const { version, year, day, part, name } = body;
 
     if (version === undefined || version !== 1) {
@@ -155,14 +143,7 @@ const postStop = async (event) => {
         throw new ResultError(400, 'Bad Request', "Missing or invalid 'name' parameter");
     }
 
-    const ts = Math.floor(Date.now() / 1000);
-
-    // TODO onStart and onStop, instead of onStartTime
-    const created = await onStartTime(year, day, part, name, ts);
-
-    console.log('postStop: done');
-
-    return { status: 501 };
+    return { year, day, part, name };
 };
 
 // TODO This should be done in AWS API Gateway configuration, but I can't get that to work
