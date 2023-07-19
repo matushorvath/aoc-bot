@@ -62,7 +62,7 @@ jobs:
           cache: 'npm'
 
       - name: Install packages
-        run: npm install --omit=dev
+        run: npm install --omit=dev --target_arch=arm64 --target_platform=linux
 
       - name: Deploy to AWS
         run: npm run deploy

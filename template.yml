@@ -27,6 +27,8 @@ Resources:
         Key: !Ref Package
       Handler: src/schedule.handler
       Runtime: nodejs18.x
+      Architectures:
+        - arm64
       Timeout: 300
       Policies:
         - AWSLambdaVPCAccessExecutionRole
@@ -56,6 +58,8 @@ Resources:
         Key: !Ref Package
       Handler: src/api.handler
       Runtime: nodejs18.x
+      Architectures:
+        - arm64
       Timeout: 300
       Policies:
         - AWSLambdaVPCAccessExecutionRole
