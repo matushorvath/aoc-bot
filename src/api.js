@@ -4,6 +4,7 @@ const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./member');
 const { onMessage } = require('./message');
 const { onStart } = require('./times');
+const { onStop } = require('./leaderboards');
 
 class ResultError extends Error {
     constructor(status, message, details = undefined) {
@@ -97,10 +98,9 @@ const postStart = async (event) => {
 
     const { year, day, part, name } = parseStartStopBody(event);
     const ts = Math.floor(Date.now() / 1000);
-
     const created = await onStart(year, day, part, name, ts);
 
-    console.log('postStart: done');
+    console.log(`postStart: done, created ${created}`);
 
     return { status: created ? 201 : 200 };
 };
@@ -109,13 +109,11 @@ const postStop = async (event) => {
     console.log('postStop: start');
 
     const { year, day, part, name } = parseStartStopBody(event);
-    const ts = Math.floor(Date.now() / 1000);
+    const invited = await onStop(year, day, part, name);
 
-    const created = await onStart(year, day, part, name, ts);
+    console.log(`postStop: done, invited ${invited}`);
 
-    console.log('postStop: done');
-
-    return { status: 501 };
+    return { status: invited ? 201 : 200 };
 };
 
 const parseStartStopBody = (event) => {
