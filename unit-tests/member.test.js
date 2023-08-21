@@ -8,8 +8,8 @@ jest.mock('@aws-sdk/client-dynamodb');
 const network = require('../src/network');
 jest.mock('../src/network');
 
-const schedule = require('../src/schedule');
-jest.mock('../src/schedule');
+const leaderboards = require('../src/leaderboards');
+jest.mock('../src/leaderboards');
 
 const years = require('../src/years');
 jest.mock('../src/years');
@@ -25,7 +25,7 @@ beforeEach(() => {
     years.addYear.mockReset();
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
-    schedule.updateLeaderboards.mockReset();
+    leaderboards.updateLeaderboards.mockReset();
 });
 
 describe('onMyChatMember', () => {
@@ -60,7 +60,7 @@ describe('onMyChatMember', () => {
 
         expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('ignores membership in a supergroup with no title', async () => {
@@ -77,7 +77,7 @@ describe('onMyChatMember', () => {
 
         expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('ignores membership in a supergroup with invalid title', async () => {
@@ -94,7 +94,7 @@ describe('onMyChatMember', () => {
 
         expect(years.addYear).not.toHaveBeenCalled();
         expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('fails if dynamodb throws', async () => {
@@ -292,7 +292,7 @@ describe('onMyChatMember', () => {
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockResolvedValueOnce(undefined);
         network.sendTelegram.mockResolvedValue(undefined);
-        schedule.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
+        leaderboards.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
 
         await expect(onMyChatMember(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
     });
@@ -363,7 +363,7 @@ describe('onMyChatMember', () => {
             disable_notification: true
         });
 
-        expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
+        expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
 
         expect(logs.logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
     });

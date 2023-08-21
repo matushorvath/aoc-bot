@@ -1,6 +1,6 @@
 'use strict';
 
-const { handler, updateLeaderboards } = require('../src/schedule');
+const { handler, updateLeaderboards } = require('../src/leaderboards');
 
 const invites = require('../src/invites');
 jest.mock('../src/invites');
@@ -25,7 +25,7 @@ beforeEach(() => {
     logs.logActivity.mockReset();
 });
 
-describe('schedule.handler', () => {
+describe('leaderboards.handler', () => {
     test('succeeds updating the leaderboard', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
 
@@ -222,7 +222,7 @@ describe('schedule.handler', () => {
     });
 });
 
-describe('schedule.updateLeaderboards', () => {
+describe('leaderboards.updateLeaderboards', () => {
     test('selected year not in database', async () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
 

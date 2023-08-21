@@ -1,7 +1,7 @@
 'use strict';
 
 const { sendTelegram } = require('./network');
-const { updateLeaderboards } = require('./schedule');
+const { updateLeaderboards } = require('./leaderboards');
 const { addYear } = require('./years');
 const { logActivity } = require('./logs');
 

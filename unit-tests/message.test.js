@@ -14,8 +14,8 @@ jest.mock('../src/times');
 const boardFormat = require('../src/board');
 jest.mock('../src/board');
 
-const schedule = require('../src/schedule');
-jest.mock('../src/schedule');
+const leaderboards = require('../src/leaderboards');
+jest.mock('../src/leaderboards');
 
 const logs = require('../src/logs');
 jest.mock('../src/logs');
@@ -31,7 +31,7 @@ beforeEach(() => {
     logs.disableLogs.mockReset();
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
-    schedule.updateLeaderboards.mockReset();
+    leaderboards.updateLeaderboards.mockReset();
 });
 
 describe('onMessage generic', () => {
@@ -579,7 +579,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            schedule.updateLeaderboards.mockResolvedValueOnce({
+            leaderboards.updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [], sent: [], created: [], updated: []
             });
 
@@ -595,7 +595,7 @@ describe('onMessage /update', () => {
                 action: 'typing'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
+            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
             expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (year 1979)");
 
@@ -612,7 +612,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            schedule.updateLeaderboards.mockResolvedValueOnce({
+            leaderboards.updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [{ year: 1984 }, { year: 2345 }],
                 sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
                 created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
@@ -631,7 +631,7 @@ describe('onMessage /update', () => {
                 action: 'typing'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
+            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
             expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (year 1979)");
 
@@ -675,7 +675,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            schedule.updateLeaderboards.mockResolvedValueOnce({
+            leaderboards.updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [], sent: [], created: [], updated: []
             });
 
@@ -691,7 +691,7 @@ describe('onMessage /update', () => {
                 action: 'typing'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
             expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
 
@@ -708,7 +708,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            schedule.updateLeaderboards.mockResolvedValueOnce({
+            leaderboards.updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [],
                 sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }],
                 created: [{ year: 1980, day: 13 }],
@@ -727,7 +727,7 @@ describe('onMessage /update', () => {
                 action: 'typing'
             });
 
-            expect(schedule.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
             expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
 
@@ -750,7 +750,7 @@ describe('onMessage /update', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        schedule.updateLeaderboards.mockResolvedValueOnce({
+        leaderboards.updateLeaderboards.mockResolvedValueOnce({
             unretrieved: [], sent: [], created: [], updated: []
         });
 
@@ -761,7 +761,7 @@ describe('onMessage /update', () => {
             text: 'Invalid parameters (see /help)'
         });
 
-        expect(schedule.updateLeaderboards).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
         expect(logs.logActivity).not.toHaveBeenCalled();
     });
 
@@ -772,7 +772,7 @@ describe('onMessage /update', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        schedule.updateLeaderboards.mockResolvedValueOnce({
+        leaderboards.updateLeaderboards.mockResolvedValueOnce({
             unretrieved: [], sent: [], created: [], updated: []
         });
 

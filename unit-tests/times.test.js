@@ -1,6 +1,6 @@
 'use strict';
 
-const { onStartTime, loadStartTimes } = require('../src/times');
+const { onStart, loadStartTimes } = require('../src/times');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
@@ -10,9 +10,9 @@ beforeEach(() => {
     dynamodb.DynamoDB.prototype.query.mockReset();
 });
 
-describe('onStartTime', () => {
+describe('onStart', () => {
     test('saves a time to database', async () => {
-        await expect(onStartTime(1945, 11, 2, 'sOmE oNe', 123456789)).resolves.toBe(true);
+        await expect(onStart(1945, 11, 2, 'sOmE oNe', 123456789)).resolves.toBe(true);
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             Item: {
@@ -32,7 +32,7 @@ describe('onStartTime', () => {
     test('does not save time when one already exists', async () => {
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' });
 
-        await expect(onStartTime(1945, 11, 2, 'sOmE oNe', 123456789)).resolves.toBe(false);
+        await expect(onStart(1945, 11, 2, 'sOmE oNe', 123456789)).resolves.toBe(false);
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             Item: {
@@ -51,7 +51,7 @@ describe('onStartTime', () => {
 
     test('fails after an error while saving', async () => {
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('sOmEeRrOr'));
-        await expect(onStartTime(1945, 11, 2, 'sOmE oNe', 123456789)).rejects.toThrow('sOmEeRrOr');
+        await expect(onStart(1945, 11, 2, 'sOmE oNe', 123456789)).rejects.toThrow('sOmEeRrOr');
     });
 });
 
@@ -66,8 +66,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -90,8 +89,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -119,8 +117,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -147,8 +144,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -185,8 +181,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
@@ -195,7 +190,6 @@ describe('loadStartTimes', () => {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            Limit: 10,
             ExclusiveStartKey: {
                 id: { S: 'start_time' },
                 sk: { S: '1848:15:2:sOmE oNe' }
