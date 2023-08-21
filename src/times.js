@@ -41,8 +41,7 @@ const loadStartTimes = async (year, day) => {
         ExpressionAttributeValues: {
             ':id': { S: 'start_time' },
             ':sk': { S: `${year}:${day}` }
-        },
-        Limit: 10 // TODO remove this limit, it's just here to test paging
+        }
     };
 
     const startTimes = {};

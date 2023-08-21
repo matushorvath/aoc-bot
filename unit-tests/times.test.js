@@ -66,8 +66,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -90,8 +89,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -119,8 +117,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -147,8 +144,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
     });
 
@@ -185,8 +181,7 @@ describe('loadStartTimes', () => {
             ExpressionAttributeValues: {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
-            },
-            Limit: 10
+            }
         });
         expect(dynamodb.DynamoDB.prototype.query).toHaveBeenNthCalledWith(2, {
             TableName: 'aoc-bot',
@@ -195,7 +190,6 @@ describe('loadStartTimes', () => {
                 ':id': { S: 'start_time' },
                 ':sk': { S: '1848:15' }
             },
-            Limit: 10,
             ExclusiveStartKey: {
                 id: { S: 'start_time' },
                 sk: { S: '1848:15:2:sOmE oNe' }
