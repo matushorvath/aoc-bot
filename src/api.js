@@ -3,7 +3,7 @@
 const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./member');
 const { onMessage } = require('./message');
-const { onStartTime } = require('./times');
+const { onStart } = require('./times');
 
 class ResultError extends Error {
     constructor(status, message, details = undefined) {
@@ -113,7 +113,7 @@ const postStart = async (event) => {
     }
 
     const ts = Math.floor(Date.now() / 1000);
-    const created = await onStartTime(year, day, part, name, ts);
+    const created = await onStart(year, day, part, name, ts);
 
     console.log('postStart: done');
 

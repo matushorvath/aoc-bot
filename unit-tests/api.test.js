@@ -18,7 +18,7 @@ beforeEach(() => {
     secrets.getWebhookSecret.mockReset();
     member.onMyChatMember.mockReset();
     message.onMessage.mockReset();
-    times.onStartTime.mockReset();
+    times.onStart.mockReset();
 });
 
 describe('API handler', () => {
@@ -66,7 +66,7 @@ describe('API handler', () => {
 
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
-        expect(times.onStartTime).not.toHaveBeenCalled();
+        expect(times.onStart).not.toHaveBeenCalled();
     });
 
     test('rejects unknown method for /start', async () => {
@@ -78,7 +78,7 @@ describe('API handler', () => {
 
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
-        expect(times.onStartTime).not.toHaveBeenCalled();
+        expect(times.onStart).not.toHaveBeenCalled();
     });
 });
 
@@ -283,7 +283,7 @@ describe('POST /start API', () => {
             body: expect.stringMatching(errorMatch)
         });
 
-        expect(times.onStartTime).not.toHaveBeenCalled();
+        expect(times.onStart).not.toHaveBeenCalled();
     });
 
     test.each([
@@ -323,7 +323,7 @@ describe('POST /start API', () => {
             body: expect.stringMatching(errorMatch)
         });
 
-        expect(times.onStartTime).not.toHaveBeenCalled();
+        expect(times.onStart).not.toHaveBeenCalled();
     });
 
     test('returns correct error message for HTTP 400', async () => {
@@ -377,7 +377,7 @@ describe('POST /start API', () => {
             })
         };
 
-        times.onStartTime.mockRejectedValueOnce(new ResultError(500, 'rEsUlT eRrOr 500'));
+        times.onStart.mockRejectedValueOnce(new ResultError(500, 'rEsUlT eRrOr 500'));
 
         await expect(handler(event)).resolves.toMatchObject({
             statusCode: 500,
@@ -393,7 +393,7 @@ describe('POST /start API', () => {
         [1, 'an existing', false, 200],
         [2, 'an existing', false, 200]
     ])('works with name, part %s and %s record', async (part, _desciption, created, statusCode) => {
-        times.onStartTime.mockResolvedValueOnce(created);
+        times.onStart.mockResolvedValueOnce(created);
 
         const event = {
             resource: '/start',
@@ -408,6 +408,6 @@ describe('POST /start API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode });
 
-        expect(times.onStartTime).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', expect.any(Number));
+        expect(times.onStart).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', expect.any(Number));
     });
 });

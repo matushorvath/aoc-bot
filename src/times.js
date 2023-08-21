@@ -5,7 +5,7 @@ const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onStartTime = async (year, day, part, name, ts) => {
+const onStart = async (year, day, part, name, ts) => {
     const params = {
         Item: {
             id: { S: 'start_time' },
@@ -24,13 +24,13 @@ const onStartTime = async (year, day, part, name, ts) => {
         await db.putItem(params);
     } catch (e) {
         if (e.name === 'ConditionalCheckFailedException') {
-            console.log(`onStartTime: already have start time for ${year} ${day} ${part} ${name}`);
+            console.log(`onStart: already have start time for ${year} ${day} ${part} ${name}`);
             return false;
         }
         throw e;
     }
 
-    console.log(`onStartTime: saved ${year} ${day} ${part} ${name} ${ts}`);
+    console.log(`onStart: saved ${year} ${day} ${part} ${name} ${ts}`);
     return true;
 };
 
@@ -66,4 +66,4 @@ const loadStartTimes = async (year, day) => {
 };
 
 exports.loadStartTimes = loadStartTimes;
-exports.onStartTime = onStartTime;
+exports.onStart = onStart;
