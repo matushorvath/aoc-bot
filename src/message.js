@@ -1,7 +1,7 @@
 'use strict';
 
 const { sendTelegram, getLeaderboard } = require('./network');
-const { updateLeaderboards } = require('./schedule');
+const { updateLeaderboards } = require('./leaderboards');
 const { formatBoard } = require('./board');
 const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
 const { loadStartTimes } = require('./times');
