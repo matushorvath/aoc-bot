@@ -6,15 +6,10 @@ const { publishBoards } = require('./publish');
 const { getYears } = require('./years');
 const { logActivity } = require('./logs');
 
-const selectYears = async (selection) => {
-    let years = [...await getYears()];
+const handler = async () => {
+    console.log('handler: start');
 
-    if (selection.year) {
-        // Select just one year, and only if it exists in the database
-        years = years.filter(y => y === selection.year);
-    }
-
-    return years;
+    await updateLeaderboards();
 };
 
 const updateLeaderboards = async (selection = {}) => {
@@ -64,10 +59,15 @@ const updateLeaderboards = async (selection = {}) => {
     return result;
 };
 
-const handler = async () => {
-    console.log('handler: start');
+const selectYears = async (selection) => {
+    let years = [...await getYears()];
 
-    await updateLeaderboards();
+    if (selection.year) {
+        // Select just one year, and only if it exists in the database
+        years = years.filter(y => y === selection.year);
+    }
+
+    return years;
 };
 
 exports.handler = handler;
