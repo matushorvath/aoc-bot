@@ -52,9 +52,6 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Setup cfn-lint
-        run: pip3 install --upgrade cfn-lint
-
       - name: Setup node.js
         uses: actions/setup-node@v3
         with:
