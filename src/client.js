@@ -1,7 +1,7 @@
 'use strict';
 
 const tdl = require('tdl');
-const { getTdjson } = require('prebuilt-tdlib');
+const { getTdjson } = require('prebuilt-tdlib-amazon-linux-2');
 
 const crypto = require ('crypto');
 const fs = require('fs/promises');
@@ -61,7 +61,7 @@ class TelegramClient {
         const filesDirectory = path.join(tmpDirectory, '_td_files');
         await fs.mkdir(filesDirectory, { recursive: true });
 
-        const encryptedName = path.join(__dirname, 'td.binlog.aes');
+        const encryptedName = path.join(__dirname, '..', 'td.binlog.aes');
         const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
         // Create the td.binlog unless it already exists
@@ -188,8 +188,25 @@ class TelegramClient {
         return (await updatesPromise).map(update => update?.message?.content?.text?.text);
     }
 
-    async addChatMember(userId, chatId) {
-        const status = await this.clientInvoke({
+    async createSupergroup(title, description) {
+        const chat = await this.clientInvoke({
+            _: 'createNewSupergroupChat',
+            title,
+            description
+        });
+
+        if (chat?._ !== 'chat' || !chat?.id || chat?.type?._ !== 'chatTypeSupergroup' || !chat?.type?.supergroup_id) {
+            throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
+        }
+
+        return {
+            chatId: chat.id,
+            supergroupId: chat.type.supergroup_id
+        };
+    }
+
+    async addChatAdmin(userId, chatId) {
+        let status = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
@@ -245,6 +262,29 @@ class TelegramClient {
             status: {
                 _: 'chatMemberStatusLeft'
             }
+        });
+
+        if (status?._ !== 'ok') {
+            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async canTransferChatOwnership() {
+        const result = await this.clientInvoke({
+            _: 'canTransferOwnership'
+        });
+
+        return {
+            canTransfer: result?._ === 'canTransferOwnershipResultOk',
+            result: result?._
+        };
+    }
+
+    async transferChatOwnership(chatId, newOwnerUserId) {
+        const status = await this.clientInvoke({
+            _: 'transferChatOwnership',
+            chat_id: chatId,
+            user_id: newOwnerUserId
         });
 
         if (status?._ !== 'ok') {

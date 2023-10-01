@@ -7,7 +7,7 @@
 // - logs (no params, invalid params, enable for user, disable for user, when enabled/disabled both
 // - somehow test sending invites
 
-const { TelegramClient } = require('./telegram-client');
+const { TelegramClient } = require('../src/client');
 
 const yaml = require('yaml');
 const fs = require('fs/promises');

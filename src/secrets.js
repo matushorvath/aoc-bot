@@ -7,12 +7,20 @@ const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 let adventOfCodeSecret;
 let telegramSecret;
 let webhookSecret;
+let tdlibSecrets;
 
 const getSecrets = async () => {
     console.log('getSecrets: start');
 
     const params = {
-        Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
+        Names: [
+            '/aoc-bot/advent-of-code-secret',
+            '/aoc-bot/telegram-secret',
+            '/aoc-bot/webhook-secret',
+            '/aoc-bot/tdlib-api-id',
+            '/aoc-bot/tdlib-api-hash',
+            '/aoc-bot/tdlib-aes-key'
+        ],
         WithDecryption: true
     };
     const command = new GetParametersCommand(params);
@@ -25,6 +33,12 @@ const getSecrets = async () => {
     adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret').Value;
     telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret').Value;
     webhookSecret = result.Parameters.find(p => p.Name === '/aoc-bot/webhook-secret').Value;
+
+    tdlibSecrets = {
+        apiId: result.Parameters.find(p => p.Name === '/aoc-bot/tdlib-api-id').Value,
+        apiHash: result.Parameters.find(p => p.Name === '/aoc-bot/tdlib-api-hash').Value,
+        aesKey: result.Parameters.find(p => p.Name === '/aoc-bot/tdlib-aes-key').Value
+    };
 
     console.log('getSecrets: done');
 };
@@ -50,11 +64,19 @@ const getWebhookSecret = async () => {
     return webhookSecret;
 };
 
+const getTdLibSecrets = async () => {
+    if (tdlibSecrets === undefined) {
+        await getSecrets();
+    }
+    return tdlibSecrets;
+};
+
 const resetCache = () => {
-    adventOfCodeSecret = telegramSecret = webhookSecret = undefined;
+    adventOfCodeSecret = telegramSecret = tdlibSecrets = webhookSecret = undefined;
 };
 
 exports.getAdventOfCodeSecret = getAdventOfCodeSecret;
 exports.getTelegramSecret = getTelegramSecret;
 exports.getWebhookSecret = getWebhookSecret;
+exports.getTdLibSecrets = getTdLibSecrets;
 exports.resetCache = resetCache;
