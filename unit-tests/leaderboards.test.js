@@ -1,6 +1,6 @@
 'use strict';
 
-const { handler, updateLeaderboards } = require('../src/leaderboards');
+const { handler, onStop, updateLeaderboards } = require('../src/leaderboards');
 
 const invites = require('../src/invites');
 jest.mock('../src/invites');
@@ -23,6 +23,39 @@ beforeEach(() => {
     boardPublish.publishBoards.mockReset();
     years.getYears.mockReset();
     logs.logActivity.mockReset();
+});
+
+describe('onStop', () => {
+    test('triggers leaderboard update', async () => {
+        years.getYears.mockResolvedValueOnce(new Set());
+
+        await expect(onStop(1945, 11, 2, 'sOmE oNe')).resolves.toBe(false);
+    });
+
+    test('reports invitation sent to this user', async () => {
+        years.getYears.mockResolvedValueOnce(new Set([1945]));
+
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
+        invites.processInvites.mockResolvedValueOnce({ sent: [{ aocUser: 'sOmE oNe', year: 1945, day: 11 }], failed: [] });
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+
+        await expect(onStop(1945, 11, 2, 'sOmE oNe')).resolves.toBe(true);
+    });
+
+    test('reports invitation not sent to this user', async () => {
+        years.getYears.mockResolvedValueOnce(new Set([1945]));
+
+        network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd2020: true });
+        invites.processInvites.mockResolvedValueOnce({ sent: [{ aocUser: 'aNoThEr OnE', year: 1945, day: 11 }], failed: [] });
+        boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
+
+        await expect(onStop(1945, 11, 2, 'sOmE oNe')).resolves.toBe(false);
+    });
+
+    test('fails after an error while updating leaderboards', async () => {
+        years.getYears.mockRejectedValueOnce(new Error('sOmEeRrOr'));
+        await expect(onStop(1945, 11, 2, 'sOmE oNe')).rejects.toThrow('sOmEeRrOr');
+    });
 });
 
 describe('leaderboards.handler', () => {

@@ -18,8 +18,10 @@ const onStop = async (year, day, part, name) => {
     // Use the year and day parameter to update a single leaderboard
     const result = await updateLeaderboards({ year, day });
 
+    console.debug(result);
+
     // Return true if the user was invited to the channel for requested day
-    return result.sent.any(r => r.aocUser === name && r.year === year && r.day === day);
+    return result.sent.some(r => r.aocUser === name && r.year === year && r.day === day);
 };
 
 const updateLeaderboards = async (selection = {}) => {
