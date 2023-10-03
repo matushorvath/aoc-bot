@@ -14,11 +14,15 @@ jest.mock('../src/message');
 const times = require('../src/times');
 jest.mock('../src/times');
 
+const leaderboards = require('../src/leaderboards');
+jest.mock('../src/leaderboards');
+
 beforeEach(() => {
     secrets.getWebhookSecret.mockReset();
     member.onMyChatMember.mockReset();
     message.onMessage.mockReset();
     times.onStart.mockReset();
+    leaderboards.onStop.mockReset();
 });
 
 describe('API handler', () => {
@@ -70,10 +74,11 @@ describe('API handler', () => {
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
         expect(times.onStart).not.toHaveBeenCalled();
+        expect(leaderboards.onStop).not.toHaveBeenCalled();
     });
 
-    test('rejects unknown method for /start', async () => {
-        const event = { resource: '/start', httpMethod: 'GET' };
+    test.each(['/start', '/stop'])('rejects unknown method for %s', async (resource) => {
+        const event = { resource, httpMethod: 'GET' };
         await expect(handler(event)).resolves.toMatchObject({
             statusCode: 405,
             body: expect.stringMatching(/{"error":"Method Not Allowed","usage":\[.*\]}/)
@@ -82,6 +87,7 @@ describe('API handler', () => {
         expect(member.onMyChatMember).not.toHaveBeenCalled();
         expect(message.onMessage).not.toHaveBeenCalled();
         expect(times.onStart).not.toHaveBeenCalled();
+        expect(leaderboards.onStop).not.toHaveBeenCalled();
     });
 });
 
@@ -251,10 +257,10 @@ describe('POST /telegram API', () => {
     });
 });
 
-describe('OPTIONS /start API', () => {
+describe.each(['/start', '/stop'])('OPTIONS %s API', (resource) => {
     test('works', async () => {
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'OPTIONS'
         };
 
@@ -269,7 +275,10 @@ describe('OPTIONS /start API', () => {
     });
 });
 
-describe('POST /start API', () => {
+describe.each([
+    ['/start', times.onStart, [expect.any(Number)]],
+    ['/stop', leaderboards.onStop, []]
+])('POST %s API', (resource, eventHandler, eventExtraParams) => {
     test.each([
         ['missing body', {}, 'Invalid JSON syntax'],
         ['empty body', { body: '' }, 'Invalid JSON syntax'],
@@ -277,7 +286,7 @@ describe('POST /start API', () => {
         ['non-object JSON', { body: '0' }, 'Missing or invalid request body']
     ])('fails with %s', async (description, eventPart, errorMatch) => {
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'POST',
             ...eventPart
         };
@@ -287,6 +296,7 @@ describe('POST /start API', () => {
         });
 
         expect(times.onStart).not.toHaveBeenCalled();
+        expect(leaderboards.onStop).not.toHaveBeenCalled();
     });
 
     test.each([
@@ -317,7 +327,7 @@ describe('POST /start API', () => {
     ])('fails with %s', async (description, eventPart, errorMatch) => {
         eventPart.body = JSON.stringify(eventPart.body);
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'POST',
             ...eventPart
         };
@@ -327,11 +337,12 @@ describe('POST /start API', () => {
         });
 
         expect(times.onStart).not.toHaveBeenCalled();
+        expect(leaderboards.onStop).not.toHaveBeenCalled();
     });
 
     test('returns correct error message for HTTP 400', async () => {
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'POST',
             requestContext: {
                 domainName: 'dOmAiN.nAmE'
@@ -351,7 +362,7 @@ describe('POST /start API', () => {
                 error: 'Bad Request',
                 details: "Expecting 'version' parameter to be 1",
                 usage: [
-                    'POST https://dOmAiN.nAmE/start',
+                    `POST https://dOmAiN.nAmE${resource}`,
                     'body: {',
                     '    "version": 1,',
                     '    "year": 2022,',
@@ -366,7 +377,7 @@ describe('POST /start API', () => {
 
     test('returns correct error message for HTTP 500', async () => {
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'POST',
             requestContext: {
                 domainName: 'dOmAiN.nAmE'
@@ -380,7 +391,7 @@ describe('POST /start API', () => {
             })
         };
 
-        times.onStart.mockRejectedValueOnce(new ResultError(500, 'rEsUlT eRrOr 500'));
+        eventHandler.mockRejectedValueOnce(new ResultError(500, 'rEsUlT eRrOr 500'));
 
         await expect(handler(event)).resolves.toMatchObject({
             statusCode: 500,
@@ -395,11 +406,11 @@ describe('POST /start API', () => {
         [2, 'a new', true, 201],
         [1, 'an existing', false, 200],
         [2, 'an existing', false, 200]
-    ])('works with name, part %s and %s record', async (part, _desciption, created, statusCode) => {
-        times.onStart.mockResolvedValueOnce(created);
+    ])('works with name, part %s and %s record', async (part, _description, created, statusCode) => {
+        eventHandler.mockResolvedValueOnce(created);
 
         const event = {
-            resource: '/start',
+            resource,
             httpMethod: 'POST',
             body: JSON.stringify({
                 version: 1,
@@ -411,6 +422,6 @@ describe('POST /start API', () => {
         };
         await expect(handler(event)).resolves.toMatchObject({ statusCode });
 
-        expect(times.onStart).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', expect.any(Number));
+        expect(eventHandler).toHaveBeenCalledWith(2022, 13, part, 'FiRsT SeCoNdNaMe', ...eventExtraParams);
     });
 });

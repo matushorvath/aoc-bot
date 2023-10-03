@@ -178,7 +178,7 @@ const explainUsage = (event, error) => {
 
     if (event.resource === '/telegram') {
         // This endpoint is not intended for direct use, so there is no documentation
-    } else if (event.resource === '/start') {
+    } else if (event.resource === '/start' || event.resource === '/stop') {
         const example = {
             version: 1,
             year: 2022,
@@ -188,7 +188,7 @@ const explainUsage = (event, error) => {
         };
 
         error.body.usage = [
-            `POST https://${hostname}/start`,
+            `POST https://${hostname}${event.resource}`,
             ...`body: ${JSON.stringify(example, undefined, 4)}`.split('\n')
         ];
     } else {
