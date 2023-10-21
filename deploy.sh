@@ -38,31 +38,33 @@ if [ -z "$SKIP_SECRETS" ] ; then
 fi
 
 # Upload and deploy the package
-zip -rq $package $(<package.json jq -re .files[],.deployFiles[])
+if [ -z "$SKIP_DEPLOY" ] ; then
+    zip -rq $package $(<package.json jq -re .files[],.deployFiles[])
 
-aws s3 cp \
-    --region $region \
-    $package s3://$bucket/$package
+    aws s3 cp \
+        --region $region \
+        $package s3://$bucket/$package
 
-aws cloudformation deploy \
-    --region $region \
-    --capabilities CAPABILITY_IAM \
-    --template template.yml \
-    --stack-name $stack \
-    --parameter-overrides \
-        Bucket=$bucket \
-        Package=$package \
-        Version=$version
+    aws cloudformation deploy \
+        --region $region \
+        --capabilities CAPABILITY_IAM \
+        --template template.yml \
+        --stack-name $stack \
+        --parameter-overrides \
+            Bucket=$bucket \
+            Package=$package \
+            Version=$version
 
-rm -f $package
+    rm -f $package
 
-# Register the Telegram webhook
-endpoint=$(aws cloudformation describe-stacks \
-    --region $region \
-    --stack-name $stack \
-    --query "Stacks[0].Outputs[?OutputKey=='Endpoint'].OutputValue" \
-    --output text \
-)
-echo Endpoint: $endpoint
+    # Register the Telegram webhook
+    endpoint=$(aws cloudformation describe-stacks \
+        --region $region \
+        --stack-name $stack \
+        --query "Stacks[0].Outputs[?OutputKey=='Endpoint'].OutputValue" \
+        --output text \
+    )
+    echo Endpoint: $endpoint
 
-node src/register.js "${endpoint}telegram"
+    node src/register.js "${endpoint}telegram"
+fi
