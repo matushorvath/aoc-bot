@@ -120,7 +120,7 @@ const postStart = async (event) => {
     return { status: created ? 201 : 200 };
 };
 
-// TODO This should be done in AWS API GateWay configuration, but I can't get that to work
+// TODO This should be done in AWS API Gateway configuration, but I can't get that to work
 const options = async (_event) => {
     console.log('options');
 
