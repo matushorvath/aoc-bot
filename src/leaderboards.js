@@ -12,8 +12,20 @@ const handler = async () => {
     await updateLeaderboards();
 };
 
+const onStop = async (year, day, part, name) => {
+    console.log(`onStop: start ${year} ${day} ${part} ${name}`);
+
+    // Use the year and day parameter to update a single leaderboard
+    const result = await updateLeaderboards({ year, day });
+
+    console.debug(result);
+
+    // Return true if the user was invited to the channel for requested day
+    return result.sent.some(r => r.aocUser === name && r.year === year && r.day === day);
+};
+
 const updateLeaderboards = async (selection = {}) => {
-    console.log(`updateLeaderboards: start, selection ${selection}`);
+    console.log(`updateLeaderboards: start, selection ${JSON.stringify(selection)}`);
 
     const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
 
@@ -71,4 +83,5 @@ const selectYears = async (selection) => {
 };
 
 exports.handler = handler;
+exports.onStop = onStop;
 exports.updateLeaderboards = updateLeaderboards;

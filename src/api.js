@@ -4,6 +4,7 @@ const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./member');
 const { onMessage } = require('./message');
 const { onStart } = require('./times');
+const { onStop } = require('./leaderboards');
 
 class ResultError extends Error {
     constructor(status, message, details = undefined) {
@@ -53,6 +54,13 @@ const processEvent = async (event) => {
             return postStart(event);
         }
         throw new ResultError(405, 'Method Not Allowed');
+    } else if (event.resource === '/stop') {
+        if (event.httpMethod === 'OPTIONS') {
+            return options(event);
+        } else if (event.httpMethod === 'POST') {
+            return postStop(event);
+        }
+        throw new ResultError(405, 'Method Not Allowed');
     }
     throw new ResultError(403, 'Forbidden');
 };
@@ -88,6 +96,27 @@ const validateTelegramSecret = async (event) => {
 const postStart = async (event) => {
     console.log('postStart: start');
 
+    const { year, day, part, name } = parseStartStopBody(event);
+    const ts = Math.floor(Date.now() / 1000);
+    const created = await onStart(year, day, part, name, ts);
+
+    console.log(`postStart: done, created ${created}`);
+
+    return { status: created ? 201 : 200 };
+};
+
+const postStop = async (event) => {
+    console.log('postStop: start');
+
+    const { year, day, part, name } = parseStartStopBody(event);
+    const invited = await onStop(year, day, part, name);
+
+    console.log(`postStop: done, invited ${invited}`);
+
+    return { status: invited ? 201 : 200 };
+};
+
+const parseStartStopBody = (event) => {
     const body = parseBody(event);
     if (!body || typeof(body) !== 'object') {
         throw new ResultError(400, 'Bad Request', 'Missing or invalid request body');
@@ -112,12 +141,7 @@ const postStart = async (event) => {
         throw new ResultError(400, 'Bad Request', "Missing or invalid 'name' parameter");
     }
 
-    const ts = Math.floor(Date.now() / 1000);
-    const created = await onStart(year, day, part, name, ts);
-
-    console.log('postStart: done');
-
-    return { status: created ? 201 : 200 };
+    return { year, day, part, name };
 };
 
 // TODO This should be done in AWS API Gateway configuration, but I can't get that to work
@@ -154,7 +178,7 @@ const explainUsage = (event, error) => {
 
     if (event.resource === '/telegram') {
         // This endpoint is not intended for direct use, so there is no documentation
-    } else if (event.resource === '/start') {
+    } else if (event.resource === '/start' || event.resource === '/stop') {
         const example = {
             version: 1,
             year: 2022,
@@ -164,11 +188,11 @@ const explainUsage = (event, error) => {
         };
 
         error.body.usage = [
-            `POST https://${hostname}/start`,
+            `POST https://${hostname}${event.resource}`,
             ...`body: ${JSON.stringify(example, undefined, 4)}`.split('\n')
         ];
     } else {
-        error.body.usage = ['start'].map(resource => `POST https://${hostname}/${resource}`);
+        error.body.usage = ['start', 'stop'].map(resource => `POST https://${hostname}/${resource}`);
     }
 };
 
