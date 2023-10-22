@@ -25,7 +25,7 @@ const onStop = async (year, day, part, name) => {
 };
 
 const updateLeaderboards = async (selection = {}) => {
-    console.log(`updateLeaderboards: start, selection ${selection}`);
+    console.log(`updateLeaderboards: start, selection ${JSON.stringify(selection)}`);
 
     const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
 
