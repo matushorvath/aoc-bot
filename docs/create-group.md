@@ -1,4 +1,4 @@
-# Creating a Group for AoC
+# Creating a Telegram Group for AoC
 
 1. Create a new group. Group name should be `AoC YYYY Day DD`, e.g. `AoC 2016 Day 11`.
 
