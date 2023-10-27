@@ -172,7 +172,7 @@ describe('main function', () => {
         await expect(register.main()).resolves.toBeUndefined();
 
         const payload = {
-            allowed_updates: ['message', 'my_chat_member'],
+            allowed_updates: ['chat_member', 'message', 'my_chat_member'],
             drop_pending_updates: true,
             secret_token: 'mAiNwEbHoOkSeCrEt',
             url: 'mAiNuRl'
