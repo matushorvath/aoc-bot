@@ -1,6 +1,6 @@
 'use strict';
 
-const { onMyChatMember } = require('../src/member');
+const { onMyChatMember } = require('../src/chat');
 
 const dynamodb = require('@aws-sdk/client-dynamodb');
 jest.mock('@aws-sdk/client-dynamodb');
