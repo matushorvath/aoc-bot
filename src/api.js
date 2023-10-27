@@ -1,7 +1,7 @@
 'use strict';
 
 const { getWebhookSecret } = require('./secrets');
-const { onMyChatMember } = require('./member');
+const { onMyChatMember } = require('./chat');
 const { onMessage } = require('./message');
 const { onStart } = require('./times');
 const { onStop } = require('./leaderboards');
