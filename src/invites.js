@@ -20,6 +20,8 @@ const getCompletedDays = (selection, leaderboard) => {
 };
 
 const getChats = async (year, days) => {
+    console.log(`getChats: start, year ${year} days ${JSON.stringify(days)}`);
+
     // Add telegram information into the list of [AoC user, day] pairs
     const uniqueAocUsers = [...new Set(days.map(({ aocUser }) => aocUser))];
     const userMap = await mapUsers(uniqueAocUsers);
@@ -27,9 +29,13 @@ const getChats = async (year, days) => {
     const uniqueDays = [...new Set(days.map(({ day }) => day))];
     const dayMap = await mapDaysToChats(year, uniqueDays);
 
-    return days
+    const chats = days
         .map(({ aocUser, day }) => ({ aocUser, year, day, telegramUser: userMap[aocUser], chat: dayMap[day] }))
         .filter(({ telegramUser, chat }) => telegramUser !== undefined && chat !== undefined);
+
+    console.log(`getChats: done, chats ${chats.length}`);
+
+    return chats;
 };
 
 const mapUsers = async (aocUsers) => {
@@ -101,7 +107,7 @@ const mapDaysToChats = async (year, days) => {
 };
 
 const filterSentInvites = async (chats) => {
-    console.log('filterSentInvites: start');
+    console.log(`filterSentInvites: start, chats ${chats.length}`);
 
     // Filter out users who already got an invite
     const sentInvites = new Set();
@@ -133,22 +139,25 @@ const filterSentInvites = async (chats) => {
     const output = chats.filter(({ telegramUser, chat, year, day }) =>
         !sentInvites.has(`${telegramUser}:${year}:${day}:${chat}`));
 
-    console.log('filterSentInvites: done');
+    const outputForLog = output.map(({ aocUser, year, day }) => `${aocUser} ${year}/${day}`).join(', ');
+    console.log(`filterSentInvites: done, chats ${output.length} ${outputForLog}`);
+
     return output;
 };
 
 const filterUsersInChat = async (chats) => {
-    console.log('filterUsersInChat: start');
+    console.log(`filterUsersInChat: start, chats ${chats.length}`);
 
     // Filter out users who are already in the chat
-    const needsAdding = await Promise.all(chats.map(async ({ telegramUser, chat }) => {
+    const needsAdding = await Promise.all(chats.map(async ({ aocUser, telegramUser, chat }) => {
         try {
             const member = await sendTelegram('getChatMember', { chat_id: chat, user_id: telegramUser });
+            console.debug(`filterUsersInChat: ${aocUser} member ${JSON.stringify(member)}`);
             return member.ok && member.result.status === 'left';
         } catch (error) {
             const code = error.response?.data?.error_code;
             if (error.isAxiosError && code >= 400 && code < 500) {
-                console.warn(`filterUsersInChat: user not found ${telegramUser}`);
+                console.warn(`filterUsersInChat: user not found ${aocUser} (${telegramUser})`);
                 return false;
             }
             throw error;
@@ -157,7 +166,9 @@ const filterUsersInChat = async (chats) => {
 
     const output = chats.filter((_, index) => needsAdding[index]);
 
-    console.log('filterUsersInChat: done');
+    const outputForLog = output.map(({ aocUser, year, day }) => `${aocUser} ${year}/${day}`).join(', ');
+    console.log(`filterUsersInChat: done, chats ${output.length} ${outputForLog}`);
+
     return output;
 };
 

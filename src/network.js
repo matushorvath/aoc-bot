@@ -6,7 +6,7 @@ const axios = require('axios');
 const LEADERBOARD_ID = 380635;
 
 const getLeaderboard = async (year) => {
-    console.log('getLeaderboard: start');
+    console.log(`getLeaderboard: start, year ${year}`);
 
     const secret = await getAdventOfCodeSecret();
 
