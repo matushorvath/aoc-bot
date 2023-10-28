@@ -16,30 +16,19 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 const createGroupDocsUrl = 'https://matushorvath.github.io/aoc-bot/create-group';
 
 const onMyChatMember = async (my_chat_member) => {
-    // Only do something if we were made an admin in a group
-    if (my_chat_member.new_chat_member?.status !== 'administrator'
-        || (my_chat_member.chat.type !== 'group' && my_chat_member.chat.type !== 'supergroup')
-        || !my_chat_member.chat.title) {
-        return;
-    }
-
-    // Guess AoC day based on group title
-    const m = my_chat_member.chat.title.match(/AoC ([0-9]{4}) Day ([0-9]{1,2})/);
-    if (!m) {
+    // Parse year and day from the chat title
+    const { year, day } = parseChatTitle(my_chat_member.chat.title);
+    if (year === undefined || day === undefined) {
         console.warn(`onMyChatMember: chat title '${my_chat_member.chat.title}' did not match`);
         return;
     }
 
-    const year = Number(m[1]);
-    const day = Number(m[2]);
-
-    console.log(`onMyChatMember: admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
-
     // Check for correct chat settings and admin rights
-    if (!await checkSettings(my_chat_member)) {
-        console.log('onMyChatMember: wrong settings, not initializing');
+    if (!await checkChatMember(my_chat_member)) {
         return;
     }
+
+    console.log(`onMyChatMember: admin in '${my_chat_member.chat.title}' id ${my_chat_member.chat.id} (${year}/${day})`);
 
     // Store chat info in db
     await saveChat(my_chat_member.chat.id, year, day);
@@ -56,6 +45,89 @@ const onMyChatMember = async (my_chat_member) => {
     await logActivity(`Added to chat '${my_chat_member.chat.title}' (${year}/${day})`);
 
     console.log('onMyChatMember: done');
+};
+
+const parseChatTitle = (title) => {
+    // Determine AoC day based on group title
+    const match = title?.match(/AoC ([0-9]{4}) Day ([0-9]{1,2})/);
+    if (!match) {
+        console.warn(`onMyChatMember: chat title '${title}' did not match`);
+        return {};
+    }
+
+    const year = Number(match[1]);
+    const day = Number(match[2]);
+
+    return { year, day };
+};
+
+const checkChatMember = async (my_chat_member) => {
+    // TODO create a command to run these checks, /check 2023 13
+
+    const { proceed, issues } = detectChatMemberIssues(my_chat_member);
+
+    if (issues.length > 0) {
+        const message = issues.join('\n');
+        console.warn(`checkChatMember: ${message}`);
+
+        await sendTelegram('sendMessage', {
+            chat_id: my_chat_member.chat.id,
+            text: `@AocElfBot needs some additional setup:\n${message}`,
+            disable_notification: true
+        });
+
+        await sendTelegram('sendMessage', {
+            chat_id: my_chat_member.chat.id,
+            text: `See these [instructions](${createGroupDocsUrl}) for details`,
+            parse_mode: 'MarkdownV2',
+            disable_notification: true
+        });
+    }
+
+    return proceed;
+};
+
+const detectChatMemberIssues = (my_chat_member) => {
+    const issues = [];
+
+    // Enabling visible history also upgrades the group to supergroup
+    // TODO also explicitly check for visible history, currently not possible with bot API
+    if (my_chat_member.chat.type === 'group') {
+        issues.push('• enable chat history for new members');
+        return { proceed: false, issues };
+    } else if (my_chat_member.chat.type !== 'supergroup') {
+        // This handles membership in any other chat types, which the bot ignores
+        return { proceed: false, issues };
+    }
+
+    // Check if we were made an admin of this supergroup
+    if (my_chat_member.new_chat_member?.status === 'member'
+        || my_chat_member.new_chat_member?.status === 'restricted') {
+        issues.push('• make the bot an admin of this group');
+        return { proceed: false, issues };
+    } else if (my_chat_member.new_chat_member?.status !== 'administrator') {
+        // This handles statuses like 'left' or 'kicked', where we don't want any bot messages
+        return { proceed: false, issues };
+    }
+
+    // Check necessary admin permissions
+    if (!my_chat_member.new_chat_member.can_manage_chat) {
+        issues.push('• allow the bot to manage the group');
+    }
+    if (!my_chat_member.new_chat_member.can_promote_members) {
+        issues.push('• allow the bot to add new admins');
+    }
+    if (!my_chat_member.new_chat_member.can_change_info) {
+        issues.push('• allow the bot to change group info');
+    }
+    if (!my_chat_member.new_chat_member.can_invite_users) {
+        issues.push('• allow the bot to add group members');
+    }
+    if (!my_chat_member.new_chat_member.can_pin_messages) {
+        issues.push('• allow the bot to pin messages');
+    }
+
+    return { proceed: issues.length === 0, issues };
 };
 
 const saveChat = async (chatId, year, day) => {
@@ -171,62 +243,6 @@ const setChatPermissions = async (chatId) => {
     }
 
     console.debug('setChatPermissions: done');
-};
-
-const checkSettings = async (my_chat_member) => {
-    // TODO create a command to run these checks, /check 2023 13
-    // TODO check supergroup has visible history, currently not possible with bot API
-
-    // Check chat settings
-    const isSupergroup = (my_chat_member.chat.type === 'supergroup');
-
-    // Check necessary admin permissions
-    const missingPermissions = [];
-
-    if (!my_chat_member.new_chat_member.can_manage_chat) {
-        missingPermissions.push('manage the group');
-    }
-    if (!my_chat_member.new_chat_member.can_promote_members) {
-        missingPermissions.push('add new admins');
-    }
-    if (!my_chat_member.new_chat_member.can_change_info) {
-        missingPermissions.push('change group info');
-    }
-    if (!my_chat_member.new_chat_member.can_invite_users) {
-        missingPermissions.push('add group members');
-    }
-    if (!my_chat_member.new_chat_member.can_pin_messages) {
-        missingPermissions.push('pin messages');
-    }
-
-    const passed = isSupergroup && missingPermissions.length === 0;
-    if (!passed) {
-        const message = ['@AocElfBot needs some additional group settings:'];
-        if (!isSupergroup) {
-            message.push('• enable chat history for new members');
-        }
-        if (missingPermissions.length > 0) {
-            message.push(...missingPermissions.map(p => `• allow the bot to ${p}`));
-        }
-
-        const warningText = message.join('\n');
-        console.warn(`checkSettings: ${warningText}`);
-
-        await sendTelegram('sendMessage', {
-            chat_id: my_chat_member.chat.id,
-            text: warningText,
-            disable_notification: true
-        });
-
-        await sendTelegram('sendMessage', {
-            chat_id: my_chat_member.chat.id,
-            text: `See these [instructions](${createGroupDocsUrl}) for details`,
-            parse_mode: 'MarkdownV2',
-            disable_notification: true
-        });
-    }
-
-    return passed;
 };
 
 exports.onMyChatMember = onMyChatMember;
