@@ -70,18 +70,24 @@ const checkChatMember = async (my_chat_member) => {
         const message = issues.join('\n');
         console.warn(`checkChatMember: ${message}`);
 
-        await sendTelegram('sendMessage', {
-            chat_id: my_chat_member.chat.id,
-            text: `@AocElfBot needs some additional setup:\n${message}`,
-            disable_notification: true
-        });
-
-        await sendTelegram('sendMessage', {
-            chat_id: my_chat_member.chat.id,
-            text: `See these [instructions](${createGroupDocsUrl}) for details`,
-            parse_mode: 'MarkdownV2',
-            disable_notification: true
-        });
+        try {
+            await sendTelegram('sendMessage', {
+                chat_id: my_chat_member.chat.id,
+                text: `@AocElfBot needs additional setup \\([docs](${createGroupDocsUrl})\\):\n${message}`,
+                parse_mode: 'MarkdownV2',
+                disable_notification: true
+            });
+        } catch (error) {
+            // If the bot was previously kicked, it will be unable to send messages
+            const code = error.response?.data?.error_code;
+            const description = error.response?.data?.description;
+    
+            if (error.isAxiosError && code === 400 && /not enough rights/.test(description)) {
+                console.warn(`checkChatMember: Could not send message: ${description}`);
+            } else {
+                throw error;
+            }
+        }
     }
 
     return proceed;
@@ -103,7 +109,7 @@ const detectChatMemberIssues = (my_chat_member) => {
     // Check if we were made an admin of this supergroup
     if (my_chat_member.new_chat_member?.status === 'member'
         || my_chat_member.new_chat_member?.status === 'restricted') {
-        issues.push('• make the bot an admin of this group');
+        issues.push('• promote the bot to admin of this group');
         return { proceed: false, issues };
     } else if (my_chat_member.new_chat_member?.status !== 'administrator') {
         // This handles statuses like 'left' or 'kicked', where we don't want any bot messages
