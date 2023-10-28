@@ -189,4 +189,80 @@ describe('chat membership', () => {
             await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
         });
     });
+
+    // TODO test bot behavior when it is missing each admin permission
+
+    // describe.each([
+    //     'default',
+    //     'pre-initialized'
+    // ])('gracefully fails with missing %s permission', (_desc, permissions) => {
+    //     test('add bot to chat', async () => {
+    //         // Expect the bot to be added to chat
+    //         await expect(client.addChatMember(botUserId, testChatId)).resolves.toBeUndefined();
+    //     });
+
+    //     test('promote the bot to administrator', async () => {
+    //         // Start receiving bot messages
+    //         const filter = update =>
+    //             update?._ === 'updateNewMessage'
+    //             && update?.message?.sender_id?._ === 'messageSenderUser'
+    //             && update?.message?.sender_id?.user_id === botUserId
+    //             && update?.message?.chat_id === testChatId;
+    //         const updatesPromise = client.waitForUpdates(filter, 2);
+
+    //         // Expect the bot to promoted to administrator
+    //         await expect(client.setMemberStatusAdministrator(botUserId, testChatId)).resolves.toBeUndefined();
+
+    //         // Expect the bot to update the chat
+    //         await expect(updatesPromise).resolves.toMatchObject([{
+    //             message: {
+    //                 content: {
+    //                     _: 'messageChatChangePhoto',
+    //                     photo: {
+    //                         _: 'chatPhoto'
+    //                     }
+    //                 }
+    //             }
+    //         }, {
+    //             message: {
+    //                 content: {
+    //                     _: 'messageText',
+    //                     text: {
+    //                         text: '@AocElfBot is online, AoC 1980 Day 13'
+    //                     }
+    //                 }
+    //             }
+    //         }]);
+    //     });
+
+    //     test('validate chat properties', async () => {
+    //         // Description is available using getSupergroupFullInfo, but it is a cached value,
+    //         // so it does not update quickly enough for this test
+
+    //         await expect(client.getChat(testChatId)).resolves.toMatchObject({
+    //             _: 'chat',
+    //             type: {
+    //                 _: 'chatTypeSupergroup'
+    //             },
+    //             photo: {
+    //                 _: 'chatPhotoInfo'
+    //             },
+    //             permissions: {
+    //                 _: 'chatPermissions',
+
+    //                 can_send_polls: true,
+    //                 can_send_other_messages: true,
+    //                 can_add_web_page_previews: true,
+
+    //                 can_change_info: false,
+    //                 can_invite_users: false,
+    //                 can_pin_messages: false
+    //             }
+    //         });
+    //     });
+
+    //     test('remove bot from chat', async () => {
+    //         await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
+    //     });
+    // });
 });

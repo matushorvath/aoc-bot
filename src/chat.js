@@ -39,6 +39,10 @@ const onMyChatMember = async (my_chat_member) => {
     // Remember that we have at least one chat for this year
     await addYear(year);
 
+    // Check for correct chat settings and admin rights
+    await checkSettings(my_chat_member);
+    // TODO if not enough permissions, refuse to initialize
+
     // Initialize the chat
     await initializeChat(my_chat_member.chat, year, day);
 
@@ -163,6 +167,52 @@ const setChatPermissions = async (chatId) => {
     }
 
     console.debug('setChatPermissions: done');
+};
+
+const checkSettings = async (my_chat_member) => {
+    let isNotSupergroup = false;
+    const missingPermissions = [];
+
+    // Check chat settings
+    if (my_chat_member.chat.type !== 'supergroup') {
+        isNotSupergroup = true;
+    }
+    // TODO check supergroup has visible history
+
+    // Check necessary admin permissions
+    if (!my_chat_member.new_chat_member.can_manage_chat) {
+        missingPermissions.push('manage the group');
+    }
+    if (!my_chat_member.new_chat_member.can_promote_members) {
+        missingPermissions.push('add new admins');
+    }
+    if (!my_chat_member.new_chat_member.can_change_info) {
+        missingPermissions.push('change group info');
+    }
+    if (!my_chat_member.new_chat_member.can_invite_users) {
+        missingPermissions.push('add group members');
+    }
+    if (!my_chat_member.new_chat_member.can_pin_messages) {
+        missingPermissions.push('pin messages');
+    }
+
+    if (isNotSupergroup || missingPermissions.length > 0) {
+        const message = ['Please fix the setup of this group:'];
+        if (isNotSupergroup) {
+            message.push('• enable chat history for new members');
+        }
+        if (missingPermissions.length > 0) {
+            message.push(...missingPermissions.map(p => `• allow the bot to ${p}`));
+        }
+
+        await sendTelegram('sendMessage', {
+            chat_id: my_chat_member.chat.id,
+            text: message.join('\n'),
+            disable_notification: true
+        });
+    }
+
+    // TODO create a command to run these checks, /check 2023 13
 };
 
 exports.onMyChatMember = onMyChatMember;

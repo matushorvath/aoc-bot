@@ -222,7 +222,7 @@ class TelegramClient {
                     can_restrict_members: true,
                     can_pin_messages: true,
                     can_manage_topics: true,
-                    can_promote_members: false,
+                    can_promote_members: true,
                     can_manage_video_chats: true,
                     is_anonymous: false
                 }
