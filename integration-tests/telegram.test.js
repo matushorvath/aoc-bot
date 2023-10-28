@@ -189,4 +189,6 @@ describe('chat membership', () => {
             await expect(client.removeChatMember(botUserId, testChatId)).resolves.toBeUndefined();
         });
     });
+
+    // TODO test that bot correctly fails when missing some admin rights
 });
