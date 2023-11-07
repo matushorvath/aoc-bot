@@ -17,9 +17,9 @@ const createGroupDocsUrl = 'https://matushorvath.github.io/aoc-bot/create-group'
 
 const onMyChatMember = async (my_chat_member) => {
     // Parse year and day from the chat title
-    const { year, day } = parseChatTitle(my_chat_member.chat.title);
+    const { year, day } = parseChatTitle(my_chat_member?.chat?.title);
     if (year === undefined || day === undefined) {
-        console.warn(`onMyChatMember: chat title '${my_chat_member.chat.title}' did not match`);
+        console.warn(`onMyChatMember: chat title '${my_chat_member?.chat?.title}' did not match`);
         return;
     }
 
@@ -67,22 +67,27 @@ const checkChatMember = async (my_chat_member) => {
     const { proceed, issues } = detectChatMemberIssues(my_chat_member);
 
     if (issues.length > 0) {
+        const inviterUserId = getInviterUserId(my_chat_member);
+        if (!inviterUserId) {
+            return false;
+        }
+
         const message = issues.join('\n');
         console.warn(`checkChatMember: ${message}`);
 
         try {
             await sendTelegram('sendMessage', {
-                chat_id: my_chat_member.chat.id,
-                text: `@AocElfBot needs additional setup \\([docs](${createGroupDocsUrl})\\):\n${message}`,
+                chat_id: inviterUserId,
+                text: `@AocElfBot needs additional setup for group "${my_chat_member.chat.title}" \\([docs](${createGroupDocsUrl})\\):\n${message}`,
                 parse_mode: 'MarkdownV2',
                 disable_notification: true
             });
         } catch (error) {
-            // If the bot was previously kicked, it will be unable to send messages
+            // The bot might not be able to send messages to this user
             const code = error.response?.data?.error_code;
             const description = error.response?.data?.description;
     
-            if (error.isAxiosError && code === 400 && /not enough rights/.test(description)) {
+            if (error.isAxiosError && code === 400) {
                 console.warn(`checkChatMember: Could not send message: ${description}`);
             } else {
                 throw error;
@@ -93,28 +98,35 @@ const checkChatMember = async (my_chat_member) => {
     return proceed;
 };
 
-const detectChatMemberIssues = (my_chat_member) => {
-    const issues = [];
+const getInviterUserId = (my_chat_member) => {
+    const inviterUserId = my_chat_member?.from?.id;
+    if (!inviterUserId) {
+        console.warn('getInviterUserId: Could not determine who invited bot to chat');
+        return undefined;
+    }
 
+    return inviterUserId;
+};
+
+const detectChatMemberIssues = (my_chat_member) => {
     // Enabling visible history also upgrades the group to supergroup
     // TODO also explicitly check for visible history, currently not possible with bot API
     if (my_chat_member.chat.type === 'group') {
-        issues.push('• enable chat history for new members');
-        return { proceed: false, issues };
+        return { proceed: false, issues: ['• enable chat history for new members'] };
     } else if (my_chat_member.chat.type !== 'supergroup') {
         // This handles membership in any other chat types, which the bot ignores
-        return { proceed: false, issues };
+        return { proceed: false, issues: [] };
     }
 
     // Check if we were made an admin of this supergroup
-    if (my_chat_member.new_chat_member?.status === 'member'
-        || my_chat_member.new_chat_member?.status === 'restricted') {
-        issues.push('• promote the bot to admin of this group');
-        return { proceed: false, issues };
+    if (['member', 'restricted'].includes(my_chat_member.new_chat_member?.status)) {
+        return { proceed: false, issues: ['• promote the bot to admin of this group'] };
     } else if (my_chat_member.new_chat_member?.status !== 'administrator') {
         // This handles statuses like 'left' or 'kicked', where we don't want any bot messages
-        return { proceed: false, issues };
+        return { proceed: false, issues: [] };
     }
+
+    const issues = [];
 
     // Check necessary admin permissions
     if (!my_chat_member.new_chat_member.can_manage_chat) {

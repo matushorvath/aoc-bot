@@ -29,10 +29,9 @@ beforeEach(() => {
 });
 
 describe('onMyChatMember', () => {
-    test('ignores non-admin chat member update', async () => {
+    test('ignores chats with no title', async () => {
         const update = {
-            new_chat_member: { status: 'sTaTuS' },
-            chat: { type: 'supergroup', title: 'tItLe' }
+            chat: { type: 'supergroup' }
         };
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
@@ -46,10 +45,154 @@ describe('onMyChatMember', () => {
         expect(network.getLeaderboard).not.toHaveBeenCalled();
     });
 
+    test('ignores chats with invalid title', async () => {
+        const update = {
+            chat: { type: 'supergroup', title: 'BaDtItLe' }
+        };
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+    });
+
+    test.each(['member', 'restricted'])('warns about %s status in chat member update', async (status) => {
+        const update = {
+            new_chat_member: { status },
+            from: { id: 987654321 },
+            chat: { type: 'supergroup', title: 'AoC 1980 Day 13' }
+        };
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*promote the bot to admin of this group$/)
+        });
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+    });
+
+    test('ignores unknown status in chat member update', async () => {
+        const update = {
+            new_chat_member: { status: 'sTaTuS' },
+            from: { id: 987654321 },
+            chat: { type: 'supergroup', title: 'AoC 1980 Day 13' }
+        };
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(network.getLeaderboard).not.toHaveBeenCalled();
+    });
+
+    test('warns about group membership', async () => {
+        const update = {
+            new_chat_member: { status: 'administrator' },
+            from: { id: 987654321 },
+            chat: { type: 'group', title: 'AoC 1980 Day 13' }
+        };
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+        });
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+    });
+
+    test('fails to warn with missing user id', async () => {
+        const update = {
+            new_chat_member: { status: 'administrator' },
+            chat: { type: 'group', title: 'AoC 1980 Day 13' }
+        };
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+    });
+
+    test('handles HTTP 400 while sending a warning', async () => {
+        const update = {
+            new_chat_member: { status: 'administrator' },
+            from: { id: 987654321 },
+            chat: { type: 'group', title: 'AoC 1980 Day 13' }
+        };
+
+        network.sendTelegram.mockRejectedValueOnce({ isAxiosError: true, response: { data: { error_code: 400 } } });
+
+        await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+        });
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+    });
+
+    test('handles other errors while sending a warning', async () => {
+        const update = {
+            new_chat_member: { status: 'administrator' },
+            from: { id: 987654321 },
+            chat: { type: 'group', title: 'AoC 1980 Day 13' }
+        };
+
+        network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
+
+        await expect(onMyChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+        });
+
+        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
+        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
+
+        expect(years.addYear).not.toHaveBeenCalled();
+        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+    });
+
     test('ignores non-group/non-supergroup membership', async () => {
         const update = {
             new_chat_member: { status: 'administrator' },
-            chat: { type: 'sTuFf', title: 'tItLe' }
+            from: { id: 987654321 },
+            chat: { type: 'sTuFf', title: 'AoC 1980 Day 13' }
         };
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
@@ -63,43 +206,49 @@ describe('onMyChatMember', () => {
         expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
     });
 
-    test('ignores membership in a supergroup with no title', async () => {
+    const allRights = {
+        can_manage_chat: true,
+        can_promote_members: true,
+        can_change_info: true,
+        can_invite_users: true,
+        can_pin_messages: true
+    };
+
+    test.each([
+        ['can_manage_chat', 'allow the bot to manage the group'],
+        ['can_promote_members', 'allow the bot to add new admins'],
+        ['can_change_info', 'allow the bot to change group info'],
+        ['can_invite_users', 'allow the bot to add group members'],
+        ['can_pin_messages', 'allow the bot to pin messages']
+    ])('warns about membership with missing right %s', async (right, message) => {
+        const testRights = { ...allRights };
+        delete testRights[right];
+
         const update = {
-            new_chat_member: { status: 'administrator' },
-            chat: { type: 'supergroup' }
+            new_chat_member: { status: 'administrator', ...testRights },
+            from: { id: 987654321 },
+            chat: { type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
+            text: expect.stringMatching(new RegExp(`^@AocElfBot needs[\\s\\S]*${message}$`))
+        });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
         expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
-    });
-
-    test('ignores membership in a supergroup with invalid title', async () => {
-        const update = {
-            new_chat_member: { status: 'administrator' },
-            chat: { type: 'supergroup', title: 'tItLe' }
-        };
-
-        await expect(onMyChatMember(update)).resolves.toBeUndefined();
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-        expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-        expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
-
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
         expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('fails if dynamodb throws', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -124,7 +273,8 @@ describe('onMyChatMember', () => {
 
     test('fails if addYear throws', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -150,7 +300,8 @@ describe('onMyChatMember', () => {
 
     test('succeeds if sendTelegram returns HTTP 400 for setChatDescription', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -169,7 +320,8 @@ describe('onMyChatMember', () => {
 
     test('fails if sendTelegram throws for setChatDescription', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -188,7 +340,8 @@ describe('onMyChatMember', () => {
         const mockConsoleWarn = jest.spyOn(console, 'warn');
         try {
             const update = {
-                new_chat_member: { status: 'administrator' },
+                new_chat_member: { status: 'administrator', ...allRights },
+                from: { id: 987654321 },
                 chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
             };
 
@@ -210,7 +363,8 @@ describe('onMyChatMember', () => {
 
     test('fails if sendTelegram throws for setChatPhoto', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -227,7 +381,8 @@ describe('onMyChatMember', () => {
 
     test('succeeds if sendTelegram returns HTTP 400 for setChatPermissions', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -248,7 +403,8 @@ describe('onMyChatMember', () => {
 
     test('fails if sendTelegram throws for setChatPermissions', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -266,7 +422,8 @@ describe('onMyChatMember', () => {
 
     test('fails if sendTelegram throws for sendMessage', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -285,7 +442,7 @@ describe('onMyChatMember', () => {
 
     test('fails if updateLeaderboards throws', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
+            new_chat_member: { status: 'administrator', ...allRights },
             chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
@@ -297,10 +454,11 @@ describe('onMyChatMember', () => {
         await expect(onMyChatMember(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
     });
 
-    test.each(['group', 'supergroup'])('succeeds for admin membership in %s', async (chatType) => {
+    test('succeeds for admin membership with required chat settings', async () => {
         const update = {
-            new_chat_member: { status: 'administrator' },
-            chat: { id: -4242, type: chatType, title: 'AoC 1980 Day 13' }
+            new_chat_member: { status: 'administrator', ...allRights },
+            from: { id: 987654321 },
+            chat: { id: -4242, type: 'supergroup', title: 'AoC 1980 Day 13' }
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
