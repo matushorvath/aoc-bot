@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe('onChatMember', () => {
-    test('ignores chat type other than group/supergroup', async () => {
+    test('ignores chat type other than supergroup', async () => {
         const update = {
             chat: { type: 'cHaTtYpE', title: 'AoC 2010 Day 13' },
             new_chat_member: { status: 'member', user: { id: 987654321 } },
@@ -150,13 +150,7 @@ describe('onChatMember', () => {
             can_promote_members: true,
             can_change_info: true,
             can_invite_users: true,
-            can_post_messages: true,
-            can_edit_messages: true,
-            can_pin_messages: true,
-            can_post_stories: true,
-            can_edit_stories: true,
-            can_delete_stories: true,
-            can_manage_topics: true
+            can_pin_messages: true
         });
     });
 });

@@ -7,14 +7,14 @@ const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 const onChatMember = async (chat_member) => {
-    // Handle new members added to the group, who are not administrators
-    const isGroup = chat_member.chat.type === 'group' || chat_member.chat.type === 'supergroup';
+    // Handle new members added to the supergroup, who are not administrators
+    const isSuperGroup = chat_member.chat.type === 'supergroup';
     const wasNotInChat = chat_member.old_chat_member?.status === 'left'
         || chat_member.old_chat_member?.status === 'kicked'
         || chat_member.old_chat_member?.status === 'restricted';
     const isNowInChat = chat_member.new_chat_member?.status === 'member';
 
-    if (!isGroup || !wasNotInChat || !isNowInChat) {
+    if (!isSuperGroup || !wasNotInChat || !isNowInChat) {
         return;
     }
 
@@ -61,13 +61,13 @@ const promote = async (chat, telegramUser) => {
             can_promote_members: true,
             can_change_info: true,
             can_invite_users: true,
-            can_post_messages: true,
-            can_edit_messages: true,
-            can_pin_messages: true,
-            can_post_stories: true,
-            can_edit_stories: true,
-            can_delete_stories: true,
-            can_manage_topics: true
+            //can_post_messages: true,          // only for channels
+            //can_edit_messages: true,          // only for channels
+            can_pin_messages: true
+            //can_post_stories: true,           // only for channels
+            //can_edit_stories: true,           // only for channels
+            //can_delete_stories: true,         // only for channels
+            //can_manage_topics: true           // should work, but causes RIGHT_FORBIDDEN
         });
     } catch (error) {
         // Detect when the bot does not have enough rights to promote a member
