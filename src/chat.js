@@ -62,6 +62,14 @@ const parseChatTitle = (title) => {
 };
 
 const checkChatMember = async (my_chat_member) => {
+    // TODO edit the message
+    // - remove @AocElfBot
+    // - add docs link to help
+    // - link to specific section of docs in the message
+    // - link to docs to the end? to each error? like <a href='docs#promote'>promote</a> bot to admin
+
+    // TODO check and fix IT, we are sending more messages now to private chats
+
     // TODO create a command to run these checks, /check 2023 13
 
     const { proceed, issues } = detectChatMemberIssues(my_chat_member);
