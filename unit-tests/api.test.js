@@ -8,6 +8,9 @@ jest.mock('../src/secrets');
 const chat = require('../src/chat');
 jest.mock('../src/chat');
 
+const member = require('../src/member');
+jest.mock('../src/member');
+
 const message = require('../src/message');
 jest.mock('../src/message');
 
@@ -20,6 +23,7 @@ jest.mock('../src/leaderboards');
 beforeEach(() => {
     secrets.getWebhookSecret.mockReset();
     chat.onMyChatMember.mockReset();
+    member.onChatMember.mockReset();
     message.onMessage.mockReset();
     times.onStart.mockReset();
     leaderboards.onStop.mockReset();
@@ -152,6 +156,21 @@ describe('POST /telegram API', () => {
 
         expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
         expect(chat.onMyChatMember).toHaveBeenCalledWith(true);
+    });
+
+    test('handles onChatMember throwing', async () => {
+        secrets.getWebhookSecret.mockResolvedValueOnce('gOoDsEcReT');
+        member.onChatMember.mockRejectedValueOnce(new Error('uPdAtEeRrOr'));
+
+        const event = {
+            resource: '/telegram', httpMethod: 'POST',
+            headers: { 'X-Telegram-Bot-Api-Secret-Token': 'gOoDsEcReT' },
+            body: '{"chat_member":true}'
+        };
+        await expect(handler(event)).resolves.toMatchObject({ statusCode: 500, body: '{"error":"Internal Server Error"}' });
+
+        expect(secrets.getWebhookSecret).toHaveBeenCalledWith();
+        expect(member.onChatMember).toHaveBeenCalledWith(true);
     });
 
     test('handles onMessage throwing', async () => {

@@ -1,7 +1,6 @@
 'use strict';
 
 const { sendTelegram } = require('./network');
-
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
 const DB_TABLE = 'aoc-bot';
