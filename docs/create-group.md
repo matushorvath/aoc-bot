@@ -14,10 +14,12 @@
    ![](img/create-group/edit-group-1.png)
    ![](img/create-group/visible-history.png)
 
-1. <a id="promote-bot"></a>In the same "Manage group" menu, select the list of members, right click on `@AocElfBot` and promote it to admin. Use default access rights for the bot.
+1. <a id="promote-bot"></a>In the same "Manage group" menu, select the list of members, right click on `@AocElfBot` and promote it to admin.
 
    ![](img/create-group/edit-group-2.png)
    ![](img/create-group/promote-admin.png)
+
+1. <a id="permissions"></a>In addition to the defaults, enable also the "Add new admins" permission. This will allow the bot to autopromote people to admins after they join the group.
    ![](img/create-group/add-admin.png)
 
 1. If everything goes well, the bot will set up the new group and create a pinned message with the leaderboard.

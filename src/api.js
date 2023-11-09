@@ -2,6 +2,7 @@
 
 const { getWebhookSecret } = require('./secrets');
 const { onMyChatMember } = require('./chat');
+const { onChatMember } = require('./member');
 const { onMessage } = require('./message');
 const { onStart } = require('./times');
 const { onStop } = require('./leaderboards');
@@ -75,6 +76,8 @@ const postTelegram = async (event) => {
 
     if (update.my_chat_member) {
         await onMyChatMember(update.my_chat_member);
+    } else if (update.chat_member) {
+        await onChatMember(update.chat_member);
     } else if (update.message) {
         await onMessage(update.message);
     }
@@ -144,7 +147,7 @@ const parseStartStopBody = (event) => {
     return { year, day, part, name };
 };
 
-// TODO This should be done in AWS API Gateway configuration, but I can't get that to work
+// This should be done in AWS API Gateway configuration, but I can't get that to work
 const options = async (_event) => {
     console.log('options');
 

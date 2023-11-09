@@ -84,7 +84,7 @@ const main = async () => {
 
     const data = {
         url: args.url,
-        allowedUpdates: ['message', 'my_chat_member']
+        allowedUpdates: ['chat_member', 'message', 'my_chat_member']
     };
 
     return await register(secrets, data);
