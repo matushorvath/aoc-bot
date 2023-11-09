@@ -147,7 +147,7 @@ const parseStartStopBody = (event) => {
     return { year, day, part, name };
 };
 
-// TODO This should be done in AWS API Gateway configuration, but I can't get that to work
+// This should be done in AWS API Gateway configuration, but I can't get that to work
 const options = async (_event) => {
     console.log('options');
 

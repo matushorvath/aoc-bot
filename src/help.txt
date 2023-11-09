@@ -58,4 +58,5 @@ Supported commands:
 /help
     Show this message\.
 
+How to add the bot to a group: [https://matushorvath\.github\.io/aoc\-bot/create\-group](https://matushorvath.github.io/aoc-bot/create-group)\.
 Bot source code: [https://github\.com/matushorvath/aoc\-bot](https://github.com/matushorvath/aoc-bot)\.

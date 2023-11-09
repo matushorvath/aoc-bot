@@ -19,7 +19,7 @@
    ![](img/create-group/edit-group-2.png)
    ![](img/create-group/promote-admin.png)
 
-1. In addition to the defaults, enable also the "Add new admins" permission. This will allow the bot to autopromote people to admins after they join the group.
+1. <a id="permissions"></a>In addition to the defaults, enable also the "Add new admins" permission. This will allow the bot to autopromote people to admins after they join the group.
    ![](img/create-group/add-admin.png)
 
 1. If everything goes well, the bot will set up the new group and create a pinned message with the leaderboard.

@@ -62,14 +62,7 @@ const parseChatTitle = (title) => {
 };
 
 const checkChatMember = async (my_chat_member) => {
-    // TODO edit the message
-    // - remove @AocElfBot
-    // - add docs link to help
-    // - link to specific section of docs in the message
-    // - link to docs to the end? to each error? like <a href='docs#promote'>promote</a> bot to admin
-
     // TODO check and fix IT, we are sending more messages now to private chats
-
     // TODO create a command to run these checks, /check 2023 13
 
     const { proceed, issues } = detectChatMemberIssues(my_chat_member);
@@ -86,7 +79,7 @@ const checkChatMember = async (my_chat_member) => {
         try {
             await sendTelegram('sendMessage', {
                 chat_id: inviterUserId,
-                text: `@AocElfBot needs additional setup for group "${my_chat_member.chat.title}" \\([docs](${createGroupDocsUrl})\\):\n${message}`,
+                text: `Additional setup needed for group \`${my_chat_member.chat.title}\`:\n${message}`,
                 parse_mode: 'MarkdownV2',
                 disable_notification: true
             });
@@ -116,11 +109,15 @@ const getInviterUserId = (my_chat_member) => {
     return inviterUserId;
 };
 
+const docsLink = (text, anchor) => {
+    return `[${text}](${createGroupDocsUrl}#${anchor})`;
+};
+
 const detectChatMemberIssues = (my_chat_member) => {
     // Enabling visible history also upgrades the group to supergroup
     // TODO also explicitly check for visible history, currently not possible with bot API
     if (my_chat_member.chat.type === 'group') {
-        return { proceed: false, issues: ['• enable chat history for new members'] };
+        return { proceed: false, issues: [`• enable ${docsLink('chat history', 'chat-history')} for new members`] };
     } else if (my_chat_member.chat.type !== 'supergroup') {
         // This handles membership in any other chat types, which the bot ignores
         return { proceed: false, issues: [] };
@@ -128,7 +125,7 @@ const detectChatMemberIssues = (my_chat_member) => {
 
     // Check if we were made an admin of this supergroup
     if (['member', 'restricted'].includes(my_chat_member.new_chat_member?.status)) {
-        return { proceed: false, issues: ['• promote the bot to admin of this group'] };
+        return { proceed: false, issues: [`• ${docsLink('promote', 'promote-bot')} the bot to admin of this group`] };
     } else if (my_chat_member.new_chat_member?.status !== 'administrator') {
         // This handles statuses like 'left' or 'kicked', where we don't want any bot messages
         return { proceed: false, issues: [] };
@@ -138,19 +135,19 @@ const detectChatMemberIssues = (my_chat_member) => {
 
     // Check necessary admin permissions
     if (!my_chat_member.new_chat_member.can_manage_chat) {
-        issues.push('• allow the bot to manage the group');
+        issues.push(`• ${docsLink('allow', 'permissions')} the bot to manage the group`);
     }
     if (!my_chat_member.new_chat_member.can_promote_members) {
-        issues.push('• allow the bot to add new admins');
+        issues.push(`• ${docsLink('allow', 'permissions')} the bot to add new admins`);
     }
     if (!my_chat_member.new_chat_member.can_change_info) {
-        issues.push('• allow the bot to change group info');
+        issues.push(`• ${docsLink('allow', 'permissions')} the bot to change group info`);
     }
     if (!my_chat_member.new_chat_member.can_invite_users) {
-        issues.push('• allow the bot to add group members');
+        issues.push(`• ${docsLink('allow', 'permissions')} the bot to add group members`);
     }
     if (!my_chat_member.new_chat_member.can_pin_messages) {
-        issues.push('• allow the bot to pin messages');
+        issues.push(`• ${docsLink('allow', 'permissions')} the bot to pin messages`);
     }
 
     return { proceed: issues.length === 0, issues };
