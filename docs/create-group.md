@@ -8,13 +8,13 @@
 
    ![](img/create-group/add-bot.png)
 
-1. In the "Manage group" menu, set "Chat history for new members" to "Visible".
+1. <a id="chat-history"></a>In the "Manage group" menu, set "Chat history for new members" to "Visible".
 
    ![](img/create-group/manage-group.png)
    ![](img/create-group/edit-group-1.png)
    ![](img/create-group/visible-history.png)
 
-1. In the same "Manage group" menu, select the list of members, right click on `@AocElfBot` and promote it to admin. Use default access rights for the bot.
+1. <a id="promote-bot"></a>In the same "Manage group" menu, select the list of members, right click on `@AocElfBot` and promote it to admin. Use default access rights for the bot.
 
    ![](img/create-group/edit-group-2.png)
    ![](img/create-group/promote-admin.png)
