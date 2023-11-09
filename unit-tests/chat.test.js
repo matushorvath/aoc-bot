@@ -72,7 +72,8 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
-            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*promote the bot to admin of this group$/)
+            text: expect.stringMatching(
+                /^Additional setup[\s\S]*\[promote\]\(https:.*\) the bot to admin of this group$/)
         });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
@@ -112,7 +113,7 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
-            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+            text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
@@ -153,7 +154,7 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
-            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+            text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
@@ -177,7 +178,7 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
-            text: expect.stringMatching(/^@AocElfBot needs[\s\S]*enable chat history for new members$/)
+            text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
@@ -215,11 +216,11 @@ describe('onMyChatMember', () => {
     };
 
     test.each([
-        ['can_manage_chat', 'allow the bot to manage the group'],
-        ['can_promote_members', 'allow the bot to add new admins'],
-        ['can_change_info', 'allow the bot to change group info'],
-        ['can_invite_users', 'allow the bot to add group members'],
-        ['can_pin_messages', 'allow the bot to pin messages']
+        ['can_manage_chat', '\\[allow\\]\\(https:.*\\) the bot to manage the group'],
+        ['can_promote_members', '\\[allow\\]\\(https:.*\\) the bot to add new admins'],
+        ['can_change_info', '\\[allow\\]\\(https:.*\\) the bot to change group info'],
+        ['can_invite_users', '\\[allow\\]\\(https:.*\\) the bot to add group members'],
+        ['can_pin_messages', '\\[allow\\]\\(https:.*\\) the bot to pin messages']
     ])('warns about membership with missing right %s', async (right, message) => {
         const testRights = { ...allRights };
         delete testRights[right];
@@ -234,7 +235,7 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
-            text: expect.stringMatching(new RegExp(`^@AocElfBot needs[\\s\\S]*${message}$`))
+            text: expect.stringMatching(new RegExp(`^Additional setup[\\s\\S]*${message}$`))
         });
 
         expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
