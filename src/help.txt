@@ -3,8 +3,8 @@ I can register your Advent of Code name, and then automatically invite you into 
 Supported commands:
 
 /reg \<aocname\>
-    Register your Advent of Code name\. Format your name exactly as it is visible in our
-    [leaderboard](https://adventofcode\.com/2021/leaderboard/private/view/380635) \(without the `(AoC\+\+)` suffix\)\.
+    Register your Advent of Code name\. Format your name exactly
+    as it is visible in our [leaderboard](https://adventofcode\.com/2021/leaderboard/private/view/380635) \(without the `(AoC\+\+)` suffix\)\.
 
 /unreg
     Unregister from the bot\.
@@ -13,22 +13,26 @@ Supported commands:
     Display your registration status\.
 
 /update \[today\|all\|\<year\>\|\<year\> \<day\>\]
-    Process leaderboards and invites\. Updates are performed automatically every 15 minutes\.
-    This command is only needed if you want to trigger an update immediately\.
+    Process leaderboards and invites\. Updates are performed
+    automatically every 15 minutes\. This command is only needed
+    if you want to trigger an update immediately\.
 
     /update
     /update today
-        Process today's leaderboard and invites \(default in December\)
+        Process today's leaderboard and invites
+        \(default in December\)
 
     /update
     /update year
-        Process most recent year's leaderboards and invites \(default outside of December\)
+        Process most recent year's leaderboards and invites
+        \(default outside of December\)
 
     /update \<year\>
         Process leaderboards and invites for selected year
 
     /update \<day\>
-        Process leaderboards and invites for selected day in current year
+        Process leaderboards and invites for selected day
+        within current year
 
     /update \<day\> \<year\>
     /update \<year\> \<day\>
@@ -53,11 +57,12 @@ Supported commands:
     Enable/disable sending activity logs into your chat with the bot\.
 
 /logs
-    Find out whether sending activity logs is currently enabled or disabled for your chat with the bot\.
+    Find out whether sending activity logs is currently
+    enabled or disabled for your chat with the bot\.
 
 /help
     Show this message\.
 
 [Creating a Telegram Group for AoC](https://matushorvath.github.io/aoc-bot/create-group)
 
-Bot source code: [https://github\.com/matushorvath/aoc\-bot](https://github.com/matushorvath/aoc-bot)\.
+Bot source code: [https://github\.com/matushorvath/aoc\-bot](https://github.com/matushorvath/aoc-bot)
