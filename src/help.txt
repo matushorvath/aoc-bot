@@ -12,7 +12,7 @@ Supported commands:
 /status
     Display your registration status\.
 
-/update \[today\|all\|\<year\>\|\<year\> \<day\>\]
+/update \[today\|\<year\>\|\<year\> \<day\>\]
     Process leaderboards and invites\. Updates are performed
     automatically every 15 minutes\. This command is only needed
     if you want to trigger an update immediately\.
