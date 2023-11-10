@@ -100,7 +100,7 @@ describe('/update command', () => {
 
 test('/help command', async () => {
     await expect(client.sendMessage(botUserId, '/help')).resolves.toMatchObject([
-        expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\.$/)
+        expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot$/)
     ]);
 });
 
