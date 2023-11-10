@@ -10,14 +10,14 @@ const formatBoard = (year, day, leaderboard, startTimes) => {
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
 
-    const header = pre(escape(`Deň ${day.toString().padStart(2)} @${elapsed} ` +
-        'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*'));
-    const footer = pre('\\* čistý čas zistený pluginom ') + `[${escape(pluginUrl)}](${pluginUrl})`;
+    const header = `Deň ${day.toString().padStart(2)} @${elapsed} ` +
+        'ofic. part 1 a 2 (čas na p2) neoficiálne (čistý čas na p2)*';
+    const table = results.map(result => formatOneLine(result, startTs, startTimes[result.name]));
 
-    const body = results.map(result => pre(escape(formatOneLine(
-        result, startTs, startTimes[result.name]))));
+    const body = code(escape([header, ...table].join('\n')));
+    const plugin = pre('\\* čistý čas zistený pluginom ') + `[${escape(pluginUrl)}](${pluginUrl})`;
 
-    const board = [header, ...body, '``', footer].join('\n');
+    const board = [body, plugin].join('\n');
     return board;
 };
 
@@ -114,5 +114,7 @@ const escape = (text) => {
 };
 
 const pre = (text) => `\`${text}\``;
+
+const code = (text) => `\`\`\`\n${text}\n\`\`\``;
 
 exports.formatBoard = formatBoard;
