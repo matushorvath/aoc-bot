@@ -26,7 +26,7 @@ Resources:
         Bucket: !Ref Bucket
         Key: !Ref Package
       Handler: src/leaderboards.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Architectures:
         - arm64
       Timeout: 300
@@ -57,7 +57,7 @@ Resources:
         Bucket: !Ref Bucket
         Key: !Ref Package
       Handler: src/api.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       Architectures:
         - arm64
       Timeout: 300
