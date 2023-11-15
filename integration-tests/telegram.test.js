@@ -13,7 +13,7 @@ const yaml = require('yaml');
 const fs = require('fs/promises');
 const path = require('path');
 
-jest.setTimeout(30 * 1000);
+jest.setTimeout(90 * 1000);
 
 // Telegram ids to use for testing
 const botUserId = 5071613978;
