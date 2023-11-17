@@ -10,7 +10,7 @@ const url = 'https://7b79gj2si4.execute-api.eu-central-1.amazonaws.com/Prod/star
 describe('POST /start', () => {
     const validData = {
         version: 1,
-        year: 2003,
+        year: 2000,
         day: 13,
         part: 2,
         name: 'TeSt UsEr'
