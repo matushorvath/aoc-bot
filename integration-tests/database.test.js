@@ -15,7 +15,7 @@ const db = new DynamoDB({
 
 jest.setTimeout(30 * 1000);
 
-const isValidYear = year => Number(year) === 1980 || (Number(year) >= 2015 && Number(year) <= 2050);
+const isValidYear = year => Number(year) === 1980 || Number(year) === 2000 || (Number(year) >= 2015 && Number(year) <= 2050);
 
 describe('Database consistency', () => {
     const data = [];
