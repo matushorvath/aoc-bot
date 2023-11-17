@@ -15,7 +15,8 @@ const db = new DynamoDB({
 
 jest.setTimeout(30 * 1000);
 
-const isValidYear = year => Number(year) === 1980 || Number(year) === 2000 || (Number(year) >= 2015 && Number(year) <= 2050);
+const isValidYear = year => Number(year) === 1980 || Number(year) === 2000
+    || (Number(year) >= 2015 && Number(year) <= 2050);
 
 describe('Database consistency', () => {
     const data = [];
@@ -158,12 +159,6 @@ describe('Database consistency', () => {
             const start_times = data.filter(i => i.id.S === 'start_time');
             expect(start_times).toEachPassPredicate(i => i.part.N === '1' || i.part.N === '2');
         });
-
-        // test('start_times:name can be found in aoc_user', () => {
-        //     const start_times = data.filter(i => i.id.S === 'start_time');
-        //     const all_aoc_users = new Set(data.filter(i => i.id.S === 'aoc_user').map(i => i.aoc_user.S));
-        //     expect(start_times).toEachPassPredicate(i => all_aoc_users.has(i.name.S));
-        // });
 
         // TODO start_time:ts is some sane value (valid year, newer than year/day)
         // TODO start_times:chat exists in telegram
