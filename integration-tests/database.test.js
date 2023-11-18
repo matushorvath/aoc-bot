@@ -55,8 +55,8 @@ describe('Database consistency', () => {
 
         test('aoc_user:telegram_user can be found in telegram_user', () => {
             const aoc_users = data.filter(i => i.id.S === 'aoc_user');
-            const telegramUsers = new Set(data.filter(i => i.id.S === 'telegram_user').map(i => i.telegram_user.N));
-            expect(aoc_users).toEachPassPredicate(i => telegramUsers.has(i.telegram_user.N));
+            const all_telegram_users = new Set(data.filter(i => i.id.S === 'telegram_user').map(i => i.telegram_user.N));
+            expect(aoc_users).toEachPassPredicate(i => all_telegram_users.has(i.telegram_user.N));
         });
     });
 
@@ -132,8 +132,8 @@ describe('Database consistency', () => {
     describe('Check promotion records', () => {
         test('promotion:sk can be found in telegram_user', () => {
             const promotions = data.filter(i => i.id.S === 'promotion');
-            const telegramUsers = new Set(data.filter(i => i.id.S === 'telegram_user').map(i => i.telegram_user.N));
-            expect(promotions).toEachPassPredicate(i => telegramUsers.has(i.sk.S));
+            const all_telegram_users = new Set(data.filter(i => i.id.S === 'telegram_user').map(i => i.telegram_user.N));
+            expect(promotions).toEachPassPredicate(i => all_telegram_users.has(i.sk.S));
         });
 
         // TODO promotion:sk user exists in telegram
