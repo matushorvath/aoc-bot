@@ -35,6 +35,9 @@ const onMessage = async (message) => {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'unreg') {
         await onCommandUnreg(message.chat.id, message.from.id);
+    } else if (command === 'rename') {
+        // TODO document command in /help
+        await onCommandRename(message.chat.id, params?.trim());
     } else if (command === 'logs') {
         await onCommandLogs(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'status') {
@@ -55,8 +58,27 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
     console.log(`onCommandReg: start, aocUser ${aocUser} telegramUser ${telegramUser}`);
 
     // Delete existing registration, if any
-    await deleteUserData(telegramUser);
+    await deleteTelegramUserData(telegramUser);
 
+    // Create new registration
+    await createUserData(aocUser, telegramUser);
+
+    console.log('onCommandReg: user stored in db');
+
+    // Confirm the registration
+    await sendTelegram('sendMessage', {
+        chat_id: chat,
+        text: `You are now registered as AoC user '${aocUser}'`,
+        disable_notification: true
+    });
+
+    await logActivity(`Registered user '${aocUser}'`);
+
+    console.log('onCommandReg: done');
+};
+
+// TODO move user handling to a separate file
+const createUserData = async (aocUser, telegramUser) => {
     // Store user mapping in db
     const aocParams = {
         Item: {
@@ -79,25 +101,12 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
         TableName: DB_TABLE
     };
     await db.putItem(telegramParams);
-
-    console.log('onCommandReg: user stored in db');
-
-    // Confirm the registration
-    await sendTelegram('sendMessage', {
-        chat_id: chat,
-        text: `You are now registered as AoC user '${aocUser}'`,
-        disable_notification: true
-    });
-
-    await logActivity(`Registered user '${aocUser}'`);
-
-    console.log('onCommandReg: done');
 };
 
 const onCommandUnreg = async (chat, telegramUser) => {
     console.log(`onCommandUnreg: start, telegramUser '${telegramUser}'`);
 
-    const aocUser = await deleteUserData(telegramUser);
+    const aocUser = await deleteTelegramUserData(telegramUser);
     if (aocUser) {
         await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -117,7 +126,8 @@ const onCommandUnreg = async (chat, telegramUser) => {
     console.log('onCommandUnreg: done');
 };
 
-const deleteUserData = async (telegramUser) => {
+// TODO move user handling to a separate file
+const deleteTelegramUserData = async (telegramUser) => {
     // Find AoC record in database
     const getParams = {
         TableName: DB_TABLE,
@@ -130,13 +140,20 @@ const deleteUserData = async (telegramUser) => {
 
     const getData = await db.getItem(getParams);
     if (!getData.Item) {
-        console.log('deleteUserData: no records to delete');
+        console.log('deleteTelegramUserData: no records to delete');
         return undefined;
     }
 
     const aocUser = getData.Item.aoc_user.S;
-    console.log(`deleteUserData: found aocUser ${aocUser}`);
+    console.log(`deleteTelegramUserData: found aocUser ${aocUser}`);
 
+    await deleteUserData(aocUser, telegramUser);
+
+    return aocUser;
+};
+
+// TODO move user handling to a separate file
+const deleteUserData = async (aocUser, telegramUser) => {
     // Delete all user records
     const writeParams = {
         RequestItems: {
@@ -164,7 +181,167 @@ const deleteUserData = async (telegramUser) => {
     }
 
     console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
-    return aocUser;
+};
+
+const onCommandRename = async (chat, params) => {
+    console.log(`onCommandRename: start, params '${params}'`);
+
+    // Parse parameters
+    const m = params.match(/^"[^"]+"\s+"[^"]+"$/);
+    if (!m) {
+        console.log(`onCommandRename: params are invalid: ${params}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Invalid parameters (see /help)',
+            disable_notification: true
+        });
+        return;
+    }
+
+    const [, oldAocUser, newAocUser] = m;
+    const found = await renameAocUser(oldAocUser, newAocUser);
+
+    if (found) {
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `Renamed AoC user '${oldAocUser}' to '${newAocUser}')`,
+            disable_notification: true
+        });
+
+        await logActivity(`Renamed user '${oldAocUser}' to '${newAocUser}'`);
+    } else {
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `AoC user '${oldAocUser} not found`,
+            disable_notification: true
+        });
+    }
+
+    console.log('onCommandRename: done');
+};
+
+// TODO move user handling to a separate file
+const renameAocUser = async (oldAocUser, newAocUser) => {
+    console.log(`renameAocUser: renaming '${oldAocUser}' to '${newAocUser}'`);
+
+    const telegramUser = await renameAocUserRecord(oldAocUser, newAocUser);
+    if (telegramUser === undefined) {
+        console.warn(`renameAocUser: aoc_user record not found for ${oldAocUser}`);
+        return false;
+    }
+
+    console.log(`renameAocUser: found telegram_user '${telegramUser}'`);
+
+    const oldAocUserInTelegramUser = await renameTelegramUserRecord(telegramUser, newAocUser);
+    if (oldAocUserInTelegramUser === undefined) {
+        console.warn(`renameAocUser: telegram_user record not found ${telegramUser}`);
+        return false;
+    }
+
+    await renameStartTimeRecords(oldAocUser, newAocUser);
+
+    console.log(`renameAocUser: renamed '${oldAocUser}' to '${newAocUser}'`);
+    return true;
+};
+
+// TODO move user handling to a separate file
+const renameAocUserRecord = async (oldAocUser, newAocUser) => {
+    const params = {
+        TableName: DB_TABLE,
+        Key: {
+            id: { S: 'aoc_user' },
+            sk: { S: ':old_aoc_user' }
+        },
+        UpdateExpression: 'SET sk=:new_aoc_user, aoc_user=:new_aoc_user',
+        ExpressionAttributeValues: {
+            ':old_aoc_user': { S: oldAocUser },
+            ':new_aoc_user': { S: newAocUser }
+        },
+        ReturnValues: 'ALL_NEW'
+    };
+
+    const data = await db.updateItem(params);
+    console.log(`renameAocUserRecord: done, telegram_user ${data.Attributes.telegram_user.N}`);
+
+    if (data.Attributes?.telegram_user?.N === undefined) {
+        return undefined;
+    }
+    return Number(data.Attributes.telegram_user.N);
+};
+
+// TODO move user handling to a separate file
+const renameTelegramUserRecord = async (telegramUser, newAocUser) => {
+    const params = {
+        TableName: DB_TABLE,
+        Key: {
+            id: { S: 'telegram_user' },
+            sk: { S: ':telegram_user' }
+        },
+        UpdateExpression: 'SET aoc_user=:new_aoc_user',
+        ExpressionAttributeValues: {
+            ':telegram_user': { S: String(telegramUser) },
+            ':new_aoc_user': { S: newAocUser }
+        },
+        ReturnValues: 'ALL_OLD'
+    };
+
+    const data = await db.updateItem(params);
+    console.log(`renameTelegramUserRecord: done, old aoc_user [${data.Attributes?.aoc_user?.S}]`);
+
+    return data.Attributes?.aoc_user?.S;
+};
+
+const renameStartTimeRecords = async (oldAocUser, newAocUser) => {
+    // TODO There is a race condition here, if the user submits start times while we are renaming
+
+    const commonParams = {
+        TableName: DB_TABLE,
+        KeyConditionExpression: 'id = :id',
+        FilterExpression: 'name = :old_aoc_user',
+        ExpressionAttributeValues: {
+            ':id': { S: 'start_time' },
+            ':old_aoc_user': { S: oldAocUser }
+        }
+    };
+
+    let startTimeCount = 0;
+
+    let data;
+    while (!data || data.LastEvaluatedKey) {
+        const params = { ...commonParams };
+        if (data?.LastEvaluatedKey) {
+            params.ExclusiveStartKey = data.LastEvaluatedKey;
+        }
+        data = await db.query(params);
+
+        for (const item of data.Items) {
+            await renameOneStartTimeRecord(item.sk.S, newAocUser);
+            startTimeCount++;
+        }
+    }
+
+    console.log(`renameStartTimeRecords: done, processed ${startTimeCount} start_time records`);
+};
+
+const renameOneStartTimeRecord = async (oldSk, newAocUser) => {
+    // Replace last component of the sk value
+    const newSk = oldSk.split(':').with(-1, newAocUser).join(':');
+
+    const params = {
+        TableName: DB_TABLE,
+        Key: {
+            id: { S: 'start_time' },
+            sk: { S: ':old_sk' }
+        },
+        UpdateExpression: 'SET sk=:new_sk, name=:new_aoc_user',
+        ExpressionAttributeValues: {
+            ':old_sk': { S: oldSk },
+            ':new_sk': { S: newSk },
+            ':new_aoc_user': { S: newAocUser }
+        }
+    };
+
+    await db.updateItem(params);
 };
 
 const onCommandLogs = async (chat, value) => {
