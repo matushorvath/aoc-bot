@@ -59,7 +59,7 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
     const ots2d = formatDuration(result.ts2 - startTs);
     const odiffd = formatDuration(result.ts2 - result.ts1);
 
-    let line = `${result.name.padStart(16)} ${ots1d} ${ots2d} (${odiffd})`;
+    let line = `${formatName(result.name, 16)} ${ots1d} ${ots2d} (${odiffd})`;
 
     if (dayStartTimes?.[1]) {
         const start1 = dayStartTimes[1];
@@ -85,6 +85,14 @@ const formatOneLine = (result, startTs, dayStartTimes) => {
         }
     }
     return line;
+};
+
+const formatName = (name, length) => {
+    if (name.length <= length) {
+        return name.padStart(length);
+    } else {
+        return `${name.substring(0, 15)}…`;
+    }
 };
 
 const formatDuration = (duration) => {

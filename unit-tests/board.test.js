@@ -269,6 +269,19 @@ Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý č
 \`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
     });
 
+    test('handles long names', async () => {
+        const leaderboard = { members: { '111': {
+            name: 'Person With A Very Long Name',
+            completion_day_level: { '1': { '1': {} } }
+        } } };
+
+        expect(formatBoard(2021, 1, leaderboard, {})).toEqual(`\`\`\`
+Deň  1 @ 12d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*
+Person With A V… \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)
+\`\`\`
+\`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
+    });
+
     // TODO start times that exist but don't include current year
     // TODO long name
 });
