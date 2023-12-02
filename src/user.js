@@ -190,7 +190,7 @@ const renameStartTimeRecords = async (oldAocUser, newAocUser) => {
         }
         data = await db.query(params);
 
-        for (const item of data.Items) {
+        for (const item of data.Items ?? []) {
             await renameOneStartTimeRecord(item, newAocUser);
             startTimeCount++;
         }

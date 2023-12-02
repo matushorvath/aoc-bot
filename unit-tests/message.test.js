@@ -27,7 +27,6 @@ const fsp = require('fs/promises');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
-    dynamodb.DynamoDB.prototype.batchWriteItem.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
     logs.enableLogs.mockReset();
@@ -35,6 +34,8 @@ beforeEach(() => {
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
     leaderboards.updateLeaderboards.mockReset();
+    user.createUserData.mockReset();
+    user.deleteTelegramUserData.mockReset();
     user.renameAocUser.mockReset();
 });
 
@@ -48,7 +49,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -65,7 +65,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -82,7 +81,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -131,8 +129,6 @@ describe('onMessage /reg', () => {
             from: { id: 7878 },
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
-
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
@@ -200,7 +196,7 @@ describe('onMessage /rename', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
-            text: "Invalid parameters (see /help)"
+            text: 'Invalid parameters (see /help)'
         });
     });
 
@@ -217,7 +213,7 @@ describe('onMessage /rename', () => {
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
-            text: "Invalid parameters (see /help)"
+            text: 'Invalid parameters (see /help)'
         });
     });
 
