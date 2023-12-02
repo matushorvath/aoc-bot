@@ -20,11 +20,13 @@ jest.mock('../src/leaderboards');
 const logs = require('../src/logs');
 jest.mock('../src/logs');
 
+const user = require('../src/user');
+jest.mock('../src/user');
+
 const fsp = require('fs/promises');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
-    dynamodb.DynamoDB.prototype.batchWriteItem.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
     logs.enableLogs.mockReset();
@@ -32,6 +34,9 @@ beforeEach(() => {
     logs.logActivity.mockReset();
     network.sendTelegram.mockReset();
     leaderboards.updateLeaderboards.mockReset();
+    user.createUserData.mockReset();
+    user.deleteTelegramUserData.mockReset();
+    user.renameAocUser.mockReset();
 });
 
 describe('onMessage generic', () => {
@@ -44,7 +49,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -61,7 +65,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -78,7 +81,6 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
@@ -113,119 +115,30 @@ describe('onMessage /reg', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
+        expect(user.createUserData).not.toHaveBeenCalled();
+
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "Sorry, I don't understand that command"
         });
     });
 
-    test('with new user', async () => {
+    test('with a user', async () => {
         const update = {
-            text: '/reg New User',
+            text: '/reg Some User',
             from: { id: 7878 },
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
+        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
+        expect(user.createUserData).toHaveBeenCalledWith('Some User', 7878);
 
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
-
-        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'New User'");
+        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Some User'");
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-            chat_id: 2323, text: "You are now registered as AoC user 'New User'", disable_notification: true
-        });
-    });
-
-    test('with existing user', async () => {
-        const update = {
-            text: '/reg Existing User',
-            from: { id: 7878 },
-            chat: { id: 2323, type: 'private', title: 'tItLe' }
-        };
-
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
-
-        await expect(onMessage(update)).resolves.toBeUndefined();
-
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-            RequestItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                ]
-            }
-        });
-
-        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
-
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-            chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
-        });
-    });
-
-    test('when some user records fail to delete', async () => {
-        const update = {
-            text: '/reg Existing User',
-            from: { id: 7878 },
-            chat: { id: 2323, type: 'private', title: 'tItLe' }
-        };
-
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
-            UnprocessedItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
-                ]
-            }
-        });
-
-        // Expect it to succeed, we just log a warning that some records remained
-        await expect(onMessage(update)).resolves.toBeUndefined();
-
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-            RequestItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                ]
-            }
-        });
-
-        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Existing User'");
-
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
-            chat_id: 2323, text: "You are now registered as AoC user 'Existing User'", disable_notification: true
+            chat_id: 2323, text: "You are now registered as AoC user 'Some User'", disable_notification: true
         });
     });
 });
@@ -238,20 +151,10 @@ describe('onMessage /unreg', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({});
-
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).not.toHaveBeenCalled();
+        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
+        expect(logs.logActivity).not.toHaveBeenCalled();
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: 'You are not registered', disable_notification: true
@@ -265,29 +168,11 @@ describe('onMessage /unreg', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({ UnprocessedItems: {} });
+        user.deleteTelegramUserData.mockResolvedValueOnce('OlDaOcUsEr');
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-            RequestItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                ]
-            }
-        });
-
+        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
         expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
@@ -295,49 +180,78 @@ describe('onMessage /unreg', () => {
             text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
         });
     });
+});
 
-    test('when some user records fail to delete', async () => {
+describe('onMessage /rename', () => {
+    test('without parameters', async () => {
         const update = {
-            text: '/unreg',
+            text: '/rename',
             from: { id: 7878 },
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { aoc_user: { S: 'OlDaOcUsEr' } } });
-        dynamodb.DynamoDB.prototype.batchWriteItem.mockResolvedValueOnce({
-            UnprocessedItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } }
-                ]
-            }
-        });
-
-        // Expect it to succeed, we just log a warning that some records remained
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalledWith({
-            TableName: 'aoc-bot',
-            Key: {
-                id: { S: 'telegram_user' },
-                sk: { S: '7878' }
-            },
-            ProjectionExpression: 'aoc_user'
-        });
-
-        expect(dynamodb.DynamoDB.prototype.batchWriteItem).toHaveBeenCalledWith({
-            RequestItems: {
-                'aoc-bot': [
-                    { DeleteRequest: { Key: { id: { S: 'aoc_user' }, sk: { S: 'OlDaOcUsEr' } } } },
-                    { DeleteRequest: { Key: { id: { S: 'telegram_user' }, sk: { S: '7878' } } } }
-                ]
-            }
-        });
-
-        expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+        expect(user.renameAocUser).not.toHaveBeenCalled();
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
-            text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
+            text: 'Invalid parameters (see /help)'
+        });
+    });
+
+    test('with invalid parameters', async () => {
+        const update = {
+            text: '/rename Old User New User',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Invalid parameters (see /help)'
+        });
+    });
+
+    test('when user is not found', async () => {
+        const update = {
+            text: '/rename "Old User" "New User"',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        user.renameAocUser.mockResolvedValueOnce(false);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logs.logActivity).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "AoC user 'Old User' not found", disable_notification: true
+        });
+    });
+
+    test('with valid users', async () => {
+        const update = {
+            text: '/rename "Old User" "New User"',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        user.renameAocUser.mockResolvedValueOnce(true);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logs.logActivity).toHaveBeenCalledWith("Renamed AoC user 'Old User' to 'New User'");
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "Renamed AoC user 'Old User' to 'New User'", disable_notification: true
         });
     });
 });
