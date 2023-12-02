@@ -74,8 +74,8 @@ const promote = async (chat, telegramUser) => {
         const code = error.response?.data?.error_code;
         const description = error.response?.data?.description;
 
-        if (error.isAxiosError && code === 400 && /not enough rights/.test(description)) {
-            console.warn(`promote: Not enough rights (${description})`);
+        if (error.isAxiosError && code === 400) {
+            console.warn(`promote: Bad request (${description})`);
         } else {
             throw error;
         }
