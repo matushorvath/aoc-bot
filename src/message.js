@@ -4,6 +4,7 @@ const { sendTelegram, getLeaderboard } = require('./network');
 const { updateLeaderboards } = require('./leaderboards');
 const { formatBoard } = require('./board');
 const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
+const { createUserData, deleteTelegramUserData, renameAocUser } = require('./user');
 const { loadStartTimes } = require('./times');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
@@ -35,6 +36,9 @@ const onMessage = async (message) => {
         await onCommandReg(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'unreg') {
         await onCommandUnreg(message.chat.id, message.from.id);
+    } else if (command === 'rename') {
+        // TODO document command in /help
+        await onCommandRename(message.chat.id, params?.trim());
     } else if (command === 'logs') {
         await onCommandLogs(message.chat.id, params?.trim(), message.from.id);
     } else if (command === 'status') {
@@ -55,30 +59,10 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
     console.log(`onCommandReg: start, aocUser ${aocUser} telegramUser ${telegramUser}`);
 
     // Delete existing registration, if any
-    await deleteUserData(telegramUser);
+    await deleteTelegramUserData(telegramUser);
 
-    // Store user mapping in db
-    const aocParams = {
-        Item: {
-            id: { S: 'aoc_user' },
-            sk: { S: aocUser },
-            aoc_user: { S: aocUser },
-            telegram_user: { N: String(telegramUser) }
-        },
-        TableName: DB_TABLE
-    };
-    await db.putItem(aocParams);
-
-    const telegramParams = {
-        Item: {
-            id: { S: 'telegram_user' },
-            sk: { S: String(telegramUser) },
-            aoc_user: { S: aocUser },
-            telegram_user: { N: String(telegramUser) }
-        },
-        TableName: DB_TABLE
-    };
-    await db.putItem(telegramParams);
+    // Create new registration
+    await createUserData(aocUser, telegramUser);
 
     console.log('onCommandReg: user stored in db');
 
@@ -97,7 +81,7 @@ const onCommandReg = async (chat, aocUser, telegramUser) => {
 const onCommandUnreg = async (chat, telegramUser) => {
     console.log(`onCommandUnreg: start, telegramUser '${telegramUser}'`);
 
-    const aocUser = await deleteUserData(telegramUser);
+    const aocUser = await deleteTelegramUserData(telegramUser);
     if (aocUser) {
         await sendTelegram('sendMessage', {
             chat_id: chat,
@@ -117,54 +101,45 @@ const onCommandUnreg = async (chat, telegramUser) => {
     console.log('onCommandUnreg: done');
 };
 
-const deleteUserData = async (telegramUser) => {
-    // Find AoC record in database
-    const getParams = {
-        TableName: DB_TABLE,
-        Key: {
-            id: { S: 'telegram_user' },
-            sk: { S: String(telegramUser) }
-        },
-        ProjectionExpression: 'aoc_user'
-    };
+const onCommandRename = async (chat, params) => {
+    console.log(`onCommandRename: start, params '${params}'`);
 
-    const getData = await db.getItem(getParams);
-    if (!getData.Item) {
-        console.log('deleteUserData: no records to delete');
-        return undefined;
+    // This command is undocumented
+    // /rename "Old Name" "New Name"
+    // You will need to manually delete old aoc_user and start_time records
+
+    // Parse parameters
+    const m = params.match(/^"([^"]+)"\s+"([^"]+)"$/);
+    if (!m) {
+        console.log(`onCommandRename: params are invalid: ${params}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Invalid parameters (see /help)',
+            disable_notification: true
+        });
+        return;
     }
 
-    const aocUser = getData.Item.aoc_user.S;
-    console.log(`deleteUserData: found aocUser ${aocUser}`);
+    const [, oldAocUser, newAocUser] = m;
+    const found = await renameAocUser(oldAocUser, newAocUser);
 
-    // Delete all user records
-    const writeParams = {
-        RequestItems: {
-            [DB_TABLE]: [{
-                DeleteRequest: {
-                    Key: {
-                        id: { S: 'aoc_user' },
-                        sk: { S: aocUser }
-                    }
-                }
-            }, {
-                DeleteRequest: {
-                    Key: {
-                        id: { S: 'telegram_user' },
-                        sk: { S: String(telegramUser) }
-                    }
-                }
-            }]
-        }
-    };
-    const writeData = await db.batchWriteItem(writeParams);
+    if (found) {
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `Renamed AoC user '${oldAocUser}' to '${newAocUser}')`,
+            disable_notification: true
+        });
 
-    if (Object.keys(writeData.UnprocessedItems).length > 0) {
-        console.warn(`deleteUserData: some records not deleted: ${JSON.stringify(writeData.UnprocessedItems)}`);
+        await logActivity(`Renamed user '${oldAocUser}' to '${newAocUser}'`);
+    } else {
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: `AoC user '${oldAocUser} not found`,
+            disable_notification: true
+        });
     }
 
-    console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
-    return aocUser;
+    console.log('onCommandRename: done');
 };
 
 const onCommandLogs = async (chat, value) => {
