@@ -186,6 +186,80 @@ describe('onMessage /unreg', () => {
     });
 });
 
+describe('onMessage /rename', () => {
+    test('without parameters', async () => {
+        const update = {
+            text: '/rename',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Invalid parameters (see /help)"
+        });
+    });
+
+    test('with invalid parameters', async () => {
+        const update = {
+            text: '/rename Old User New User',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: "Invalid parameters (see /help)"
+        });
+    });
+
+    test('when user is not found', async () => {
+        const update = {
+            text: '/rename "Old User" "New User"',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        user.renameAocUser.mockResolvedValueOnce(false);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logs.logActivity).not.toHaveBeenCalled();
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "AoC user 'Old User' not found", disable_notification: true
+        });
+    });
+
+    test('with valid users', async () => {
+        const update = {
+            text: '/rename "Old User" "New User"',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        user.renameAocUser.mockResolvedValueOnce(true);
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logs.logActivity).toHaveBeenCalledWith("Renamed AoC user 'Old User' to 'New User'");
+
+        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, text: "Renamed AoC user 'Old User' to 'New User'", disable_notification: true
+        });
+    });
+});
+
 describe('onMessage /logs', () => {
     test('with an invalid parameter', async () => {
         const update = {

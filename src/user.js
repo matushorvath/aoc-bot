@@ -94,6 +94,8 @@ const renameAocUser = async (oldAocUser, newAocUser) => {
         return false;
     }
 
+    // TODO also refuse if the new user already exists
+
     console.log(`renameAocUser: found telegram_user '${telegramUser}'`);
 
     const oldAocUserInTelegramUser = await renameTelegramUserRecord(telegramUser, newAocUser);
