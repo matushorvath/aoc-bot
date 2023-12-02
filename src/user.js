@@ -109,27 +109,37 @@ const renameAocUser = async (oldAocUser, newAocUser) => {
 };
 
 const renameAocUserRecord = async (oldAocUser, newAocUser) => {
-    const params = {
+    // Get the old item
+    const getParams = {
         TableName: DB_TABLE,
         Key: {
             id: { S: 'aoc_user' },
-            sk: { S: ':old_aoc_user' }
-        },
-        UpdateExpression: 'SET sk=:new_aoc_user, aoc_user=:new_aoc_user',
-        ExpressionAttributeValues: {
-            ':old_aoc_user': { S: oldAocUser },
-            ':new_aoc_user': { S: newAocUser }
-        },
-        ReturnValues: 'ALL_NEW'
+            sk: { S: oldAocUser }
+        }
     };
 
-    const data = await db.updateItem(params);
-    console.log(`renameAocUserRecord: done, telegram_user ${data.Attributes.telegram_user.N}`);
-
-    if (data.Attributes?.telegram_user?.N === undefined) {
+    const items = await db.getItem(getParams);
+    if (items?.Item === undefined) {
         return undefined;
     }
-    return Number(data.Attributes.telegram_user.N);
+
+    // Create a new item
+    const putParams = {
+        Item: {
+            ...items.Item,
+            sk: { S: newAocUser },
+            aoc_user: { S: newAocUser }
+        },
+        TableName: DB_TABLE
+    };
+
+    await db.putItem(putParams);
+
+    // TODO we should also delete the old item, but make sure the new one was successfully created first
+
+    console.log(`renameAocUserRecord: done, telegram_user ${items.Item.telegram_user.N}`);
+
+    return Number(items.Item.telegram_user.N);
 };
 
 const renameTelegramUserRecord = async (telegramUser, newAocUser) => {
@@ -137,11 +147,10 @@ const renameTelegramUserRecord = async (telegramUser, newAocUser) => {
         TableName: DB_TABLE,
         Key: {
             id: { S: 'telegram_user' },
-            sk: { S: ':telegram_user' }
+            sk: { S: String(telegramUser) }
         },
         UpdateExpression: 'SET aoc_user=:new_aoc_user',
         ExpressionAttributeValues: {
-            ':telegram_user': { S: String(telegramUser) },
             ':new_aoc_user': { S: newAocUser }
         },
         ReturnValues: 'ALL_OLD'
@@ -159,7 +168,10 @@ const renameStartTimeRecords = async (oldAocUser, newAocUser) => {
     const commonParams = {
         TableName: DB_TABLE,
         KeyConditionExpression: 'id = :id',
-        FilterExpression: 'name = :old_aoc_user',
+        FilterExpression: '#name = :old_aoc_user',
+        ExpressionAttributeNames: {
+            '#name': 'name'
+        },
         ExpressionAttributeValues: {
             ':id': { S: 'start_time' },
             ':old_aoc_user': { S: oldAocUser }
@@ -177,7 +189,7 @@ const renameStartTimeRecords = async (oldAocUser, newAocUser) => {
         data = await db.query(params);
 
         for (const item of data.Items) {
-            await renameOneStartTimeRecord(item.sk.S, newAocUser);
+            await renameOneStartTimeRecord(item, newAocUser);
             startTimeCount++;
         }
     }
@@ -185,25 +197,23 @@ const renameStartTimeRecords = async (oldAocUser, newAocUser) => {
     console.log(`renameStartTimeRecords: done, processed ${startTimeCount} start_time records`);
 };
 
-const renameOneStartTimeRecord = async (oldSk, newAocUser) => {
+const renameOneStartTimeRecord = async (item, newAocUser) => {
     // Replace last component of the sk value
-    const newSk = oldSk.split(':').with(-1, newAocUser).join(':');
+    const newSk = item.sk.S.split(':').with(-1, newAocUser).join(':');
 
-    const params = {
-        TableName: DB_TABLE,
-        Key: {
-            id: { S: 'start_time' },
-            sk: { S: ':old_sk' }
+    // Create a new item
+    const putParams = {
+        Item: {
+            ...item,
+            sk: { S: newSk },
+            name: { S: newAocUser }
         },
-        UpdateExpression: 'SET sk=:new_sk, name=:new_aoc_user',
-        ExpressionAttributeValues: {
-            ':old_sk': { S: oldSk },
-            ':new_sk': { S: newSk },
-            ':new_aoc_user': { S: newAocUser }
-        }
+        TableName: DB_TABLE
     };
 
-    await db.updateItem(params);
+    await db.putItem(putParams);
+
+    // TODO delete old item once putItem passes
 };
 
 exports.createUserData = createUserData;

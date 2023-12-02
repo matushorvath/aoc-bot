@@ -104,8 +104,12 @@ const onCommandUnreg = async (chat, telegramUser) => {
 const onCommandRename = async (chat, params) => {
     console.log(`onCommandRename: start, params '${params}'`);
 
+    // This command is undocumented
+    // /rename "Old Name" "New Name"
+    // You will need to manually delete old aoc_user and start_time records
+
     // Parse parameters
-    const m = params.match(/^"[^"]+"\s+"[^"]+"$/);
+    const m = params.match(/^"([^"]+)"\s+"([^"]+)"$/);
     if (!m) {
         console.log(`onCommandRename: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
