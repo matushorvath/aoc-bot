@@ -282,6 +282,54 @@ Person With A V… \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\
 \`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
     });
 
-    // TODO start times that exist but don't include current year
-    // TODO long name
+    test('sorts with startTimes', async () => {
+        const leaderboard = {
+            members: {
+                '111': {
+                    name: 'P1 No Plugin',
+                    completion_day_level: {
+                        '5': { '1': { get_star_ts: 1638684500 } }
+                    }
+                },
+                '222': {
+                    name: 'P1 With Plugin',
+                    completion_day_level: {
+                        '5': { '1': { get_star_ts: 1638684501 } }
+                    }
+                },
+                '333': {
+                    name: 'P2 No Plugin',
+                    completion_day_level: {
+                        '5': { '1': { get_star_ts: 1638684502 }, '2': { get_star_ts: 1638684512 } }
+                    }
+                },
+                '444': {
+                    name: 'P2 With Plugin',
+                    completion_day_level: {
+                        '5': { '1': { get_star_ts: 1638684503 }, '2': { get_star_ts: 1638684513 } }
+                    }
+                },
+                '555': {
+                    name: 'Only Plugin',
+                    completion_day_level: {}
+                }
+            }
+        };
+
+        const startTimes = {
+            'Only Plugin': { '1': [1638683500] },
+            'P1 With Plugin': { '1': [1638683510] },
+            'P2 With Plugin': { '1': [1638683520], '2': [1638684510] }
+        };
+
+        expect(formatBoard(2021, 5, leaderboard, startTimes)).toEqual(`\`\`\`
+Deň  5 @  8d  7h ofic\\. part 1 a 2 \\(čas na p2\\) neoficiálne \\(čistý čas na p2\\)\\*
+  P2 With Plugin 01:08:23 01:08:33 \\(00:00:10\\) \\[00:16:23 00:16:33 \\(00:00:03\\)\\]
+    P2 No Plugin 01:08:22 01:08:32 \\(00:00:10\\)
+  P1 With Plugin 01:08:21 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[00:16:31 \\-\\-:\\-\\-:\\-\\-\\]
+    P1 No Plugin 01:08:20 \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\)
+     Only Plugin \\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\- \\(\\-\\-:\\-\\-:\\-\\-\\) \\[\\-\\-:\\-\\-:\\-\\- \\-\\-:\\-\\-:\\-\\-\\]
+\`\`\`
+\`\\* čistý čas zistený pluginom \`[https://github\\.com/TrePe0/aoc\\-plugin](https://github.com/TrePe0/aoc-plugin)`);
+    });
 });

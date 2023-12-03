@@ -6,7 +6,7 @@ const pluginUrl = 'https://github.com/TrePe0/aoc-plugin';
 const formatBoard = (year, day, leaderboard, startTimes) => {
     // Make an array of results for this day
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
-    const results = getResults(day, leaderboard, startTs, startTimes);
+    const results = sortResults(getResults(day, leaderboard, startTs, startTimes));
 
     const formattedDay = day.toString().padStart(2);
     const elapsed = formatDuration(Math.floor(Date.now() / 1000) - startTs);
@@ -56,19 +56,30 @@ const getResults = (day, leaderboard, startTs, startTimes) => {
             ots1: result.ts1 - startTs,
             ots2: result.ts2 - startTs,
             odiff: result.ts2 - result.ts1,
-            nts1: result.ts1 - result.start1,
-            nts2: result.ts2 - result.start1,
-            ndiff: result.ts2 - result.start2
+            nts1: result.start1 ? result.ts1 - result.start1 : undefined,
+            nts2: result.start1 ? result.ts2 - result.start1 : undefined,
+            ndiff: result.start2 ? result.ts2 - result.start2 : undefined
         }));
 
-    // Sort the results
+    return results;
+};
+
+const sortResults = (results) => {
     return results.toSorted((a, b) => {
-        if (a.ots2 !== b.ots2) {
-            return a.ots2 - b.ots2;
+        const ap2 = a.nts2 ?? a.ots2;
+        const bp2 = b.nts2 ?? b.ots2;
+
+        if (ap2 !== bp2) {
+            return ap2 - bp2;
         }
-        if (a.ots1 !== b.ots1) {
-            return a.ots1 - b.ots1;
+
+        const ap1 = a.nts1 ?? a.ots1;
+        const bp1 = b.nts1 ?? b.ots1;
+
+        if (ap1 !== bp1) {
+            return ap1 - bp1;
         }
+
         return a.name.localeCompare(b.name, LOCALE);
     });
 };
