@@ -39,7 +39,7 @@ Supported commands:
         Process leaderboards and invites for selected day
 
 
-/board \[today\|\<day\>\|\<year\> \<day\|\<day\> \<year\>
+/board \[today\|\<day\>\|\<year\> \<day\|\<day\> \<year\>\]
     Format and display a board for selected day\.
 
     /board
