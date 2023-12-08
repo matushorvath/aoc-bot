@@ -148,19 +148,19 @@ Resources:
           ResourcePath: "/*"
       AccessLogSetting:
         DestinationArn: !GetAtt AocBotApiLog.Arn
-        Format: |
+        Format: >
           {
-            "requestId":"$context.requestId",
-            "extendedRequestId":"$context.extendedRequestId",
-            "ip": "$context.identity.sourceIp",
-            "caller":"$context.identity.caller",
-            "user":"$context.identity.user",
-            "requestTime":"$context.requestTime",
-            "httpMethod":"$context.httpMethod",
-            "resourcePath":"$context.resourcePath",
-            "status":"$context.status",
-            "protocol":"$context.protocol",
-            "responseLength":"$context.responseLength"
+          "requestId": "$context.requestId",
+          "extendedRequestId": "$context.extendedRequestId",
+          "ip": "$context.identity.sourceIp",
+          "caller": "$context.identity.caller",
+          "user": "$context.identity.user",
+          "requestTime": "$context.requestTime",
+          "httpMethod": "$context.httpMethod",
+          "resourcePath": "$context.resourcePath",
+          "status": "$context.status",
+          "protocol": "$context.protocol",
+          "responseLength": "$context.responseLength"
           }
       DefinitionBody:
         openapi: "3.0.1"
