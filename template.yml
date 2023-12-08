@@ -146,6 +146,22 @@ Resources:
           LoggingLevel: INFO
           MetricsEnabled: false
           ResourcePath: "/*"
+      AccessLogSetting:
+        DestinationArn: !GetAtt AocBotApiLog.Arn
+        Format: |
+          {
+            "requestId":"$context.requestId",
+            "extendedRequestId":"$context.extendedRequestId",
+            "ip": "$context.identity.sourceIp",
+            "caller":"$context.identity.caller",
+            "user":"$context.identity.user",
+            "requestTime":"$context.requestTime",
+            "httpMethod":"$context.httpMethod",
+            "resourcePath":"$context.resourcePath",
+            "status":"$context.status",
+            "protocol":"$context.protocol",
+            "responseLength":"$context.responseLength"
+          }
       DefinitionBody:
         openapi: "3.0.1"
         info:
@@ -207,6 +223,12 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AocBotApiFunction
       Principal: apigateway.amazonaws.com
+
+  # Log group for API Gateway access logs
+  AocBotApiLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub API-Gateway-Access-Logs_${AocBotApi}
 
 # Output the API endpoint, to be used for Telegram registration
 Outputs:
