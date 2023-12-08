@@ -41,9 +41,6 @@ Resources:
             ParameterName: aoc-bot/telegram-secret
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/webhook-secret
-      Environment:
-        Variables:
-          AWS_SDK_LOAD_CONFIG: 1
 
   # API function to process HTTP requests
   AocBotApiFunction:
@@ -72,9 +69,6 @@ Resources:
             ParameterName: aoc-bot/telegram-secret
         - SSMParameterReadPolicy:
             ParameterName: aoc-bot/webhook-secret
-      Environment:
-        Variables:
-          AWS_SDK_LOAD_CONFIG: 1
 
   # Dynamo DB table to store all data
   AocBotTable:

@@ -6,91 +6,105 @@ const ssm = require('@aws-sdk/client-ssm');
 jest.mock('@aws-sdk/client-ssm');
 
 beforeEach(() => {
-    ssm.GetParametersCommand.mockReset();
+    ssm.GetParameterCommand.mockReset();
     ssm.SSMClient.prototype.send.mockReset();
 });
 
-const functions = [
-    ['getAdventOfCodeSecret', getAdventOfCodeSecret, 'aOcSeCrEt'],
-    ['getTelegramSecret', getTelegramSecret, 'tElEgRaMsEcReT'],
-    ['getWebhookSecret', getWebhookSecret, 'wEbHoOkSeCrEt']
-];
-
-describe.each(functions)('%s', (_description, getSecretFunction, result) => {
-    test('gets secrets first time', async () => {
+describe('getAdventOfCodeSecret', () => {
+    test('gets the secret from remote', async () => {
         resetCache();
 
-        const data = {
-            Parameters: [{
-                Name: '/aoc-bot/webhook-secret',
-                Value: 'wEbHoOkSeCrEt'
-            }, {
-                Name: '/aoc-bot/telegram-secret',
-                Value: 'tElEgRaMsEcReT'
-            }, {
-                Name: '/aoc-bot/advent-of-code-secret',
-                Value: 'aOcSeCrEt'
-            }]
-        };
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'aOcSeCrEt' } });
 
-        ssm.GetParametersCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
-        ssm.SSMClient.prototype.send.mockResolvedValueOnce(data);
+        await expect(getAdventOfCodeSecret()).resolves.toEqual('aOcSeCrEt');
 
-        await expect(getSecretFunction()).resolves.toEqual(result);
-
-        expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
-            WithDecryption: true
-        });
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/advent-of-code-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
     });
 
     test('gets secrets from cache', async () => {
-        await expect(getSecretFunction()).resolves.toEqual(result);
+        await expect(getAdventOfCodeSecret()).resolves.toEqual('aOcSeCrEt');
 
-        expect(ssm.GetParametersCommand).not.toHaveBeenCalled();
+        expect(ssm.GetParameterCommand).not.toHaveBeenCalled();
         expect(ssm.SSMClient.prototype.send).not.toHaveBeenCalled();
     });
 
-    test('fails with missing SSM', async () => {
+    test('fails with a SSM error', async () => {
         resetCache();
 
-        const data = {
-            Parameters: [{
-                Name: '/uNeXpEcTed',
-                Value: 'sEcReT'
-            }],
-            InvalidParameters: [
-                '/aoc-bot/telegram-secret',
-                '/aoc-bot/advent-of-code-secret',
-                '/aoc-bot/webhook-secret'
-            ]
-        };
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
-        ssm.GetParametersCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
-        ssm.SSMClient.prototype.send.mockResolvedValueOnce(data);
+        await expect(getAdventOfCodeSecret()).rejects.toThrow('sSmErRoR');
 
-        await expect(getSecretFunction()).rejects.toThrow(/getSecrets/);
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/advent-of-code-secret', WithDecryption: true });
+        expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
+    });
+});
 
-        expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
-            WithDecryption: true
-        });
+describe('getTelegramSecret', () => {
+    test('gets the secret from remote', async () => {
+        resetCache();
+
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'tElEgRaMsEcReT' } });
+
+        await expect(getTelegramSecret()).resolves.toEqual('tElEgRaMsEcReT');
+
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/telegram-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
     });
 
-    test('fails with AWS error', async () => {
+    test('gets secrets from cache', async () => {
+        await expect(getTelegramSecret()).resolves.toEqual('tElEgRaMsEcReT');
+
+        expect(ssm.GetParameterCommand).not.toHaveBeenCalled();
+        expect(ssm.SSMClient.prototype.send).not.toHaveBeenCalled();
+    });
+
+    test('fails with a SSM error', async () => {
         resetCache();
 
-        ssm.GetParametersCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
-        await expect(getSecretFunction()).rejects.toThrow('sSmErRoR');
+        await expect(getTelegramSecret()).rejects.toThrow('sSmErRoR');
 
-        expect(ssm.GetParametersCommand).toHaveBeenCalledWith({
-            Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
-            WithDecryption: true
-        });
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/telegram-secret', WithDecryption: true });
+        expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
+    });
+});
+
+describe('getWebhookSecret', () => {
+    test('gets the secret from remote', async () => {
+        resetCache();
+
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'wEbHoOkSeCrEt' } });
+
+        await expect(getWebhookSecret()).resolves.toEqual('wEbHoOkSeCrEt');
+
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/webhook-secret', WithDecryption: true });
+        expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
+    });
+
+    test('gets secrets from cache', async () => {
+        await expect(getWebhookSecret()).resolves.toEqual('wEbHoOkSeCrEt');
+
+        expect(ssm.GetParameterCommand).not.toHaveBeenCalled();
+        expect(ssm.SSMClient.prototype.send).not.toHaveBeenCalled();
+    });
+
+    test('fails with a SSM error', async () => {
+        resetCache();
+
+        ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
+        ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
+
+        await expect(getWebhookSecret()).rejects.toThrow('sSmErRoR');
+
+        expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/webhook-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
     });
 });

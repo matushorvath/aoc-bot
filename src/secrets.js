@@ -1,6 +1,6 @@
 'use strict';
 
-const { SSMClient, GetParametersCommand } = require('@aws-sdk/client-ssm');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 
 const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 
@@ -8,44 +8,34 @@ let adventOfCodeSecret;
 let telegramSecret;
 let webhookSecret;
 
-const getSecrets = async () => {
-    console.log('getSecrets: start');
+const getSecret = async (name) => {
+    console.log(`getSecret: start, name ${name}`);
 
-    const params = {
-        Names: ['/aoc-bot/advent-of-code-secret', '/aoc-bot/telegram-secret', '/aoc-bot/webhook-secret'],
-        WithDecryption: true
-    };
-    const command = new GetParametersCommand(params);
+    const params = { Name: `/aoc-bot/${name}`, WithDecryption: true };
+    const result = await ssm.send(new GetParameterCommand(params));
 
-    const result = await ssm.send(command);
-    if (result.InvalidParameters?.length) {
-        throw new Error(`getSecrets: Invalid parameters: ${JSON.stringify(result.InvalidParameters)}`);
-    }
+    console.log('getSecret: done');
 
-    adventOfCodeSecret = result.Parameters.find(p => p.Name === '/aoc-bot/advent-of-code-secret').Value;
-    telegramSecret = result.Parameters.find(p => p.Name === '/aoc-bot/telegram-secret').Value;
-    webhookSecret = result.Parameters.find(p => p.Name === '/aoc-bot/webhook-secret').Value;
-
-    console.log('getSecrets: done');
+    return result.Parameter.Value;
 };
 
 const getAdventOfCodeSecret = async () => {
     if (adventOfCodeSecret === undefined) {
-        await getSecrets();
+        adventOfCodeSecret = await getSecret('advent-of-code-secret');
     }
     return adventOfCodeSecret;
 };
 
 const getTelegramSecret = async () => {
     if (telegramSecret === undefined) {
-        await getSecrets();
+        telegramSecret = await getSecret('telegram-secret');
     }
     return telegramSecret;
 };
 
 const getWebhookSecret = async () => {
     if (webhookSecret === undefined) {
-        await getSecrets();
+        webhookSecret = await getSecret('webhook-secret');
     }
     return webhookSecret;
 };
