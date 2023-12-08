@@ -17,12 +17,17 @@ jest.mock('../src/years');
 const logs = require('../src/logs');
 jest.mock('../src/logs');
 
+const secrets = require('../src/secrets');
+jest.mock('../src/secrets');
+
 beforeEach(() => {
     network.getLeaderboard.mockReset();
     invites.processInvites.mockReset();
     boardPublish.publishBoards.mockReset();
     years.getYears.mockReset();
     logs.logActivity.mockReset();
+    secrets.getAdventOfCodeSecret.mockReset();
+    secrets.getTelegramSecret.mockReset();
 });
 
 describe('onStop', () => {

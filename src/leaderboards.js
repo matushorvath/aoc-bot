@@ -5,6 +5,7 @@ const { getLeaderboard } = require('./network');
 const { publishBoards } = require('./publish');
 const { getYears } = require('./years');
 const { logActivity } = require('./logs');
+const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
 
 const handler = async () => {
     console.log('handler: start');
@@ -28,6 +29,10 @@ const updateLeaderboards = async (selection = {}) => {
     console.log(`updateLeaderboards: start, selection ${JSON.stringify(selection)}`);
 
     const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
+
+    // Pre-load these secrets, otherwise they get loaded multiple times inside the
+    // Promise.all calls below. This reduces KMS costs used by decrypting the SSM parameters.
+    await Promise.all([getAdventOfCodeSecret(), getTelegramSecret()]);
 
     let years = await selectYears(selection);
     if (years.length === 0) {
