@@ -1,7 +1,5 @@
 'use strict';
 
-/* eslint-disable max-len */
-
 const { formatBoard } = require('../src/board');
 const fsp = require('fs/promises');
 
