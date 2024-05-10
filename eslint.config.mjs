@@ -22,13 +22,14 @@ export default [
         rules: {
             'comma-dangle': 'error',
             'indent': ['error', 4],
-            'max-len': ['error', 120, { 'ignoreStrings': true, 'ignoreTemplateLiterals': true }],
-            'no-multi-spaces': ['error', { 'ignoreEOLComments': true }],
+            'max-len': ['error', 120, { ignoreStrings: true, ignoreTemplateLiterals: true }],
+            'no-constant-condition': ['error', { checkLoops: false }],
+            'no-multi-spaces': ['error', { ignoreEOLComments: true }],
             'no-multiple-empty-lines': 'error',
             'no-shadow': 'error',
-            'no-unused-vars': ['error', { 'varsIgnorePattern': '^_', 'argsIgnorePattern': '^_' }],
+            'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
             'object-curly-spacing': ['error', 'always'],
-            'quotes': ['error', 'single', { 'avoidEscape': true }],
+            'quotes': ['error', 'single', { avoidEscape: true }],
             'semi': 'error',
             'strict': 'error'
         }
