@@ -6,6 +6,7 @@ const path = require('path');
 const util = require('util');
 const os = require('os');
 
+const randomBytesAsync = util.promisify(crypto.randomBytes);
 const pbkdf2Async = util.promisify(crypto.pbkdf2);
 
 const createTelegramDatabase = async () => {
@@ -26,7 +27,7 @@ const loadTelegramDatabase = async (aesKey) => {
     const encryptedName = path.join(__dirname, 'td.binlog.aes');
     const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
-    // Create the td.binlog unless it already exists
+    // Create td.binlog unless it already exists
     let decryptedHandle;
     try {
         decryptedHandle = await fs.open(decryptedName, 'wx', 0o644);
@@ -50,9 +51,24 @@ const loadTelegramDatabase = async (aesKey) => {
     return { databaseDirectory, filesDirectory };
 };
 
-const decryptDatabase = async (encrypted, aesKey) => {
-    console.log('decryptDatabase: start');
+const saveTelegramDatabase = async (databaseDirectory, aesKey) => {
+    const encryptedName = path.join(__dirname, 'td.binlog.aes');
+    const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
+    // Encrypt td.binlog.aes
+    let encryptedHandle = await fs.open(encryptedName, 'w', 0o644);
+
+    try {
+        const decrypted = await fs.readFile(decryptedName);
+        const encrypted = await encryptDatabase(decrypted, aesKey);
+
+        await encryptedHandle.writeFile(encrypted);
+    } finally {
+        await encryptedHandle.close();
+    }
+};
+
+const decryptDatabase = async (encrypted, aesKey) => {
     const salt = encrypted.subarray(8, 16);
     const input = encrypted.subarray(16);
 
@@ -65,12 +81,27 @@ const decryptDatabase = async (encrypted, aesKey) => {
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     const decrypted = Buffer.concat([decipher.update(input), decipher.final()]);
 
-    console.log('decryptDatabase: done');
-
     return decrypted;
 };
 
+const encryptDatabase = async (decrypted, aesKey) => {
+    const salt = await randomBytesAsync(8);
+
+    const info = crypto.getCipherInfo('aes-256-cbc');
+    const keyIv = await pbkdf2Async(aesKey, salt, 10000, info.keyLength + info.ivLength, 'sha256');
+
+    const key = keyIv.subarray(0, info.keyLength);
+    const iv = keyIv.subarray(info.keyLength);
+
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    const encrypted = Buffer.concat([Buffer.from('Salted__', 'ascii'), salt, cipher.update(decrypted), cipher.final()]);
+
+    return encrypted;
+};
+
+
 module.exports = {
     createTelegramDatabase,
-    loadTelegramDatabase
+    loadTelegramDatabase,
+    saveTelegramDatabase
 };

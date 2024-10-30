@@ -2,18 +2,18 @@
 
 const { TelegramClient } = require('./telegram-client');
 const { loadTelegramCredentials } = require('./telegram-credentials');
-const { createTelegramDatabase } = require('./telegram-database');
+const { createTelegramDatabase, saveTelegramDatabase } = require('./telegram-database');
 
 const main = async () => {
-    const { apiId, apiHash/*, aesKey*/ } = await loadTelegramCredentials();
+    const { apiId, apiHash, aesKey } = await loadTelegramCredentials();
     const { databaseDirectory, filesDirectory } = await createTelegramDatabase();
 
     const client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
 
-    //await client.init();
     await client.interactiveLogin();
-
     await client.close();
+
+    await saveTelegramDatabase(databaseDirectory, aesKey);
 };
 
 main().catch(console.error);
