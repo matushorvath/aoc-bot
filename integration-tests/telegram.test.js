@@ -8,10 +8,8 @@
 // - somehow test sending invites
 
 const { TelegramClient } = require('./telegram-client');
-
-const yaml = require('yaml');
-const fs = require('fs/promises');
-const path = require('path');
+const { loadTelegramCredentials } = require('./telegram-credentials');
+const { loadTelegramDatabase } = require('./telegram-database');
 
 jest.setTimeout(90 * 1000);
 
@@ -19,20 +17,12 @@ jest.setTimeout(90 * 1000);
 const botUserId = 5071613978;
 const testChatId = -1001842149447;      // id of the 'AoC 1980 Day 13' test chat
 
-const loadCredentials = async () => {
-    try {
-        return yaml.parse(await fs.readFile(path.join(__dirname, 'credentials.yaml'), 'utf-8'));
-    } catch (e) {
-        console.error('You need to create credentials.yaml using credentials.yaml.template');
-        throw e;
-    }
-};
-
 let client;
 
 beforeAll(async () => {
-    const { apiId, apiHash, aesKey } = await loadCredentials();
-    client = new TelegramClient(apiId, apiHash, aesKey);
+    const { apiId, apiHash, aesKey } = await loadTelegramCredentials();
+    const { databaseDirectory, filesDirectory } = await loadTelegramDatabase(aesKey);
+    client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
 
     try {
         await client.init();

@@ -1,35 +1,28 @@
 'use strict';
 
+// TODO
+// - use client.iterUpdates() instead of client.on('update', ...)
+
 const tdl = require('tdl');
 const { getTdjson } = require('prebuilt-tdlib');
-
-const crypto = require ('crypto');
-const fs = require('fs/promises');
-const path = require('path');
-const util = require('util');
-const os = require('os');
-
 const { setTimeout } = require('timers/promises');
-
-const pbkdf2Async = util.promisify(crypto.pbkdf2);
 
 tdl.configure({ tdjson: getTdjson() });
 
 class TelegramClient {
-    constructor(apiId, apiHash, aesKey) {
+    constructor(apiId, apiHash, databaseDirectory, filesDirectory) {
         this.apiId = apiId;
         this.apiHash = apiHash;
-        this.aesKey = aesKey;
+        this.databaseDirectory = databaseDirectory;
+        this.filesDirectory = filesDirectory;
     }
 
     async init() {
-        const { databaseDirectory, filesDirectory } = await this.prepareDatabase();
-
         const options = {
             apiId: this.apiId,
             apiHash: this.apiHash,
-            databaseDirectory,
-            filesDirectory,
+            databaseDirectory: this.databaseDirectory,
+            filesDirectory: this.filesDirectory,
             skipOldUpdates: true
         };
 
@@ -50,62 +43,6 @@ class TelegramClient {
         if (this.client) {
             await this.client.close();
         }
-    }
-
-    async prepareDatabase() {
-        const tmpDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'aoc-bot-tdlib-'));
-
-        const databaseDirectory = path.join(tmpDirectory, '_td_database');
-        await fs.mkdir(databaseDirectory, { recursive: true });
-
-        const filesDirectory = path.join(tmpDirectory, '_td_files');
-        await fs.mkdir(filesDirectory, { recursive: true });
-
-        const encryptedName = path.join(__dirname, 'td.binlog.aes');
-        const decryptedName = path.join(databaseDirectory, 'td.binlog');
-
-        // Create the td.binlog unless it already exists
-        let decryptedHandle;
-        try {
-            decryptedHandle = await fs.open(decryptedName, 'wx', 0o644);
-        } catch (error) {
-            if (error.code === 'EEXIST') {
-                return;
-            }
-            throw error;
-        }
-
-        // Decrypt the file and write it out
-        try {
-            const encrypted = await fs.readFile(encryptedName);
-            const decrypted = await this.decryptDatabase(encrypted);
-
-            await decryptedHandle.writeFile(decrypted);
-        } finally {
-            await decryptedHandle.close();
-        }
-
-        return { databaseDirectory, filesDirectory };
-    }
-
-    async decryptDatabase(encrypted) {
-        console.log('decryptDatabase: start');
-
-        const salt = encrypted.subarray(8, 16);
-        const input = encrypted.subarray(16);
-
-        const info = crypto.getCipherInfo('aes-256-cbc');
-        const keyIv = await pbkdf2Async(this.aesKey, salt, 10000, info.keyLength + info.ivLength, 'sha256');
-
-        const key = keyIv.subarray(0, info.keyLength);
-        const iv = keyIv.subarray(info.keyLength);
-
-        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-        const decrypted = Buffer.concat([decipher.update(input), decipher.final()]);
-
-        console.log('decryptDatabase: done');
-
-        return decrypted;
     }
 
     async clientInvoke(...params) {
@@ -137,7 +74,7 @@ class TelegramClient {
         let onUpdate;
         return new Promise(resolve => {
             onUpdate = (update) => {
-                // console.debug(JSON.stringify(update, undefined, 2));
+                console.debug(JSON.stringify(update, undefined, 2)); // TODO comment out
                 if (filter(update)) {
                     updates.push(update);
                 }
