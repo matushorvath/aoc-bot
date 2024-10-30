@@ -19,7 +19,7 @@ class TelegramClient {
 
         this.client = tdl.createClient(options);
 
-        this.client.on('update', (update) => { console.debug(JSON.stringify(update, undefined, 2)); }); // TODO remove
+        //this.client.on('update', (update) => { console.debug(JSON.stringify(update, undefined, 2)); }); // TODO remove
         this.client.on('error', console.error);
     }
 
@@ -49,10 +49,12 @@ class TelegramClient {
         }
     }
 
+    async interactiveLogin() {
+        await this.client.login();
+    }
+
     async close() {
-        if (this.client) {
-            await this.client.close();
-        }
+        await this.client.close();
     }
 
     async clientInvoke(...params) {
