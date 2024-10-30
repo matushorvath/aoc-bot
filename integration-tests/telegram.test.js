@@ -25,7 +25,7 @@ beforeAll(async () => {
     client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
 
     try {
-        await client.login();
+        await client.init();
     } catch (e) {
         await client.close();
         throw e;

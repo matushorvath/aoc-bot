@@ -18,34 +18,35 @@ class TelegramClient {
         };
 
         this.client = tdl.createClient(options);
+
+        this.client.on('update', (update) => { console.debug(JSON.stringify(update, undefined, 2)); }); // TODO remove
         this.client.on('error', console.error);
     }
 
-    async login() {
+    async init() {
+        // Wait for both connection and authorization ready, or for a request for interaction
         let authorized, connected;
 
-        const connectionReadyFilter = (update) => {
-            if (update?._ === 'updateAuthorizationState') {
-                authorized = update?.authorization_state?._ === 'authorizationStateReady';
+        for await (const update of this.client.iterUpdates()) {
+            if (update._ === 'updateAuthorizationState') {
+                authorized = update.authorization_state._ === 'authorizationStateReady';
 
-                if (update?.authorization_state?._ === 'authorizationStateClosed') {
+                if (update.authorization_state._ === 'authorizationStateClosed') {
                     throw new Error('authorization failed');
-                } else if (update?.authorization_state?._.startsWith('authorizationStateWait') &&
-                        update?.authorization_state?._ !== 'authorizationStateWaitTdlibParameters') {
-                    throw new Error(`authorization is interactive (${update?.state?._})`);
+                } else if (update.authorization_state._.startsWith('authorizationStateWait') &&
+                        update.authorization_state._ !== 'authorizationStateWaitTdlibParameters') {
+                    throw new Error(`authorization is interactive (${update.authorization_state._})`);
                 }
             }
 
-            if (update?._ === 'updateConnectionState') {
-                connected = update?.state?._ === 'connectionStateReady';
+            if (update._ === 'updateConnectionState') {
+                connected = update.state._ === 'connectionStateReady';
             }
 
-            return authorized && connected;
-        };
-        const connectionReadyPromise = this.waitForUpdates(connectionReadyFilter);
-
-        await this.client.login();
-        await connectionReadyPromise;
+            if (authorized && connected) {
+                return;
+            }
+        }
     }
 
     async close() {
