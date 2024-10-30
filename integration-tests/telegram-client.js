@@ -11,27 +11,36 @@ tdl.configure({ tdjson: getTdjson() });
 
 class TelegramClient {
     constructor(apiId, apiHash, databaseDirectory, filesDirectory) {
-        this.apiId = apiId;
-        this.apiHash = apiHash;
-        this.databaseDirectory = databaseDirectory;
-        this.filesDirectory = filesDirectory;
-    }
-
-    async init() {
         const options = {
-            apiId: this.apiId,
-            apiHash: this.apiHash,
-            databaseDirectory: this.databaseDirectory,
-            filesDirectory: this.filesDirectory,
+            apiId, apiHash,
+            databaseDirectory, filesDirectory,
             skipOldUpdates: true
         };
 
         this.client = tdl.createClient(options);
         this.client.on('error', console.error);
+    }
+
+    async login() {
+        let authorized, connected;
 
         const connectionReadyFilter = (update) => {
-            return update?._ === 'updateConnectionState'
-                && update?.state?._ === 'connectionStateReady';
+            if (update?._ === 'updateAuthorizationState') {
+                authorized = update?.authorization_state?._ === 'authorizationStateReady';
+
+                if (update?.authorization_state?._ === 'authorizationStateClosed') {
+                    throw new Error('authorization failed');
+                } else if (update?.authorization_state?._.startsWith('authorizationStateWait') &&
+                        update?.authorization_state?._ !== 'authorizationStateWaitTdlibParameters') {
+                    throw new Error(`authorization is interactive (${update?.state?._})`);
+                }
+            }
+
+            if (update?._ === 'updateConnectionState') {
+                connected = update?.state?._ === 'connectionStateReady';
+            }
+
+            return authorized && connected;
         };
         const connectionReadyPromise = this.waitForUpdates(connectionReadyFilter);
 
@@ -72,11 +81,15 @@ class TelegramClient {
         const updates = [];
 
         let onUpdate;
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             onUpdate = (update) => {
-                console.debug(JSON.stringify(update, undefined, 2)); // TODO comment out
-                if (filter(update)) {
-                    updates.push(update);
+                try {
+                    console.debug(JSON.stringify(update, undefined, 2)); // TODO comment out
+                    if (filter(update)) {
+                        updates.push(update);
+                    }
+                } catch (error) {
+                    reject(error);
                 }
                 if (updates.length >= count) {
                     resolve(updates);
