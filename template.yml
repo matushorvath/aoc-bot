@@ -89,6 +89,39 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
 
+  # Dynamo DB backup plan
+  AocBotBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: AocBotBackupPlan
+        BackupPlanRule:
+          - RuleName: AocBotDecemberRule
+            TargetBackupVault: Default
+            ScheduleExpression: "cron(0 4 * DEC ? *)" # every day at 4:00am, only in December
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              DeleteAfterDays: 35
+          - RuleName: AocBotNotDecemberRule
+            TargetBackupVault: Default
+            ScheduleExpression: "cron(0 4 ? JAN-NOV 1 *)" # every week on Sunday 4:00am, January through November
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              DeleteAfterDays: 400
+
+  # Select resources for the backup plan
+  AocBotBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref AocBotBackupPlan
+      BackupSelection:
+        SelectionName: AocBotTableBackupSelection
+        IamRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AWSBackupDefaultServiceRole
+        Resources:
+          - !GetAtt AocBotTable.Arn
+
   # Rule to regularly trigger AocBotScheduleFunction in December
   AocBotDecemberRule:
     Type: AWS::Events::Rule
