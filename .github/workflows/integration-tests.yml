@@ -1,7 +1,13 @@
 name: Integration Tests
 
 on:
-  deployment_status:
+  workflow_run:
+    workflows:
+      - Test and Deploy
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency: integration-tests
@@ -10,8 +16,6 @@ jobs:
   test:
     name: Integration Tests
     runs-on: ubuntu-22.04
-
-    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
 
     steps:
       - name: Checkout sources
