@@ -77,21 +77,8 @@ class TelegramClient {
         }
     }
 
-    async waitForUpdates(filter, count = 1) {
-        const updates = [];
-
-        for await (const update of this.client.iterUpdates()) {
-            if (filter(update)) {
-                updates.push(update);
-            }
-
-            if (updates.length >= count) {
-                return updates;
-            }
-        }
-    }
-
     async sendMessage(userId, text, responseCount = 1) {
+        // Find the private chat with this bot
         const chat = await this.clientInvoke({
             _: 'createPrivateChat',
             user_id: userId
@@ -101,6 +88,7 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
         }
 
+        // Send the message to the chat
         const message = await this.clientInvoke({
             _: 'sendMessage',
             chat_id: chat.id,
@@ -117,15 +105,29 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(message)}`);
         }
 
-        const messageFromBotFilter = (update) => {
-            return update?._ === 'updateNewMessage'
+        const responses = await this.receiveResponse(userId, chat.id, responseCount);
+        return responses.map(response => response?.content?.text?.text);
+    }
+
+    async receiveResponse(userId, chatId, responseCount) {
+        const responses = [];
+
+        for await (const update of this.client.iterUpdates()) {
+            const isResponse = update?._ === 'updateNewMessage'
                 && update?.message?.sender_id?._ === 'messageSenderUser'
                 && update?.message?.sender_id?.user_id === userId
-                && update?.message?.chat_id === chat.id;
-        };
-        const updates = await this.waitForUpdates(messageFromBotFilter, responseCount);
+                && update?.message?.chat_id === chatId;
 
-        return updates.map(update => update?.message?.content?.text?.text);
+            if (isResponse) {
+                responses.push(update?.message);
+
+                if (responses.length >= responseCount) {
+                    return responses;
+                }
+            }
+        }
+
+        return responses;
     }
 
     async addChatMember(userId, chatId) {

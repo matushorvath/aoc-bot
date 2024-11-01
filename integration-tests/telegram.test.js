@@ -122,34 +122,22 @@ describe('chat membership', () => {
         });
 
         test('promote the bot to administrator', async () => {
-            // Start receiving bot messages
-            const filter = update =>
-                update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === botUserId
-                && update?.message?.chat_id === testChatId;
-            const updatesPromise = client.waitForUpdates(filter, 2);
-
             // Expect the bot to promoted to administrator
             await expect(client.setMemberStatusAdministrator(botUserId, testChatId)).resolves.toBeUndefined();
 
             // Expect the bot to update the chat
-            await expect(updatesPromise).resolves.toMatchObject([{
-                message: {
-                    content: {
-                        _: 'messageChatChangePhoto',
-                        photo: {
-                            _: 'chatPhoto'
-                        }
+            await expect(client.receiveResponse(botUserId, testChatId, 2)).resolves.toMatchObject([{
+                content: {
+                    _: 'messageChatChangePhoto',
+                    photo: {
+                        _: 'chatPhoto'
                     }
                 }
             }, {
-                message: {
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            text: '@AocElfBot is online, AoC 1980 Day 13'
-                        }
+                content: {
+                    _: 'messageText',
+                    text: {
+                        text: '@AocElfBot is online, AoC 1980 Day 13'
                     }
                 }
             }]);
