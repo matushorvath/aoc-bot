@@ -2,110 +2,56 @@
 
 const tdl = require('tdl');
 const { getTdjson } = require('prebuilt-tdlib');
-
-const crypto = require ('crypto');
-const fs = require('fs/promises');
-const path = require('path');
-const util = require('util');
-const os = require('os');
-
 const { setTimeout } = require('timers/promises');
-
-const pbkdf2Async = util.promisify(crypto.pbkdf2);
 
 tdl.configure({ tdjson: getTdjson() });
 
 class TelegramClient {
-    constructor(apiId, apiHash, aesKey) {
-        this.apiId = apiId;
-        this.apiHash = apiHash;
-        this.aesKey = aesKey;
-    }
-
-    async init() {
-        const { databaseDirectory, filesDirectory } = await this.prepareDatabase();
-
+    constructor(apiId, apiHash, databaseDirectory, filesDirectory) {
         const options = {
-            apiId: this.apiId,
-            apiHash: this.apiHash,
-            databaseDirectory,
-            filesDirectory,
+            apiId, apiHash,
+            databaseDirectory, filesDirectory,
             skipOldUpdates: true
         };
 
         this.client = tdl.createClient(options);
+
+        //this.client.on('update', (update) => { console.debug(JSON.stringify(update, undefined, 2)); }); // TODO remove
         this.client.on('error', console.error);
+    }
 
-        const connectionReadyFilter = (update) => {
-            return update?._ === 'updateConnectionState'
-                && update?.state?._ === 'connectionStateReady';
-        };
-        const connectionReadyPromise = this.waitForUpdates(connectionReadyFilter);
+    async init() {
+        // Wait for both connection and authorization ready, or for a request for interaction
+        let authorized, connected;
 
+        for await (const update of this.client.iterUpdates()) {
+            if (update._ === 'updateAuthorizationState') {
+                authorized = update.authorization_state._ === 'authorizationStateReady';
+
+                if (update.authorization_state._ === 'authorizationStateClosed') {
+                    throw new Error('authorization failed');
+                } else if (update.authorization_state._.startsWith('authorizationStateWait') &&
+                        update.authorization_state._ !== 'authorizationStateWaitTdlibParameters') {
+                    throw new Error(`authorization is interactive (${update.authorization_state._})`);
+                }
+            }
+
+            if (update._ === 'updateConnectionState') {
+                connected = update.state._ === 'connectionStateReady';
+            }
+
+            if (authorized && connected) {
+                return;
+            }
+        }
+    }
+
+    async interactiveLogin() {
         await this.client.login();
-        await connectionReadyPromise;
     }
 
     async close() {
-        if (this.client) {
-            await this.client.close();
-        }
-    }
-
-    async prepareDatabase() {
-        const tmpDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'aoc-bot-tdlib-'));
-
-        const databaseDirectory = path.join(tmpDirectory, '_td_database');
-        await fs.mkdir(databaseDirectory, { recursive: true });
-
-        const filesDirectory = path.join(tmpDirectory, '_td_files');
-        await fs.mkdir(filesDirectory, { recursive: true });
-
-        const encryptedName = path.join(__dirname, 'td.binlog.aes');
-        const decryptedName = path.join(databaseDirectory, 'td.binlog');
-
-        // Create the td.binlog unless it already exists
-        let decryptedHandle;
-        try {
-            decryptedHandle = await fs.open(decryptedName, 'wx', 0o644);
-        } catch (error) {
-            if (error.code === 'EEXIST') {
-                return;
-            }
-            throw error;
-        }
-
-        // Decrypt the file and write it out
-        try {
-            const encrypted = await fs.readFile(encryptedName);
-            const decrypted = await this.decryptDatabase(encrypted);
-
-            await decryptedHandle.writeFile(decrypted);
-        } finally {
-            await decryptedHandle.close();
-        }
-
-        return { databaseDirectory, filesDirectory };
-    }
-
-    async decryptDatabase(encrypted) {
-        console.log('decryptDatabase: start');
-
-        const salt = encrypted.subarray(8, 16);
-        const input = encrypted.subarray(16);
-
-        const info = crypto.getCipherInfo('aes-256-cbc');
-        const keyIv = await pbkdf2Async(this.aesKey, salt, 10000, info.keyLength + info.ivLength, 'sha256');
-
-        const key = keyIv.subarray(0, info.keyLength);
-        const iv = keyIv.subarray(info.keyLength);
-
-        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-        const decrypted = Buffer.concat([decipher.update(input), decipher.final()]);
-
-        console.log('decryptDatabase: done');
-
-        return decrypted;
+        await this.client.close();
     }
 
     async clientInvoke(...params) {
@@ -131,27 +77,8 @@ class TelegramClient {
         }
     }
 
-    async waitForUpdates(filter, count = 1) {
-        const updates = [];
-
-        let onUpdate;
-        return new Promise(resolve => {
-            onUpdate = (update) => {
-                // console.debug(JSON.stringify(update, undefined, 2));
-                if (filter(update)) {
-                    updates.push(update);
-                }
-                if (updates.length >= count) {
-                    resolve(updates);
-                }
-            };
-            this.client.on('update', onUpdate);
-        }).finally(() => {
-            this.client.off('update', onUpdate);
-        });
-    }
-
     async sendMessage(userId, text, responseCount = 1) {
+        // Find the private chat with this bot
         const chat = await this.clientInvoke({
             _: 'createPrivateChat',
             user_id: userId
@@ -161,14 +88,7 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
         }
 
-        const messageFromBotFilter = (update) => {
-            return update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === userId
-                && update?.message?.chat_id === chat.id;
-        };
-        const updatesPromise = this.waitForUpdates(messageFromBotFilter, responseCount);
-
+        // Send the message to the chat
         const message = await this.clientInvoke({
             _: 'sendMessage',
             chat_id: chat.id,
@@ -185,18 +105,40 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(message)}`);
         }
 
-        return (await updatesPromise).map(update => update?.message?.content?.text?.text);
+        const responses = await this.receiveResponse(userId, chat.id, responseCount);
+        return responses.map(response => response?.content?.text?.text);
+    }
+
+    async receiveResponse(userId, chatId, responseCount) {
+        const responses = [];
+
+        for await (const update of this.client.iterUpdates()) {
+            const isResponse = update?._ === 'updateNewMessage'
+                && update?.message?.sender_id?._ === 'messageSenderUser'
+                && update?.message?.sender_id?.user_id === userId
+                && update?.message?.chat_id === chatId;
+
+            if (isResponse) {
+                responses.push(update?.message);
+
+                if (responses.length >= responseCount) {
+                    return responses;
+                }
+            }
+        }
+
+        return responses;
     }
 
     async addChatMember(userId, chatId) {
-        const status = await this.clientInvoke({
+        const failed = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
         });
 
-        if (status?._ !== 'ok') {
-            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        if (failed?._ !== 'failedToAddMembers' || failed?.failed_to_add_members.length !== 0) {
+            throw new Error(`Invalid response: ${JSON.stringify(failed)}`);
         }
     }
 
@@ -298,6 +240,40 @@ class TelegramClient {
 
         if (status?._ !== 'ok') {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async getContacts() {
+        const users = await this.clientInvoke({
+            _: 'getContacts'
+        });
+
+        if (users?._ !== 'users') {
+            throw new Error(`Invalid response: ${JSON.stringify(users)}`);
+        }
+
+        return users;
+    }
+
+    async loadChats() {
+        try {
+            while (true) {
+                const status = await this.clientInvoke({
+                    _: 'loadChats',
+                    limit: 1000
+                });
+
+                if (status?._ !== 'ok') {
+                    throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+                }
+            }
+        } catch (error) {
+            // Receiving a 404 means all chats have been loaded
+            if (error._ === 'error' && error.code === 404) {
+                return;
+            }
+
+            throw error;
         }
     }
 

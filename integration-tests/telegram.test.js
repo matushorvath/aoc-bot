@@ -8,10 +8,8 @@
 // - somehow test sending invites
 
 const { TelegramClient } = require('./telegram-client');
-
-const yaml = require('yaml');
-const fs = require('fs/promises');
-const path = require('path');
+const { loadTelegramCredentials } = require('./telegram-credentials');
+const { loadTelegramDatabase } = require('./telegram-database');
 
 jest.setTimeout(90 * 1000);
 
@@ -19,27 +17,25 @@ jest.setTimeout(90 * 1000);
 const botUserId = 5071613978;
 const testChatId = -1001842149447;      // id of the 'AoC 1980 Day 13' test chat
 
-const loadCredentials = async () => {
-    try {
-        return yaml.parse(await fs.readFile(path.join(__dirname, 'credentials.yaml'), 'utf-8'));
-    } catch (e) {
-        console.error('You need to create credentials.yaml using credentials.yaml.template');
-        throw e;
-    }
-};
-
 let client;
 
 beforeAll(async () => {
-    const { apiId, apiHash, aesKey } = await loadCredentials();
-    client = new TelegramClient(apiId, apiHash, aesKey);
+    const { apiId, apiHash, aesKey } = await loadTelegramCredentials();
+    const { databaseDirectory, filesDirectory } = await loadTelegramDatabase(aesKey);
 
+    client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
     try {
         await client.init();
     } catch (e) {
         await client.close();
+        client = undefined;
+
         throw e;
     }
+
+    // We need to load all contacts and chats to be able to access them
+    await client.getContacts();
+    await client.loadChats();
 });
 
 afterAll(async () => {
@@ -126,34 +122,22 @@ describe('chat membership', () => {
         });
 
         test('promote the bot to administrator', async () => {
-            // Start receiving bot messages
-            const filter = update =>
-                update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === botUserId
-                && update?.message?.chat_id === testChatId;
-            const updatesPromise = client.waitForUpdates(filter, 2);
-
             // Expect the bot to promoted to administrator
             await expect(client.setMemberStatusAdministrator(botUserId, testChatId)).resolves.toBeUndefined();
 
             // Expect the bot to update the chat
-            await expect(updatesPromise).resolves.toMatchObject([{
-                message: {
-                    content: {
-                        _: 'messageChatChangePhoto',
-                        photo: {
-                            _: 'chatPhoto'
-                        }
+            await expect(client.receiveResponse(botUserId, testChatId, 2)).resolves.toMatchObject([{
+                content: {
+                    _: 'messageChatChangePhoto',
+                    photo: {
+                        _: 'chatPhoto'
                     }
                 }
             }, {
-                message: {
-                    content: {
-                        _: 'messageText',
-                        text: {
-                            text: '@AocElfBot is online, AoC 1980 Day 13'
-                        }
+                content: {
+                    _: 'messageText',
+                    text: {
+                        text: '@AocElfBot is online, AoC 1980 Day 13'
                     }
                 }
             }]);
@@ -176,7 +160,6 @@ describe('chat membership', () => {
 
                     can_send_polls: true,
                     can_send_other_messages: true,
-                    can_add_web_page_previews: true,
 
                     can_change_info: false,
                     can_invite_users: false,
