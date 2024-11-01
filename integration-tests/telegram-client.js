@@ -1,8 +1,5 @@
 'use strict';
 
-// TODO
-// - use client.iterUpdates() instead of client.on('update', ...)
-
 const tdl = require('tdl');
 const { getTdjson } = require('prebuilt-tdlib');
 const { setTimeout } = require('timers/promises');
@@ -83,24 +80,15 @@ class TelegramClient {
     async waitForUpdates(filter, count = 1) {
         const updates = [];
 
-        let onUpdate;
-        return new Promise((resolve, reject) => {
-            onUpdate = (update) => {
-                try {
-                    if (filter(update)) {
-                        updates.push(update);
-                    }
-                } catch (error) {
-                    reject(error);
-                }
-                if (updates.length >= count) {
-                    resolve(updates);
-                }
-            };
-            this.client.on('update', onUpdate);
-        }).finally(() => {
-            this.client.off('update', onUpdate);
-        });
+        for await (const update of this.client.iterUpdates()) {
+            if (filter(update)) {
+                updates.push(update);
+            }
+
+            if (updates.length >= count) {
+                return updates;
+            }
+        }
     }
 
     async sendMessage(userId, text, responseCount = 1) {
@@ -112,14 +100,6 @@ class TelegramClient {
         if (chat?._ !== 'chat') {
             throw new Error(`Invalid response: ${JSON.stringify(chat)}`);
         }
-
-        const messageFromBotFilter = (update) => {
-            return update?._ === 'updateNewMessage'
-                && update?.message?.sender_id?._ === 'messageSenderUser'
-                && update?.message?.sender_id?.user_id === userId
-                && update?.message?.chat_id === chat.id;
-        };
-        const updatesPromise = this.waitForUpdates(messageFromBotFilter, responseCount);
 
         const message = await this.clientInvoke({
             _: 'sendMessage',
@@ -137,7 +117,15 @@ class TelegramClient {
             throw new Error(`Invalid response: ${JSON.stringify(message)}`);
         }
 
-        return (await updatesPromise).map(update => update?.message?.content?.text?.text);
+        const messageFromBotFilter = (update) => {
+            return update?._ === 'updateNewMessage'
+                && update?.message?.sender_id?._ === 'messageSenderUser'
+                && update?.message?.sender_id?.user_id === userId
+                && update?.message?.chat_id === chat.id;
+        };
+        const updates = await this.waitForUpdates(messageFromBotFilter, responseCount);
+
+        return updates.map(update => update?.message?.content?.text?.text);
     }
 
     async addChatMember(userId, chatId) {
