@@ -87,7 +87,6 @@ class TelegramClient {
         return new Promise((resolve, reject) => {
             onUpdate = (update) => {
                 try {
-                    console.debug(JSON.stringify(update, undefined, 2)); // TODO comment out
                     if (filter(update)) {
                         updates.push(update);
                     }
@@ -251,6 +250,40 @@ class TelegramClient {
 
         if (status?._ !== 'ok') {
             throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        }
+    }
+
+    async getContacts() {
+        const users = await this.clientInvoke({
+            _: 'getContacts'
+        });
+
+        if (users?._ !== 'users') {
+            throw new Error(`Invalid response: ${JSON.stringify(users)}`);
+        }
+
+        return users;
+    }
+
+    async loadChats() {
+        try {
+            while (true) {
+                const status = await this.clientInvoke({
+                    _: 'loadChats',
+                    limit: 1000
+                });
+
+                if (status?._ !== 'ok') {
+                    throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+                }
+            }
+        } catch (error) {
+            // Receiving a 404 means all chats have been loaded
+            if (error._ === 'error' && error.code === 404) {
+                return;
+            }
+
+            throw error;
         }
     }
 

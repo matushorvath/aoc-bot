@@ -22,14 +22,20 @@ let client;
 beforeAll(async () => {
     const { apiId, apiHash, aesKey } = await loadTelegramCredentials();
     const { databaseDirectory, filesDirectory } = await loadTelegramDatabase(aesKey);
-    client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
 
+    client = new TelegramClient(apiId, apiHash, databaseDirectory, filesDirectory);
     try {
         await client.init();
     } catch (e) {
         await client.close();
+        client = undefined;
+
         throw e;
     }
+
+    // We need to load all contacts and chats to be able to access them
+    await client.getContacts();
+    await client.loadChats();
 });
 
 afterAll(async () => {
