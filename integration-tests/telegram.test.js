@@ -172,7 +172,6 @@ describe('chat membership', () => {
 
                     can_send_polls: true,
                     can_send_other_messages: true,
-                    can_add_web_page_previews: true,
 
                     can_change_info: false,
                     can_invite_users: false,

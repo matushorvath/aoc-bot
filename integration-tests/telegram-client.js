@@ -141,14 +141,14 @@ class TelegramClient {
     }
 
     async addChatMember(userId, chatId) {
-        const status = await this.clientInvoke({
+        const failed = await this.clientInvoke({
             _: 'addChatMember',
             chat_id: chatId,
             user_id: userId
         });
 
-        if (status?._ !== 'ok') {
-            throw new Error(`Invalid response: ${JSON.stringify(status)}`);
+        if (failed?._ !== 'failedToAddMembers' || failed?.failed_to_add_members.length !== 0) {
+            throw new Error(`Invalid response: ${JSON.stringify(failed)}`);
         }
     }
 
