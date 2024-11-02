@@ -62,7 +62,6 @@ const parseChatTitle = (title) => {
 };
 
 const checkChatMember = async (my_chat_member) => {
-    // TODO check and fix IT, we are sending more messages now to private chats
     // TODO create a command to run these checks, /check 2023 13
 
     const { proceed, issues } = detectChatMemberIssues(my_chat_member);
