@@ -36,7 +36,7 @@
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.751.0",
         "@aws-sdk/client-ssm": "^3.750.0",
-        "axios": "^1.7.9",
+        "axios": "^1.8.1",
         "luxon": "^3.5.0"
     },
     "devDependencies": {
