@@ -37,7 +37,7 @@
         "@aws-sdk/client-dynamodb": "^3.774.0",
         "@aws-sdk/client-ssm": "^3.774.0",
         "axios": "^1.8.4",
-        "luxon": "^3.5.0"
+        "luxon": "^3.6.1"
     },
     "devDependencies": {
         "eslint": "^9.23.0",
