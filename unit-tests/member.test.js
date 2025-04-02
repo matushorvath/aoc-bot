@@ -80,7 +80,7 @@ describe('onChatMember', () => {
         expect(network.sendTelegram).not.toHaveBeenCalled();
     });
 
-    test('handles axios error in sendTelegram', async () => {
+    test('handles fetch error in sendTelegram', async () => {
         const update = {
             chat: { type: 'supergroup', id: -13579, title: 'AoC 2010 Day 13' },
             new_chat_member: { status: 'member', user: { id: 987654321 } },
@@ -89,13 +89,9 @@ describe('onChatMember', () => {
 
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
         network.sendTelegram.mockRejectedValueOnce({
-            isAxiosError: true,
-            response: {
-                data: {
-                    error_code: 400,
-                    description: 'pReFiX not enough rights pOsTfIx'
-                }
-            }
+            isTelegramError: true,
+            telegram_error_code: 400,
+            telegram_description: 'pReFiX not enough rights pOsTfIx'
         });
 
         await expect(onChatMember(update)).resolves.toBeUndefined();
@@ -104,7 +100,7 @@ describe('onChatMember', () => {
         expect(network.sendTelegram).toHaveBeenCalled();
     });
 
-    test('handles non-axios error in sendTelegram', async () => {
+    test('handles non-fetch error in sendTelegram', async () => {
         const update = {
             chat: { type: 'supergroup', id: -13579, title: 'AoC 2010 Day 13' },
             new_chat_member: { status: 'member', user: { id: 987654321 } },

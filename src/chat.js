@@ -84,11 +84,8 @@ const checkChatMember = async (my_chat_member) => {
             });
         } catch (error) {
             // The bot might not be able to send messages to this user
-            const code = error.response?.data?.error_code;
-            const description = error.response?.data?.description;
-    
-            if (error.isAxiosError && code === 400) {
-                console.warn(`checkChatMember: Could not send message: ${description}`);
+            if (error.isTelegramError && error.telegram_error_code === 400) {
+                console.warn(`checkChatMember: Could not send message: ${error.telegram_description}`);
             } else {
                 throw error;
             }
@@ -194,11 +191,8 @@ const setChatDescription = async (chatId, year, day) => {
         });
     } catch (error) {
         // Setting chat description to the same value results in a 400 error
-        const code = error.response?.data?.error_code;
-        const description = error.response?.data?.description;
-
-        if (error.isAxiosError && code === 400) {
-            console.warn(`setChatDescription: Could not set chat description: ${description}`);
+        if (error.isTelegramError && error.telegram_error_code === 400) {
+            console.warn(`setChatDescription: Could not set chat description: ${error.telegram_description}`);
         } else {
             throw error;
         }
@@ -212,12 +206,8 @@ const setChatPhoto = async (chatId, day) => {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
         const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
 
-        await sendTelegram('setChatPhoto', {
-            chat_id: chatId,
-            photo: photo
-        }, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await sendTelegram('setChatPhoto', { chat_id: chatId, photo: photo },
+            { 'Content-Type': 'multipart/form-data' });
     } catch (error) {
         if (error.code === 'ENOENT') {
             console.warn(`setChatPhoto: No icon found for day ${day}`);
@@ -254,11 +244,8 @@ const setChatPermissions = async (chatId) => {
         });
     } catch (error) {
         // Setting chat permissions to the same value results in a 400 error
-        const code = error.response?.data?.error_code;
-        const description = error.response?.data?.description;
-
-        if (error.isAxiosError && code === 400) {
-            console.warn(`setChatPermissions: Could not set chat permissions: ${description}`);
+        if (error.isTelegramError && error.telegram_error_code === 400) {
+            console.warn(`setChatPermissions: Could not set chat permissions: ${error.telegram_description}`);
         } else {
             throw error;
         }

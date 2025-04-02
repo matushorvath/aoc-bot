@@ -43,7 +43,7 @@ describe('Database consistency', () => {
         ];
 
         expect(data).toEachMatchObject({
-            id: { S: expect.toBeOneOf(...knownIds) }
+            id: { S: expect.oneOf(...knownIds) }
         });
     });
 

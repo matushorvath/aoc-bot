@@ -148,7 +148,7 @@ describe('onMyChatMember', () => {
             chat: { type: 'group', title: 'AoC 1980 Day 13' }
         };
 
-        network.sendTelegram.mockRejectedValueOnce({ isAxiosError: true, response: { data: { error_code: 400 } } });
+        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -308,10 +308,10 @@ describe('onMyChatMember', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce({
-            isAxiosError: true,
-            response: { data: { error_code: 400 } }
-        });     // setChatDescription
+        network.sendTelegram.mockRejectedValueOnce({    // setChatDescription
+            isTelegramError: true,
+            telegram_error_code: 400
+        });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -389,12 +389,12 @@ describe('onMyChatMember', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
-        network.sendTelegram.mockRejectedValueOnce({
-            isAxiosError: true,
-            response: { data: { error_code: 400 } }
-        });     // setChatPermissions
+        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatDescription
+        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatPhoto
+        network.sendTelegram.mockRejectedValueOnce({                // setChatPermissions
+            isTelegramError: true,
+            telegram_error_code: 400
+        });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -490,9 +490,7 @@ describe('onMyChatMember', () => {
         expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
             chat_id: -4242,
             photo: expect.anything() // TODO { path: 'path to the img' }
-        }, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        }, { 'Content-Type': 'multipart/form-data' });
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', {
             chat_id: -4242,

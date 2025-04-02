@@ -1,7 +1,5 @@
 'use strict';
 
-const axios = require('axios');
-
 const loadSecrets = () => {
     const telegramSecret = process.env.TELEGRAM_SECRET;
     if (!telegramSecret) {
@@ -26,16 +24,22 @@ const parseCommandLine = () => {
     return { url };
 };
 
-const sendTelegram = async (secret, api, data, config = undefined) => {
+const sendTelegram = async (secret, api, data) => {
     const url = `https://api.telegram.org/bot${secret}/${api}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: data == undefined ? undefined : JSON.stringify(data)
+    });
 
-    const response = await axios.post(url, data, config);
-    if (!response?.data?.ok) {
-        console.error('telegram response:', response?.data);
+    const json = await response.json();
+
+    if (!response.ok || !json.ok) {
+        console.error('telegram response:', json);
         throw Error('Telegram request failed');
     }
 
-    return response.data;
+    return json;
 };
 
 const isRegistrationCorrect = (result, data) => {

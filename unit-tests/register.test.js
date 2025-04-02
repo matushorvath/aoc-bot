@@ -2,11 +2,10 @@
 
 const register = require('../src/register');
 
-const axios = require('axios');
-jest.mock('axios');
+global.fetch = jest.fn();
 
 beforeEach(() => {
-    axios.post.mockReset();
+    fetch.mockReset();
 });
 
 describe('webhook registration', () => {
@@ -20,6 +19,13 @@ describe('webhook registration', () => {
         allowedUpdates: ['nEwUpDaTe2', 'nEwUpDaTe1', 'nEwUpDaTe3']
     };
 
+    const getWebhookInfoParams = [
+        'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }
+    ];
+
     const setWebhookPayload = {
         allowed_updates: data.allowedUpdates,
         drop_pending_updates: true,
@@ -27,64 +33,72 @@ describe('webhook registration', () => {
         url: data.url
     };
 
-    test('fails when axios throws from first getWebhookInfo', async () => {
-        axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // getWebhookInfo
+    const setWebhookParams = [
+        'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(setWebhookPayload)
+        }
+    ];
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+    test('fails when fetch throws from first getWebhookInfo', async () => {
+        fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // getWebhookInfo
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
+
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test('fails with a non-ok response from first getWebhookInfo', async () => {
-        axios.post.mockResolvedValueOnce({ data: { ok: false } }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // getWebhookInfo
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
-    test('fails when axios throws from setWebhook', async () => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
-        axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // setWebhook
+    test('fails when fetch throws from setWebhook', async () => {
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
+        fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // setWebhook
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
     });
 
     test('fails with a non-ok response from setWebhook', async () => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
-        axios.post.mockResolvedValueOnce({ data: { ok: false } }); // setWebhook
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // setWebhook
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
     });
 
-    test('fails when axios throws from second getWebhookInfo', async () => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
-        axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // getWebhookInfo
+    test('fails when fetch throws from second getWebhookInfo', async () => {
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
+        fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // getWebhookInfo
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test('fails with a non-ok response from second getWebhookInfo', async () => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
-        axios.post.mockResolvedValueOnce({ data: { ok: false } }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // getWebhookInfo
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test.each([
@@ -98,27 +112,27 @@ describe('webhook registration', () => {
         ['one missing value in allowed_updates', { url: 'nEwUrL', allowed_updates: ['nEwUpDaTe2', 'nEwUpDaTe3'] }],
         ['one extra value in allowed_updates', { url: 'nEwUrL', allowed_updates: ['nEwUpDaTe2', 'oLdUpDaTe4', 'nEwUpDaTe1', 'nEwUpDaTe3'] }]
     ])('registers with %s from telegram', async (_desc, result) => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result } }); // getWebhookInfo
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result }) }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // getWebhookInfo
 
         await expect(register.register(secrets, data)).resolves.toBeUndefined();
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test.each([
         ['matching data', { url: 'nEwUrL', allowed_updates: ['nEwUpDaTe2', 'nEwUpDaTe1', 'nEwUpDaTe3'] }],
         ['allowed_updates in different order', { url: 'nEwUrL', allowed_updates: ['nEwUpDaTe1', 'nEwUpDaTe2', 'nEwUpDaTe3'] }]
     ])('skips registration with %s from telegram', async (_desc, result) => {
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result } }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result }) }); // getWebhookInfo
 
         await expect(register.register(secrets, data)).resolves.toBeUndefined();
 
-        expect(axios.post).toHaveBeenCalledTimes(1);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 });
 
@@ -165,9 +179,9 @@ describe('main function', () => {
         process.argv = ['node', 'register.js', 'mAiNuRl'];
 
         // The simplest mocks to allow us to inspect the setWebhook payload
-        axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
-        axios.post.mockResolvedValueOnce({ data: { ok: true } }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // getWebhookInfo
 
         await expect(register.main()).resolves.toBeUndefined();
 
@@ -178,8 +192,24 @@ describe('main function', () => {
             url: 'mAiNuRl'
         };
 
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/botmAiNtElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/botmAiNtElEgRaMsEcReT/setWebhook', payload, undefined);
-        expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/botmAiNtElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
+        expect(fetch).toHaveBeenCalledWith(
+            'https://api.telegram.org/botmAiNtElEgRaMsEcReT/getWebhookInfo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+        expect(fetch).toHaveBeenCalledWith(
+            'https://api.telegram.org/botmAiNtElEgRaMsEcReT/setWebhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }
+        );
+        expect(fetch).toHaveBeenCalledWith(
+            'https://api.telegram.org/botmAiNtElEgRaMsEcReT/getWebhookInfo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
     });
 });
