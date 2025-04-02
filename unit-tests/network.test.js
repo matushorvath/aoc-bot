@@ -84,26 +84,25 @@ describe('getLeaderboard', () => {
 });
 
 describe('sendTelegram', () => {
-    test('sends a request', async () => {
+    test('sends a form data request', async () => {
         fetch.mockResolvedValueOnce({
             ok: true,
             json: async () => ({ fAkEtElEgRaMdAtA: true })
         });
         secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
 
-        await expect(sendTelegram('aPi', { dAtA: true }, { hEaDeR: true })).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
+        await expect(sendTelegram('aPi', { dAtA: true }, 'multipart/form-data')).resolves.toEqual({ fAkEtElEgRaMdAtA: true });
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(fetch).toHaveBeenCalledWith(
             'https://api.telegram.org/bottElEgRaMsEcReT/aPi', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', hEaDeR: true },
-                body: JSON.stringify({ dAtA: true })
+                body: expect.any(FormData)
             }
         );
     });
 
-    test('sends a request without headers', async () => {
+    test('sends a JSON request', async () => {
         fetch.mockResolvedValueOnce({
             ok: true,
             json: async () => ({ fAkEtElEgRaMdAtA: true })
@@ -134,8 +133,7 @@ describe('sendTelegram', () => {
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(fetch).toHaveBeenCalledWith(
             'https://api.telegram.org/bottElEgRaMsEcReT/aPi', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                method: 'POST'
             }
         );
     });
@@ -144,6 +142,16 @@ describe('sendTelegram', () => {
         secrets.getTelegramSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
         await expect(() => sendTelegram('aPi', { dAtA: true })).rejects.toThrow('sEcReTeRrOr');
+
+        expect(secrets.getTelegramSecret).toHaveBeenCalled();
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    test('fails on unsupported content type', async () => {
+        secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
+
+        await expect(() => sendTelegram('aPi', { dAtA: true }, 'bAdCoNtEnTtYpE')).rejects.toThrow(
+            new Error('Unsupported content type: bAdCoNtEnTtYpE'));
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(fetch).not.toHaveBeenCalled();

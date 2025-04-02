@@ -17,7 +17,7 @@ jest.mock('../src/years');
 const logs = require('../src/logs');
 jest.mock('../src/logs');
 
-const fs = require('fs');
+const fs = require('fs/promises');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
@@ -337,7 +337,7 @@ describe('onMyChatMember', () => {
     });
 
     test('succeeds if createReadStream throws ENOENT', async () => {
-        const mockCreateReadStream = jest.spyOn(fs, 'createReadStream');
+        const mockReadFile = jest.spyOn(fs, 'readFile');
         const mockConsoleWarn = jest.spyOn(console, 'warn');
         try {
             const update = {
@@ -350,15 +350,15 @@ describe('onMyChatMember', () => {
             years.addYear.mockResolvedValueOnce(undefined);
             network.sendTelegram.mockResolvedValue(undefined);
 
-            mockCreateReadStream.mockImplementation(() => { throw { message: 'fSeRrOr', code: 'ENOENT' }; });
+            mockReadFile.mockImplementation(() => { throw { message: 'fSeRrOr', code: 'ENOENT' }; });
 
             await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-            expect(mockCreateReadStream).toHaveBeenCalled();
+            expect(mockReadFile).toHaveBeenCalled();
             expect(mockConsoleWarn).toHaveBeenCalledWith('setChatPhoto: No icon found for day 13');
         } finally {
             mockConsoleWarn.mockRestore();
-            mockCreateReadStream.mockRestore();
+            mockReadFile.mockRestore();
         }
     });
 
@@ -489,8 +489,8 @@ describe('onMyChatMember', () => {
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
             chat_id: -4242,
-            photo: expect.anything() // TODO { path: 'path to the img' }
-        }, { 'Content-Type': 'multipart/form-data' });
+            photo: expect.anything()
+        }, 'multipart/form-data');
 
         expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', {
             chat_id: -4242,
