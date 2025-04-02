@@ -17,7 +17,7 @@ describe('POST /start', () => {
     };
 
     test.each(['GET', 'HEAD', 'PUT', 'DELETE', 'PATCH'])('with invalid method %s', async (method) => {
-        await expect(axios({ method, url })).rejects.toMatchObject({
+        await expect(() => axios({ method, url })).rejects.toMatchObject({
             response: {
                 status: 403
             }
@@ -25,7 +25,7 @@ describe('POST /start', () => {
     });
 
     test('returns correct error response', async () => {
-        await expect(axios.post(url)).rejects.toMatchObject({
+        await expect(() => axios.post(url)).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: {
@@ -47,7 +47,7 @@ describe('POST /start', () => {
     });
 
     test('with no payload', async () => {
-        await expect(axios.post(url)).rejects.toMatchObject({
+        await expect(() => axios.post(url)).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: {
@@ -58,7 +58,7 @@ describe('POST /start', () => {
     });
 
     test('with invalid body', async () => {
-        await expect(axios.post(url, '%$@#$')).rejects.toMatchObject({
+        await expect(() => axios.post(url, '%$@#$')).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: {
@@ -69,7 +69,7 @@ describe('POST /start', () => {
     });
 
     test('with invalid JSON data', async () => {
-        await expect(axios.post(url, { uNeXpEcTeD: 42 })).rejects.toMatchObject({
+        await expect(() => axios.post(url, { uNeXpEcTeD: 42 })).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: {
@@ -101,7 +101,7 @@ describe('POST /start', () => {
         ['missing name', without(validData, 'name'), "Missing or invalid 'name' parameter"],
         ['invalid name', { ...validData, name: 12345 }, "Missing or invalid 'name' parameter"]
     ])('with %s', async (_description, data, details) => {
-        await expect(axios.post(url, data)).rejects.toMatchObject({
+        await expect(() => axios.post(url, data)).rejects.toMatchObject({
             response: {
                 status: 400,
                 data: { details }

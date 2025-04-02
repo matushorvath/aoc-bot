@@ -59,7 +59,7 @@ describe('onStop', () => {
 
     test('fails after an error while updating leaderboards', async () => {
         years.getYears.mockRejectedValueOnce(new Error('sOmEeRrOr'));
-        await expect(onStop(1945, 11, 2, 'sOmE oNe')).rejects.toThrow('sOmEeRrOr');
+        await expect(() => onStop(1945, 11, 2, 'sOmE oNe')).rejects.toThrow('sOmEeRrOr');
     });
 });
 
@@ -98,7 +98,7 @@ describe('leaderboards.handler', () => {
     test('fails loading years', async () => {
         years.getYears.mockRejectedValueOnce(new Error('gEtYeArSeRrOr'));
 
-        await expect(handler()).rejects.toThrow('gEtYeArSeRrOr');
+        await expect(() => handler()).rejects.toThrow('gEtYeArSeRrOr');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
         expect(network.getLeaderboard).not.toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe('leaderboards.handler', () => {
         years.getYears.mockResolvedValueOnce(new Set([2021, 2020]));
         network.getLeaderboard.mockRejectedValueOnce(new Error('nEtWoRkErRoR'));
 
-        await expect(handler()).rejects.toThrow('nEtWoRkErRoR');
+        await expect(() => handler()).rejects.toThrow('nEtWoRkErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
 
@@ -176,7 +176,7 @@ describe('leaderboards.handler', () => {
         boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
         boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
 
-        await expect(handler()).rejects.toThrow('pRoCeSsErRoR');
+        await expect(() => handler()).rejects.toThrow('pRoCeSsErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
 
@@ -207,7 +207,7 @@ describe('leaderboards.handler', () => {
         boardPublish.publishBoards.mockResolvedValueOnce({ created: [], updated: [] });
         boardPublish.publishBoards.mockRejectedValueOnce(new Error('pUbLiShErRoR'));
 
-        await expect(handler()).rejects.toThrow('pUbLiShErRoR');
+        await expect(() => handler()).rejects.toThrow('pUbLiShErRoR');
 
         expect(years.getYears).toHaveBeenCalledTimes(1);
 

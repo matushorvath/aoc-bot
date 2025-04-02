@@ -14,7 +14,7 @@ beforeEach(() => {
 describe('getYears', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.getItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(getYears()).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => getYears()).rejects.toThrow('dYnAmOeRrOr');
     });
 
     test('returns empty set if dynamodb has no data', async () => {
@@ -45,7 +45,7 @@ describe('getYears', () => {
 describe('addYear', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.updateItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(addYear(1234)).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => addYear(1234)).rejects.toThrow('dYnAmOeRrOr');
     });
 
     test('succeeds if dynamodb succeeds', async () => {
