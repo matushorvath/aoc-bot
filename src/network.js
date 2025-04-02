@@ -1,7 +1,6 @@
 'use strict';
 
 const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
-const axios = require('axios');
 
 const LEADERBOARD_ID = 380635;
 
@@ -14,32 +13,51 @@ const getLeaderboard = async (year) => {
     const options = { headers: { Cookie: `session=${secret}` } };
 
     let response;
-    try {
-        response = await axios.get(url, options);
-    } catch (error) {
-        if (error.isAxiosError) {
-            console.log('getLeaderboard: returning empty leaderboard, HTTP error', error);
-            return undefined;
-        }
-        throw error;
+    response = await fetch(url, options);
+    if (!response.ok) {
+        console.log('getLeaderboard: returning empty leaderboard, HTTP error', response.status);
+        return undefined;
     }
 
-    if (response.headers['content-type'] !== 'application/json') {
-        console.log('getLeaderboard: returning empty leaderboard, content type is not JSON', response.headers['content-type']);
+    const contentType = response.headers.get('content-type');
+    if (contentType !== 'application/json') {
+        console.log('getLeaderboard: returning empty leaderboard, content type is not JSON', contentType);
         return undefined;
     }
 
     console.log('getLeaderboard: done');
 
-    return response.data;
+    return response.json();
 };
 
-const sendTelegram = async (api, data, config = undefined) => {
+class FetchError extends Error {
+    constructor(message, code, description) {
+        super(message);
+
+        this.isFetchError = true;
+        this.code = code;
+        this.description = description;
+    }
+};
+
+const sendTelegram = async (api, data, headers = undefined) => {
     const secret = await getTelegramSecret();
     const url = `https://api.telegram.org/bot${secret}/${api}`;
-    const response = await axios.post(url, data, config);
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: data == undefined ? undefined : JSON.stringify(data)
+    });
 
-    return response.data;
+    var json = await response.json();
+
+    if (!response.ok) {
+        throw new FetchError(
+            `Telegram request failed with status ${response.status}`,
+            json?.error_code, json?.description);
+    }
+
+    return json;
 };
 
 exports.getLeaderboard = getLeaderboard;

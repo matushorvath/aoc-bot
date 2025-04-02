@@ -84,11 +84,8 @@ const checkChatMember = async (my_chat_member) => {
             });
         } catch (error) {
             // The bot might not be able to send messages to this user
-            const code = error.response?.data?.error_code;
-            const description = error.response?.data?.description;
-    
-            if (error.isAxiosError && code === 400) {
-                console.warn(`checkChatMember: Could not send message: ${description}`);
+            if (error.isFetchError && error.code === 400) {
+                console.warn(`checkChatMember: Could not send message: ${error.description}`);
             } else {
                 throw error;
             }
@@ -194,11 +191,8 @@ const setChatDescription = async (chatId, year, day) => {
         });
     } catch (error) {
         // Setting chat description to the same value results in a 400 error
-        const code = error.response?.data?.error_code;
-        const description = error.response?.data?.description;
-
-        if (error.isAxiosError && code === 400) {
-            console.warn(`setChatDescription: Could not set chat description: ${description}`);
+        if (error.isFetchError && error.code === 400) {
+            console.warn(`setChatDescription: Could not set chat description: ${error.description}`);
         } else {
             throw error;
         }
@@ -254,11 +248,8 @@ const setChatPermissions = async (chatId) => {
         });
     } catch (error) {
         // Setting chat permissions to the same value results in a 400 error
-        const code = error.response?.data?.error_code;
-        const description = error.response?.data?.description;
-
-        if (error.isAxiosError && code === 400) {
-            console.warn(`setChatPermissions: Could not set chat permissions: ${description}`);
+        if (error.isFetchError && error.code === 400) {
+            console.warn(`setChatPermissions: Could not set chat permissions: ${error.description}`);
         } else {
             throw error;
         }

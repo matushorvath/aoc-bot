@@ -39,7 +39,7 @@ describe('logActivity', () => {
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { chats: { NS: ['111', '222', '333', '444'] } } });
 
         network.sendTelegram.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce({ isAxiosError: true, response: { data: { error_code: 403 } } });
+        network.sendTelegram.mockRejectedValueOnce({ isFetchError: true, code: 403 });
         network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
         network.sendTelegram.mockResolvedValueOnce(undefined);
 
