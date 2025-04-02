@@ -155,7 +155,7 @@ const filterUsersInChat = async (chats) => {
             console.debug(`filterUsersInChat: ${aocUser} member ${JSON.stringify(member)}`);
             return member.ok && member.result.status === 'left';
         } catch (error) {
-            if (error.isFetchError && error.code >= 400 && error.code < 500) {
+            if (error.isTelegramError && error.telegram_error_code >= 400 && error.telegram_error_code < 500) {
                 console.warn(`filterUsersInChat: user not found ${aocUser} (${telegramUser})`);
                 return false;
             }
@@ -231,9 +231,9 @@ const sendInvites = async (changes) => {
                 success = true;
                 console.log(`sendInvites: sent to aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day}`);
             } catch (error) {
-                if (error.isFetchError && error.code >= 400 && error.code < 500) {
+                if (error.isTelegramError && error.telegram_error_code >= 400 && error.telegram_error_code < 500) {
                     // This often means we are not allowed to contact the user
-                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day} code ${error.code}`);
+                    console.log(`sendInvites: send FAILED aocUser ${aocUser} telegramUser ${telegramUser} year ${year} day ${day} code ${error.telegram_error_code}`);
                     continue;
                 }
 

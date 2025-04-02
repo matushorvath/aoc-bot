@@ -148,7 +148,7 @@ describe('onMyChatMember', () => {
             chat: { type: 'group', title: 'AoC 1980 Day 13' }
         };
 
-        network.sendTelegram.mockRejectedValueOnce({ isFetchError: true, code: 400 });
+        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -308,7 +308,10 @@ describe('onMyChatMember', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce({ isFetchError: true, code: 400 });     // setChatDescription
+        network.sendTelegram.mockRejectedValueOnce({    // setChatDescription
+            isTelegramError: true,
+            telegram_error_code: 400
+        });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -386,9 +389,12 @@ describe('onMyChatMember', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
-        network.sendTelegram.mockRejectedValueOnce({ isFetchError: true, code: 400 });     // setChatPermissions
+        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatDescription
+        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatPhoto
+        network.sendTelegram.mockRejectedValueOnce({                // setChatPermissions
+            isTelegramError: true,
+            telegram_error_code: 400
+        });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 

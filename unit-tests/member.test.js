@@ -89,9 +89,9 @@ describe('onChatMember', () => {
 
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
         network.sendTelegram.mockRejectedValueOnce({
-            isFetchError: true,
-            code: 400,
-            description: 'pReFiX not enough rights pOsTfIx'
+            isTelegramError: true,
+            telegram_error_code: 400,
+            telegram_description: 'pReFiX not enough rights pOsTfIx'
         });
 
         await expect(onChatMember(update)).resolves.toBeUndefined();

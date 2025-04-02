@@ -84,8 +84,8 @@ const checkChatMember = async (my_chat_member) => {
             });
         } catch (error) {
             // The bot might not be able to send messages to this user
-            if (error.isFetchError && error.code === 400) {
-                console.warn(`checkChatMember: Could not send message: ${error.description}`);
+            if (error.isTelegramError && error.telegram_error_code === 400) {
+                console.warn(`checkChatMember: Could not send message: ${error.telegram_description}`);
             } else {
                 throw error;
             }
@@ -191,8 +191,8 @@ const setChatDescription = async (chatId, year, day) => {
         });
     } catch (error) {
         // Setting chat description to the same value results in a 400 error
-        if (error.isFetchError && error.code === 400) {
-            console.warn(`setChatDescription: Could not set chat description: ${error.description}`);
+        if (error.isTelegramError && error.telegram_error_code === 400) {
+            console.warn(`setChatDescription: Could not set chat description: ${error.telegram_description}`);
         } else {
             throw error;
         }
@@ -244,8 +244,8 @@ const setChatPermissions = async (chatId) => {
         });
     } catch (error) {
         // Setting chat permissions to the same value results in a 400 error
-        if (error.isFetchError && error.code === 400) {
-            console.warn(`setChatPermissions: Could not set chat permissions: ${error.description}`);
+        if (error.isTelegramError && error.telegram_error_code === 400) {
+            console.warn(`setChatPermissions: Could not set chat permissions: ${error.telegram_description}`);
         } else {
             throw error;
         }

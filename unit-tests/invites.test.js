@@ -145,7 +145,7 @@ describe('processInvites', () => {
         // nAmE32 is already member of the chat for day 13
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'member' } });
         // nAmE52 has a telegram account in db, but it no longer exists
-        network.sendTelegram.mockRejectedValueOnce({ isFetchError: true, code: 400 });
+        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
         network.sendTelegram.mockResolvedValueOnce({ ok: false }); // nAmE53, telegram error state
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE55
         network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE56
@@ -181,7 +181,7 @@ describe('processInvites', () => {
         network.sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE56_5', invite_link: 'InViTeLiNk56_5' } });
         network.sendTelegram.mockRejectedValueOnce(
-            { isFetchError: true, code: 403 });
+            { isTelegramError: true, telegram_error_code: 403 });
 
         // aoc_user nAmE57, successful sending
         const invite = { ok: true, result: { name: 'iNvItE57_25', invite_link: 'InViTeLiNk57_25' } };

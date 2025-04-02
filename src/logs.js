@@ -72,7 +72,7 @@ const logActivity = async (message) => {
                 disable_notification: true
             });
         } catch (error) {
-            if (error.isFetchError && error.code >= 400 && error.code < 500) {
+            if (error.isTelegramError && error.telegram_error_code >= 400 && error.telegram_error_code < 500) {
                 console.warn(`logActivity: could not send logs to chat ${chat}`);
             } else {
                 console.error(`logActivity: unexpected error ${error}`);

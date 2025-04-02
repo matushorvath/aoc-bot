@@ -159,9 +159,9 @@ describe('sendTelegram', () => {
 
         await expect(() => sendTelegram('aPi', { dAtA: true })).rejects.toEqual(expect.objectContaining({
             message: 'Telegram request failed with status 987',
-            isFetchError: true,
-            code: 34567,
-            description: 'tElEgRaMdEsCrIpTiOn'
+            isTelegramError: true,
+            telegram_error_code: 34567,
+            telegram_description: 'tElEgRaMdEsCrIpTiOn'
         }));
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();

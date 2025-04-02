@@ -71,8 +71,8 @@ const promote = async (chat, telegramUser) => {
         });
     } catch (error) {
         // Detect when the bot does not have enough rights to promote a member
-        if (error.isFetchError && error.code === 400) {
-            console.warn(`promote: Bad request (${error.description})`);
+        if (error.isTelegramError && error.telegram_error_code === 400) {
+            console.warn(`promote: Bad request (${error.telegram_description})`);
         } else {
             throw error;
         }

@@ -30,13 +30,13 @@ const getLeaderboard = async (year) => {
     return response.json();
 };
 
-class FetchError extends Error {
-    constructor(message, code, description) {
+class SendTelegramError extends Error {
+    constructor(message, error_code, description) {
         super(message);
 
-        this.isFetchError = true;
-        this.code = code;
-        this.description = description;
+        this.isTelegramError = true;
+        this.telegram_error_code = error_code;
+        this.telegram_description = description;
     }
 };
 
@@ -52,7 +52,7 @@ const sendTelegram = async (api, data, headers = undefined) => {
     var json = await response.json();
 
     if (!response.ok) {
-        throw new FetchError(
+        throw new SendTelegramError(
             `Telegram request failed with status ${response.status}`,
             json?.error_code, json?.description);
     }
