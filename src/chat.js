@@ -206,12 +206,8 @@ const setChatPhoto = async (chatId, day) => {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
         const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
 
-        await sendTelegram('setChatPhoto', {
-            chat_id: chatId,
-            photo: photo
-        }, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await sendTelegram('setChatPhoto', { chat_id: chatId, photo: photo },
+            { 'Content-Type': 'multipart/form-data' });
     } catch (error) {
         if (error.code === 'ENOENT') {
             console.warn(`setChatPhoto: No icon found for day ${day}`);

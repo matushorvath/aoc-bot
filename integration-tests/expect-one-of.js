@@ -1,6 +1,6 @@
 'use strict';
 
-function toBeOneOf(received, ...expected) {
+function oneOf(received, ...expected) {
     const pass = expected.includes(received);
     if (pass) {
         return {
@@ -15,4 +15,4 @@ function toBeOneOf(received, ...expected) {
     }
 }
 
-expect.extend({ toBeOneOf });
+expect.extend({ oneOf });
