@@ -19,6 +19,13 @@ describe('webhook registration', () => {
         allowedUpdates: ['nEwUpDaTe2', 'nEwUpDaTe1', 'nEwUpDaTe3']
     };
 
+    const getWebhookInfoParams = [
+        'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }
+    ];
+
     const setWebhookPayload = {
         allowed_updates: data.allowedUpdates,
         drop_pending_updates: true,
@@ -26,17 +33,20 @@ describe('webhook registration', () => {
         url: data.url
     };
 
+    const setWebhookParams = [
+        'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(setWebhookPayload)
+        }
+    ];
+
     test('fails when fetch throws from first getWebhookInfo', async () => {
         fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // getWebhookInfo
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test('fails with a non-ok response from first getWebhookInfo', async () => {
@@ -44,12 +54,7 @@ describe('webhook registration', () => {
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test('fails when fetch throws from setWebhook', async () => {
@@ -58,19 +63,8 @@ describe('webhook registration', () => {
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(setWebhookPayload)
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
     });
 
     test('fails with a non-ok response from setWebhook', async () => {
@@ -79,19 +73,8 @@ describe('webhook registration', () => {
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(setWebhookPayload)
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
     });
 
     test('fails when fetch throws from second getWebhookInfo', async () => {
@@ -101,25 +84,9 @@ describe('webhook registration', () => {
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(setWebhookPayload)
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test('fails with a non-ok response from second getWebhookInfo', async () => {
@@ -129,25 +96,9 @@ describe('webhook registration', () => {
 
         await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(setWebhookPayload)
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test.each([
@@ -167,25 +118,9 @@ describe('webhook registration', () => {
 
         await expect(register.register(secrets, data)).resolves.toBeUndefined();
 
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(setWebhookPayload)
-            }
-        );
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
+        expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 
     test.each([
@@ -197,12 +132,7 @@ describe('webhook registration', () => {
         await expect(register.register(secrets, data)).resolves.toBeUndefined();
 
         expect(fetch).toHaveBeenCalledTimes(1);
-        expect(fetch).toHaveBeenCalledWith(
-            'https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
 });
 
