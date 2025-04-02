@@ -51,7 +51,7 @@ describe('onStart', () => {
 
     test('fails after an error while saving', async () => {
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('sOmEeRrOr'));
-        await expect(onStart(1945, 11, 2, 'sOmE oNe', 123456789)).rejects.toThrow('sOmEeRrOr');
+        await expect(() => onStart(1945, 11, 2, 'sOmE oNe', 123456789)).rejects.toThrow('sOmEeRrOr');
     });
 });
 

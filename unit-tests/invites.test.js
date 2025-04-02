@@ -423,7 +423,7 @@ describe('processInvites', () => {
         // filterUsersInChat
         network.sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
 
-        await expect(processInvites(leaderboard)).rejects.toThrow('eRrOr');
+        await expect(() => processInvites(leaderboard)).rejects.toThrow('eRrOr');
 
         // filterUsersInChat
         expect(network.sendTelegram).toHaveBeenCalledTimes(1);
@@ -461,7 +461,7 @@ describe('processInvites', () => {
             { ok: true, result: { name: 'iNvItE99_1', invite_link: 'InViTeLiNk99_1' } });
         network.sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
 
-        await expect(processInvites(leaderboard)).rejects.toThrow('eRrOr');
+        await expect(() => processInvites(leaderboard)).rejects.toThrow('eRrOr');
 
         // filterUsersInChat
         expect(network.sendTelegram).toHaveBeenCalledTimes(3);
@@ -498,7 +498,7 @@ describe('processInvites', () => {
         // markAsSent
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
 
-        await expect(processInvites(leaderboard)).rejects.toThrow('dYnAmOfAiLeD');
+        await expect(() => processInvites(leaderboard)).rejects.toThrow('dYnAmOfAiLeD');
 
         // sendInvites
         expect(network.sendTelegram).toHaveBeenCalledTimes(1);

@@ -174,7 +174,7 @@ describe('onMyChatMember', () => {
 
         network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
 
-        await expect(onMyChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
 
         expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
@@ -255,7 +255,7 @@ describe('onMyChatMember', () => {
 
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
 
-        await expect(onMyChatMember(update)).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('dYnAmOeRrOr');
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             Item: {
@@ -282,7 +282,7 @@ describe('onMyChatMember', () => {
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
         years.addYear.mockRejectedValueOnce(new Error('aDdYeArErRoR'));
 
-        await expect(onMyChatMember(update)).rejects.toThrow('aDdYeArErRoR');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('aDdYeArErRoR');
 
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledWith({
             Item: {
@@ -330,7 +330,7 @@ describe('onMyChatMember', () => {
         years.addYear.mockResolvedValueOnce(undefined);
         network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatDescription
 
-        await expect(onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(1);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
@@ -374,7 +374,7 @@ describe('onMyChatMember', () => {
         network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
         network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPhoto
 
-        await expect(onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(2);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
@@ -415,7 +415,7 @@ describe('onMyChatMember', () => {
         network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
         network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPermissions
 
-        await expect(onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(3);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
@@ -435,7 +435,7 @@ describe('onMyChatMember', () => {
         network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPermissions
         network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // sendMessage
 
-        await expect(onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
         expect(network.sendTelegram).toHaveBeenCalledTimes(4);
         expect(network.sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage', expect.anything());
@@ -452,7 +452,7 @@ describe('onMyChatMember', () => {
         network.sendTelegram.mockResolvedValue(undefined);
         leaderboards.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
 
-        await expect(onMyChatMember(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
+        await expect(() => onMyChatMember(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
     });
 
     test('succeeds for admin membership with required chat settings', async () => {

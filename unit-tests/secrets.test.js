@@ -36,7 +36,7 @@ describe('getAdventOfCodeSecret', () => {
         ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
-        await expect(getAdventOfCodeSecret()).rejects.toThrow('sSmErRoR');
+        await expect(() => getAdventOfCodeSecret()).rejects.toThrow('sSmErRoR');
 
         expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/advent-of-code-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
@@ -69,7 +69,7 @@ describe('getTelegramSecret', () => {
         ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
-        await expect(getTelegramSecret()).rejects.toThrow('sSmErRoR');
+        await expect(() => getTelegramSecret()).rejects.toThrow('sSmErRoR');
 
         expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/telegram-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });
@@ -102,7 +102,7 @@ describe('getWebhookSecret', () => {
         ssm.GetParameterCommand.mockReturnValueOnce({ GeTcOmMaNd: true });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
-        await expect(getWebhookSecret()).rejects.toThrow('sSmErRoR');
+        await expect(() => getWebhookSecret()).rejects.toThrow('sSmErRoR');
 
         expect(ssm.GetParameterCommand).toHaveBeenCalledWith({ Name: '/aoc-bot/webhook-secret', WithDecryption: true });
         expect(ssm.SSMClient.prototype.send).toHaveBeenCalledWith({ GeTcOmMaNd: true });

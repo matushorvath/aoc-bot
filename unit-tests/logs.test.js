@@ -18,7 +18,7 @@ beforeEach(() => {
 describe('logActivity', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.getItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(logActivity('mEsSaGe')).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => logActivity('mEsSaGe')).rejects.toThrow('dYnAmOeRrOr');
         expect(network.sendTelegram).not.toHaveBeenCalled();
     });
 
@@ -84,7 +84,7 @@ describe('logActivity', () => {
 describe('enableLogs', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.updateItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(enableLogs(1234)).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => enableLogs(1234)).rejects.toThrow('dYnAmOeRrOr');
     });
 
     test('succeeds if dynamodb succeeds', async () => {
@@ -107,7 +107,7 @@ describe('enableLogs', () => {
 describe('disableLogs', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.updateItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(disableLogs(1234)).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => disableLogs(1234)).rejects.toThrow('dYnAmOeRrOr');
     });
 
     test('succeeds if dynamodb succeeds', async () => {
@@ -130,7 +130,7 @@ describe('disableLogs', () => {
 describe('getLogsStatus', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.getItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
-        await expect(getLogsStatus(1234)).rejects.toThrow('dYnAmOeRrOr');
+        await expect(() => getLogsStatus(1234)).rejects.toThrow('dYnAmOeRrOr');
     });
 
     test('returns true if logs are enabled', async () => {

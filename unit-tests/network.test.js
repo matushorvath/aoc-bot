@@ -33,7 +33,7 @@ describe('getLeaderboard', () => {
     test('fails on missing secret', async () => {
         secrets.getAdventOfCodeSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
-        await expect(getLeaderboard(1492)).rejects.toThrow('sEcReTeRrOr');
+        await expect(() => getLeaderboard(1492)).rejects.toThrow('sEcReTeRrOr');
 
         expect(secrets.getAdventOfCodeSecret).toHaveBeenCalled();
         expect(axios.get).not.toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('getLeaderboard', () => {
         axios.get.mockRejectedValueOnce(new Error('nOnHtTpErRoR'));
         secrets.getAdventOfCodeSecret.mockResolvedValueOnce('aOcSeCrEt');
 
-        await expect(getLeaderboard(1492)).rejects.toThrow('nOnHtTpErRoR');
+        await expect(() => getLeaderboard(1492)).rejects.toThrow('nOnHtTpErRoR');
 
         expect(secrets.getAdventOfCodeSecret).toHaveBeenCalled();
         expect(axios.get).toHaveBeenCalledWith(
@@ -111,7 +111,7 @@ describe('sendTelegram', () => {
     test('fails on missing secret', async () => {
         secrets.getTelegramSecret.mockRejectedValueOnce(new Error('sEcReTeRrOr'));
 
-        await expect(sendTelegram('aPi', { dAtA: true })).rejects.toThrow('sEcReTeRrOr');
+        await expect(() => sendTelegram('aPi', { dAtA: true })).rejects.toThrow('sEcReTeRrOr');
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe('sendTelegram', () => {
         axios.post.mockRejectedValueOnce(new Error('aXiOsErRoR'));
         secrets.getTelegramSecret.mockResolvedValueOnce('tElEgRaMsEcReT');
 
-        await expect(sendTelegram('aPi', { dAtA: true })).rejects.toThrow('aXiOsErRoR');
+        await expect(() => sendTelegram('aPi', { dAtA: true })).rejects.toThrow('aXiOsErRoR');
 
         expect(secrets.getTelegramSecret).toHaveBeenCalled();
         expect(axios.post).toHaveBeenCalledWith(

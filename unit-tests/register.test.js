@@ -30,7 +30,7 @@ describe('webhook registration', () => {
     test('fails when axios throws from first getWebhookInfo', async () => {
         axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
     });
@@ -38,7 +38,7 @@ describe('webhook registration', () => {
     test('fails with a non-ok response from first getWebhookInfo', async () => {
         axios.post.mockResolvedValueOnce({ data: { ok: false } }); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
     });
@@ -47,7 +47,7 @@ describe('webhook registration', () => {
         axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
         axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // setWebhook
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
@@ -57,7 +57,7 @@ describe('webhook registration', () => {
         axios.post.mockResolvedValueOnce({ data: { ok: true, result: {} } }); // getWebhookInfo
         axios.post.mockResolvedValueOnce({ data: { ok: false } }); // setWebhook
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
@@ -68,7 +68,7 @@ describe('webhook registration', () => {
         axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
         axios.post.mockRejectedValueOnce(Error('aXiOsErRoR')); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('aXiOsErRoR'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
@@ -80,7 +80,7 @@ describe('webhook registration', () => {
         axios.post.mockResolvedValueOnce({ data: { ok: true } }); // setWebhook
         axios.post.mockResolvedValueOnce({ data: { ok: false } }); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/getWebhookInfo', undefined, undefined);
         expect(axios.post).toHaveBeenCalledWith('https://api.telegram.org/bottElEgRaMsEcReT/setWebhook', setWebhookPayload, undefined);
@@ -143,20 +143,20 @@ describe('main function', () => {
     test('fails without a TELEGRAM_SECRET', async () => {
         process.env.WEBHOOK_SECRET = 'mAiNwEbHoOkSeCrEt';
         process.argv = ['node', 'register.js', 'mAiNuRl'];
-        await expect(register.main()).rejects.toMatchObject(Error('You need to set the TELEGRAM_SECRET environment variable'));
+        await expect(() => register.main()).rejects.toMatchObject(Error('You need to set the TELEGRAM_SECRET environment variable'));
     });
 
     test('fails without a WEBHOOK_SECRET', async () => {
         process.env.TELEGRAM_SECRET = 'mAiNtElEgRaMsEcReT';
         process.argv = ['node', 'register.js', 'mAiNuRl'];
-        await expect(register.main()).rejects.toMatchObject(Error('You need to set the WEBHOOK_SECRET environment variable'));
+        await expect(() => register.main()).rejects.toMatchObject(Error('You need to set the WEBHOOK_SECRET environment variable'));
     });
 
     test('fails without arguments', async () => {
         process.env.TELEGRAM_SECRET = 'mAiNtElEgRaMsEcReT';
         process.env.WEBHOOK_SECRET = 'mAiNwEbHoOkSeCrEt';
         process.argv = ['node', 'register.js'];
-        await expect(register.main()).rejects.toMatchObject(Error('Usage: node register.js <url>'));
+        await expect(() => register.main()).rejects.toMatchObject(Error('Usage: node register.js <url>'));
     });
 
     test('registers with correct arguments', async () => {

@@ -114,7 +114,7 @@ describe('onChatMember', () => {
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
         network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
 
-        await expect(onChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
+        await expect(() => onChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalled();
         expect(network.sendTelegram).toHaveBeenCalled();
