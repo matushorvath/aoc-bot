@@ -66,13 +66,15 @@ describe('bot commands', () => {
 
         test('with no parameters', async () => {
             await expect(client.sendMessage(botUserId, '/board')).resolves.toMatchObject([
-                expect.stringMatching(/^Deň (\d| )\d @[^]*TrePe0\/aoc-plugin$/)
+                // Getting today's leaderboard will only work in December
+                expect.stringMatching(/^Deň (\d| )\d @[^]*TrePe0\/aoc-plugin|Could not retrieve leaderboard data$/)
             ]);
         });
 
         test('with today', async () => {
             await expect(client.sendMessage(botUserId, '/board today')).resolves.toMatchObject([
-                expect.stringMatching(/^Deň (\d| )\d @[^]*TrePe0\/aoc-plugin$/)
+                // Getting today's leaderboard will only work in December
+                expect.stringMatching(/^Deň (\d| )\d @[^]*TrePe0\/aoc-plugin|Could not retrieve leaderboard data$/)
             ]);
         });
 
