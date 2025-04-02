@@ -12,8 +12,7 @@ const getLeaderboard = async (year) => {
     const url = `https://adventofcode.com/${year}/leaderboard/private/view/${LEADERBOARD_ID}.json`;
     const options = { headers: { Cookie: `session=${secret}` } };
 
-    let response;
-    response = await fetch(url, options);
+    const response = await fetch(url, options);
     if (!response.ok) {
         console.log('getLeaderboard: returning empty leaderboard, HTTP error', response.status);
         return undefined;
@@ -40,15 +39,29 @@ class SendTelegramError extends Error {
     }
 };
 
-const sendTelegram = async (api, data, headers = undefined) => {
+const sendTelegram = async (api, data, contentType = 'application/json') => {
     const secret = await getTelegramSecret();
     const url = `https://api.telegram.org/bot${secret}/${api}`;
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: data == undefined ? undefined : JSON.stringify(data)
-    });
 
+    let body = undefined;
+    let headers = undefined;
+
+    if (data !== undefined) {
+        if (contentType === 'application/json') {
+            headers = { 'Content-Type': 'application/json' };
+            body = JSON.stringify(data);
+        } else if (contentType === 'multipart/form-data') {
+            // Don't set content-type, fetch will set it automatically
+            body = new FormData();
+            for (const key in data) {
+                body.append(key, data[key]);
+            }
+        } else {
+            throw new Error(`Unsupported content type: ${contentType}`);
+        }
+    }
+
+    const response = await fetch(url, { method: 'POST', headers, body });
     var json = await response.json();
 
     if (!response.ok) {

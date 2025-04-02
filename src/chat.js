@@ -7,7 +7,7 @@ const { logActivity } = require('./logs');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 
 const DB_TABLE = 'aoc-bot';
@@ -204,10 +204,10 @@ const setChatDescription = async (chatId, year, day) => {
 const setChatPhoto = async (chatId, day) => {
     try {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
-        const photo = fs.createReadStream(path.join(__dirname, '..', 'images', photoName));
+        const photoPath = path.join(__dirname, '..', 'images', photoName);
+        const photoBlob = new Blob([await fs.readFile(photoPath)]);
 
-        await sendTelegram('setChatPhoto', { chat_id: chatId, photo: photo },
-            { 'Content-Type': 'multipart/form-data' });
+        await sendTelegram('setChatPhoto', { chat_id: chatId, photo: photoBlob }, 'multipart/form-data');
     } catch (error) {
         if (error.code === 'ENOENT') {
             console.warn(`setChatPhoto: No icon found for day ${day}`);
