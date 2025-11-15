@@ -1,4 +1,5 @@
 name: Integration Tests
+
 permissions:
   contents: read
 
