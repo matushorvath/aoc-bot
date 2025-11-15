@@ -1,5 +1,9 @@
 name: Test and Deploy
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   pull_request:
   push:
