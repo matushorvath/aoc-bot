@@ -6,6 +6,7 @@ const { formatBoard } = require('./board');
 const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
 const { createUserData, deleteTelegramUserData, renameAocUser } = require('./user');
 const { loadStartTimes } = require('./times');
+const { forceInvite } = require('./invites');
 
 const { DynamoDB } = require('@aws-sdk/client-dynamodb');
 const luxon = require('luxon');
@@ -47,6 +48,8 @@ const onMessage = async (message) => {
         await onCommandUpdate(message.chat.id, message.from, params?.trim());
     } else if (command === 'board') {
         await onCommandBoard(message.chat.id, params?.trim());
+    } else if (command === 'invite') {
+        await onCommandInvite(message.chat.id, params?.trim(), message.from);
     } else if (command === 'start' || command === 'help') {
         await onCommandHelp(message.chat.id);
     } else {
@@ -191,7 +194,7 @@ const onCommandBoard = async (chat, params) => {
 
     const selection = parseYearDaySelection(params, true);
     if (!selection) {
-        console.log(`onCommandUpdate: params are invalid: ${params}`);
+        console.log(`onCommandBoard: params are invalid: ${params}`);
         await sendTelegram('sendMessage', {
             chat_id: chat,
             text: 'Invalid parameters (see /help)',
@@ -227,6 +230,38 @@ const onCommandBoard = async (chat, params) => {
     });
 
     console.log('onCommandBoard: done');
+};
+
+const onCommandInvite = async (chat, params, from) => {
+    console.log(`onCommandInvite: start, day ${params}`);
+
+    const selection = parseYearDaySelection(params, true);
+    if (!selection) {
+        console.log(`onCommandInvite: params are invalid: ${params}`);
+        await sendTelegram('sendMessage', {
+            chat_id: chat,
+            text: 'Invalid parameters (see /help)',
+            disable_notification: true
+        });
+        return;
+    }
+
+    // Display feedback to the user, since this is a slow command
+    await sendTelegram('sendChatAction', { chat_id: chat, action: 'upload_document' });
+
+    // Force an invite to be sent to current user
+    const invited = await forceInvite(from.id, selection.year, selection.day);
+
+    const senderName = formatSenderName(from);
+    await logActivity(`Invite to ${selection.year} day ${selection.day} requested by ${senderName}`);
+
+    await sendTelegram('sendMessage', {
+        chat_id: chat,
+        text: invited ? 'Invite was sent' : `Could not invite you to chat ${selection.year} day ${selection.day}`,
+        disable_notification: true
+    });
+
+    console.log('onCommandInvite: done');
 };
 
 const onCommandStatus = async (chat, telegramUser) => {

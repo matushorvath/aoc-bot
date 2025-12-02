@@ -53,6 +53,20 @@ Supported commands:
     /board \<year\> \<day\>
          Display board for selected day and year
 
+/invite \[today\|\<day\>\|\<year\> \<day\>\|\<day\> \<year\>\]
+    Force inviting current telegram user to a chat\.
+
+    /invite
+    /invite today
+        Invite current user to today's chat
+
+    /invite \<day\>
+        Invite current user to chat for selected day in current year
+
+    /invite \<day\> \<year\>
+    /invite \<year\> \<day\>
+        Invite current user to chat for for selected day and year
+
 /logs on\|off
     Enable/disable sending activity logs into your chat with the bot\.
 
