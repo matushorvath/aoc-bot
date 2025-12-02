@@ -274,5 +274,33 @@ const processInvites = async (leaderboard, selection = {}) => {
     return { sent, failed };
 };
 
+const forceInvite = async (telegramUser, year, day) => {
+    // Find a chat for requested day
+    const dayMap = await mapDaysToChats(year, [day]);
+    if (dayMap[day] === undefined) {
+        return false;
+    }
+
+    // Emulate chats data as if it was created from a leaderboard
+    const chats = [{
+        year, day, telegramUser,
+        aocUser: undefined,
+        chat: dayMap[day]
+    }];
+
+    // Invite current user to the chat
+    const changes = await filterSentInvites(chats);
+    const invites = await filterUsersInChat(changes);
+
+    // Create invites for all missing cases
+    const { sent, failed } = await sendInvites(invites);
+
+    console.debug(`onCommandInvite: sent invites: ${JSON.stringify(sent)}`);
+    console.debug(`onCommandInvite: failed invites: ${JSON.stringify(failed)}`);
+
+    return sent.length > 0;
+};
+
 exports.mapDaysToChats = mapDaysToChats;
 exports.processInvites = processInvites;
+exports.forceInvite = forceInvite;
