@@ -1,0 +1,44 @@
+name: Unit Tests
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Setup cfn-lint
+        run: pip3 install --upgrade cfn-lint
+
+      - name: Setup node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install packages
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Report test coverage
+        # Actions run by dependabot are not allowed to update PRs
+        if: github.ref != 'refs/heads/main' && github.actor != 'dependabot[bot]'
+        uses: artiomtr/jest-coverage-report-action@v2.0-rc.6
+        with:
+          annotations: none
+          github-token: ${{ secrets.GITHUB_TOKEN }}

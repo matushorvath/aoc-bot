@@ -6,7 +6,7 @@ permissions:
 on:
   workflow_run:
     workflows:
-      - Test and Deploy
+      - Deploy
     types:
       - completed
     branches:

@@ -2,7 +2,6 @@
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/matushorvath/aoc-bot/main)
 ![GitHub deployments](https://img.shields.io/github/deployments/matushorvath/aoc-bot/production?label=deployment)
 
-
 # Advent of Code Telegram Bot
 
 A Telegram bot that helps a group of people organize while solving the Advent of Code competition.
