@@ -6,7 +6,7 @@ permissions:
 on:
   workflow_run:
     workflows:
-      - Deploy
+      - Deploy to AWS
     types:
       - completed
     branches:
