@@ -44,7 +44,7 @@
         "eslint-plugin-jest": "^29.15.1",
         "globals": "^17.4.0",
         "jest": "^30.3.0",
-        "prebuilt-tdlib": "=0.1008062.2",
+        "prebuilt-tdlib": "=0.1008063.0",
         "tdl": "^8.1.0",
         "yaml": "^2.8.3"
     }
