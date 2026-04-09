@@ -1,4 +1,6 @@
-[![Test and Deploy](https://github.com/matushorvath/aoc-bot/actions/workflows/build.yml/badge.svg)](https://github.com/matushorvath/aoc-bot/actions/workflows/build.yml)
+[![Unit Tests](https://github.com/matushorvath/aoc-bot/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/matushorvath/aoc-bot/actions/workflows/unit-tests.yml)
+[![Deploy to AWS](https://github.com/matushorvath/aoc-bot/actions/workflows/deploy.yml/badge.svg)](https://github.com/matushorvath/aoc-bot/actions/workflows/deploy.yml)
+[![Integration Tests](https://github.com/matushorvath/aoc-bot/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/matushorvath/aoc-bot/actions/workflows/integration-tests.yml)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/matushorvath/aoc-bot/main)
 ![GitHub deployments](https://img.shields.io/github/deployments/matushorvath/aoc-bot/production?label=deployment)
 
