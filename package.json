@@ -22,6 +22,7 @@
     "engines": {
         "node": "^24"
     },
+    "type": "commonjs",
     "files": [
         "images/aoc*.png",
         "src/*.js",
@@ -34,8 +35,8 @@
         "node_modules/"
     ],
     "dependencies": {
-        "@aws-sdk/client-dynamodb": "^3.1033.0",
-        "@aws-sdk/client-ssm": "^3.1034.0",
+        "@aws-sdk/client-dynamodb": "^3.1038.0",
+        "@aws-sdk/client-ssm": "^3.1038.0",
         "luxon": "^3.7.2"
     },
     "devDependencies": {
