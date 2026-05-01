@@ -8,8 +8,8 @@
         "yamllint": "yamllint .",
         "cfn-lint": "cfn-lint template.yml",
         "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
-        "jest": "jest",
-        "test": "npm run lint && npm run jest",
+        "vitest": "vitest",
+        "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
         "integration-tests": "AOC_BOT_INTEGRATION_TESTS=1 jest"
     },
@@ -47,6 +47,7 @@
         "jest": "^30.3.0",
         "prebuilt-tdlib": "=0.1008063.0",
         "tdl": "^8.1.0",
+        "vitest": "^4.1.5",
         "yaml": "^2.8.3"
     }
 }

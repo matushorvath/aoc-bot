@@ -1,6 +1,4 @@
-'use strict';
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });

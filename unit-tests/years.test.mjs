@@ -1,9 +1,8 @@
-'use strict';
+import { getYears, addYear } from '../src/years';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { getYears, addYear } = require('../src/years');
-
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
