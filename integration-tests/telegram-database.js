@@ -1,15 +1,13 @@
-'use strict';
-
-const crypto = require ('crypto');
-const fs = require('fs/promises');
-const path = require('path');
-const util = require('util');
-const os = require('os');
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import path from 'path';
+import util from 'util';
+import os from 'os';
 
 const randomBytesAsync = util.promisify(crypto.randomBytes);
 const pbkdf2Async = util.promisify(crypto.pbkdf2);
 
-const createTelegramDatabase = async () => {
+export const createTelegramDatabase = async () => {
     const tmpDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'aoc-bot-tdlib-'));
 
     const databaseDirectory = path.join(tmpDirectory, '_td_database');
@@ -21,7 +19,7 @@ const createTelegramDatabase = async () => {
     return { databaseDirectory, filesDirectory };
 };
 
-const loadTelegramDatabase = async (aesKey) => {
+export const loadTelegramDatabase = async (aesKey) => {
     const { databaseDirectory, filesDirectory } = await createTelegramDatabase();
 
     const encryptedName = path.join(__dirname, 'td.binlog.aes');
@@ -51,7 +49,7 @@ const loadTelegramDatabase = async (aesKey) => {
     return { databaseDirectory, filesDirectory };
 };
 
-const saveTelegramDatabase = async (databaseDirectory, aesKey) => {
+export const saveTelegramDatabase = async (databaseDirectory, aesKey) => {
     const encryptedName = path.join(__dirname, 'td.binlog.aes');
     const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
@@ -97,11 +95,4 @@ const encryptDatabase = async (decrypted, aesKey) => {
     const encrypted = Buffer.concat([Buffer.from('Salted__', 'ascii'), salt, cipher.update(decrypted), cipher.final()]);
 
     return encrypted;
-};
-
-
-module.exports = {
-    createTelegramDatabase,
-    loadTelegramDatabase,
-    saveTelegramDatabase
 };

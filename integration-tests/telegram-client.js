@@ -1,12 +1,10 @@
-'use strict';
-
-const tdl = require('tdl');
-const { getTdjson } = require('prebuilt-tdlib');
-const { setTimeout } = require('timers/promises');
+import tdl from 'tdl';
+import { getTdjson } from 'prebuilt-tdlib';
+import { setTimeout } from 'timers/promises';
 
 tdl.configure({ tdjson: getTdjson() });
 
-class TelegramClient {
+export class TelegramClient {
     constructor(apiId, apiHash, databaseDirectory, filesDirectory) {
         const options = {
             apiId, apiHash,
@@ -290,7 +288,3 @@ class TelegramClient {
         return chat;
     }
 }
-
-module.exports = {
-    TelegramClient
-};

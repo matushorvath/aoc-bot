@@ -1,5 +1,5 @@
-import './expect-each-pass-predicate';
-import { expect } from 'vitest';
+import './expect-each-pass-predicate.js';
+import { describe, expect, test, vi } from 'vitest';
 
 describe('expect.toEachMatchObject', () => {
     test('works for positive case', () => {

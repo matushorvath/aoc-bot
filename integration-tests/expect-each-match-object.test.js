@@ -1,5 +1,5 @@
 import './expect-each-match-object.js';
-import { expect } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 describe('expect.toEachMatchObject', () => {
     test('works for positive case', () => {

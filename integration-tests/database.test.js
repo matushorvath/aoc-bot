@@ -12,8 +12,6 @@ const db = new DynamoDB({
     region: 'eu-central-1'
 });
 
-vi.testTimeout = 30 * 1000;
-
 const isValidYear = year => Number(year) === 1980 || Number(year) === 2000
     || (Number(year) >= 2015 && Number(year) <= 2050);
 
