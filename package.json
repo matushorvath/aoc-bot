@@ -8,10 +8,10 @@
         "yamllint": "yamllint .",
         "cfn-lint": "cfn-lint template.yml",
         "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
-        "vitest": "vitest",
+        "vitest": "vitest unit-tests",
         "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
-        "integration-tests": "AOC_BOT_INTEGRATION_TESTS=1 vitest run"
+        "integration-tests": "vitest run integration-tests"
     },
     "repository": {
         "type": "git",

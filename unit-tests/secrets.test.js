@@ -13,7 +13,7 @@ describe('getAdventOfCodeSecret', () => {
     test('gets the secret from remote', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'aOcSeCrEt' } });
 
         await expect(getAdventOfCodeSecret()).resolves.toEqual('aOcSeCrEt');
@@ -32,7 +32,7 @@ describe('getAdventOfCodeSecret', () => {
     test('fails with a SSM error', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
         await expect(() => getAdventOfCodeSecret()).rejects.toThrow('sSmErRoR');
@@ -46,7 +46,7 @@ describe('getTelegramSecret', () => {
     test('gets the secret from remote', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'tElEgRaMsEcReT' } });
 
         await expect(getTelegramSecret()).resolves.toEqual('tElEgRaMsEcReT');
@@ -65,7 +65,7 @@ describe('getTelegramSecret', () => {
     test('fails with a SSM error', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
         await expect(() => getTelegramSecret()).rejects.toThrow('sSmErRoR');
@@ -79,7 +79,7 @@ describe('getWebhookSecret', () => {
     test('gets the secret from remote', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockResolvedValueOnce({ Parameter: { Value: 'wEbHoOkSeCrEt' } });
 
         await expect(getWebhookSecret()).resolves.toEqual('wEbHoOkSeCrEt');
@@ -98,7 +98,7 @@ describe('getWebhookSecret', () => {
     test('fails with a SSM error', async () => {
         resetCache();
 
-        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true });
+        ssm.GetParameterCommand.mockImplementation(class { GeTcOmMaNd = true; });
         ssm.SSMClient.prototype.send.mockRejectedValueOnce(new Error('sSmErRoR'));
 
         await expect(() => getWebhookSecret()).rejects.toThrow('sSmErRoR');
