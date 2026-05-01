@@ -1,17 +1,16 @@
-'use strict';
+import { onChatMember } from '../src/member.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { onChatMember } = require('../src/member');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
-
-const network = require('../src/network');
-jest.mock('../src/network');
+import { sendTelegram } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
-    network.sendTelegram.mockReset();
+    sendTelegram.mockReset();
 });
 
 describe('onChatMember', () => {
@@ -25,7 +24,7 @@ describe('onChatMember', () => {
         await expect(onChatMember(update)).resolves.toBeUndefined();
 
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('ignores old member status other than left/kicked/restricted', async () => {
@@ -38,7 +37,7 @@ describe('onChatMember', () => {
         await expect(onChatMember(update)).resolves.toBeUndefined();
 
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('ignores new member status other than member', async () => {
@@ -51,7 +50,7 @@ describe('onChatMember', () => {
         await expect(onChatMember(update)).resolves.toBeUndefined();
 
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test.each([
@@ -77,7 +76,7 @@ describe('onChatMember', () => {
             }
         });
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('handles fetch error in sendTelegram', async () => {
@@ -88,7 +87,7 @@ describe('onChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
-        network.sendTelegram.mockRejectedValueOnce({
+        sendTelegram.mockRejectedValueOnce({
             isTelegramError: true,
             telegram_error_code: 400,
             telegram_description: 'pReFiX not enough rights pOsTfIx'
@@ -97,7 +96,7 @@ describe('onChatMember', () => {
         await expect(onChatMember(update)).resolves.toBeUndefined();
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalled();
-        expect(network.sendTelegram).toHaveBeenCalled();
+        expect(sendTelegram).toHaveBeenCalled();
     });
 
     test('handles non-fetch error in sendTelegram', async () => {
@@ -108,12 +107,12 @@ describe('onChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: {} });
-        network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
+        sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
 
         await expect(() => onChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
 
         expect(dynamodb.DynamoDB.prototype.getItem).toHaveBeenCalled();
-        expect(network.sendTelegram).toHaveBeenCalled();
+        expect(sendTelegram).toHaveBeenCalled();
     });
 
     test('promotes a user to admin', async () => {
@@ -135,7 +134,7 @@ describe('onChatMember', () => {
             }
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('promoteChatMember', {
+        expect(sendTelegram).toHaveBeenCalledWith('promoteChatMember', {
             chat_id: -13579,
             user_id: 987654321,
 

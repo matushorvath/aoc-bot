@@ -93,7 +93,7 @@ export const main = async () => {
 };
 
 /* istanbul ignore next */
-if (process.env.JEST_WORKER_ID === undefined) {
+if (process.env.VITEST_WORKER_ID === undefined) {
     main().catch((error) => {
         console.log(error);
         process.exitCode = 1;

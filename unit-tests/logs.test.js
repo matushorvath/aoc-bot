@@ -1,25 +1,24 @@
-'use strict';
+import { enableLogs, disableLogs, getLogsStatus, logActivity } from '../src/logs.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('../src/logs');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
-
-const network = require('../src/network');
-jest.mock('../src/network');
+import { sendTelegram } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.updateItem.mockReset();
-    network.sendTelegram.mockReset();
+    sendTelegram.mockReset();
 });
 
 describe('logActivity', () => {
     test('fails if dynamodb throws', async () => {
         dynamodb.DynamoDB.prototype.getItem.mockRejectedValueOnce(new Error('dYnAmOeRrOr'));
         await expect(() => logActivity('mEsSaGe')).rejects.toThrow('dYnAmOeRrOr');
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('does not send logs if dynamodb has no data', async () => {
@@ -32,16 +31,16 @@ describe('logActivity', () => {
             Key: { id: { S: 'logs' }, sk: { S: '0' } },
             ProjectionExpression: 'chats'
         });
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('sends logs even if some chats are invalid', async () => {
         dynamodb.DynamoDB.prototype.getItem.mockResolvedValueOnce({ Item: { chats: { NS: ['111', '222', '333', '444'] } } });
 
-        network.sendTelegram.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 403 });
-        network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
-        network.sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 403 });
+        sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
+        sendTelegram.mockResolvedValueOnce(undefined);
 
         await expect(logActivity('mEsSaGe')).resolves.toBeUndefined();
 
@@ -51,14 +50,14 @@ describe('logActivity', () => {
             ProjectionExpression: 'chats'
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage',
+        expect(sendTelegram).toHaveBeenCalledTimes(4);
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage',
             { chat_id: 111, text: 'log: mEsSaGe', disable_notification: true });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage',
             { chat_id: 222, text: 'log: mEsSaGe', disable_notification: true });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
             { chat_id: 333, text: 'log: mEsSaGe', disable_notification: true });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage',
             { chat_id: 444, text: 'log: mEsSaGe', disable_notification: true });
     });
 
@@ -73,10 +72,10 @@ describe('logActivity', () => {
             ProjectionExpression: 'chats'
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(2);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage',
+        expect(sendTelegram).toHaveBeenCalledTimes(2);
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage',
             { chat_id: 1234, text: 'log: mEsSaGe', disable_notification: true });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendMessage',
             { chat_id: 5678, text: 'log: mEsSaGe', disable_notification: true });
     });
 });
