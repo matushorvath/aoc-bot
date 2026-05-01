@@ -1,9 +1,8 @@
-'use strict';
+import { createUserData, deleteTelegramUserData, renameAocUser } from '../src/user.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { createUserData, deleteTelegramUserData, renameAocUser } = require('../src/user');
-
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock('@aws-sdk/client-dynamodb');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();

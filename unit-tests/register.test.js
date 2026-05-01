@@ -1,4 +1,4 @@
-import { register, main } from '../src/register';
+import { register, main } from '../src/register.js';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 global.fetch = vi.fn();

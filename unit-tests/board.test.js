@@ -1,10 +1,9 @@
-'use strict';
+import { formatBoard } from '../src/board.js';
+import fsp from 'fs/promises';
+import { beforeAll, describe, expect, setSystemTime, test, useFakeTimers, vi } from 'vitest';
 
-const { formatBoard } = require('../src/board');
-const fsp = require('fs/promises');
-
-jest.useFakeTimers();
-jest.setSystemTime(Date.UTC(2021, 11, 13, 12));  // Dec 13, 12:00 UTC
+vi.useFakeTimers();
+vi.setSystemTime(Date.UTC(2021, 11, 13, 12));  // Dec 13, 12:00 UTC
 
 describe('formatBoard', () => {
     let jsonLeaderboard;
