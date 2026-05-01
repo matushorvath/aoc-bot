@@ -1,11 +1,9 @@
-'use strict';
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onStart = async (year, day, part, name, ts) => {
+export const onStart = async (year, day, part, name, ts) => {
     const params = {
         Item: {
             id: { S: 'start_time' },
@@ -34,7 +32,7 @@ const onStart = async (year, day, part, name, ts) => {
     return true;
 };
 
-const loadStartTimes = async (year, day) => {
+export const loadStartTimes = async (year, day) => {
     const commonParams = {
         TableName: DB_TABLE,
         KeyConditionExpression: 'id = :id AND begins_with(sk, :sk)',
@@ -64,6 +62,3 @@ const loadStartTimes = async (year, day) => {
 
     return startTimes;
 };
-
-exports.loadStartTimes = loadStartTimes;
-exports.onStart = onStart;

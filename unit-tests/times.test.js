@@ -1,9 +1,8 @@
-'use strict';
+import { onStart, loadStartTimes } from '../src/times.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { onStart, loadStartTimes } = require('../src/times');
-
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.prototype.putItem.mockReset();

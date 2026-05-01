@@ -1,6 +1,5 @@
-'use strict';
-
-require('./expect-each-match-object');
+import './expect-each-match-object.js';
+import { describe, expect, test } from 'vitest';
 
 describe('expect.toEachMatchObject', () => {
     test('works for positive case', () => {

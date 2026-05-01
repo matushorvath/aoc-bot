@@ -1,10 +1,8 @@
-'use strict';
-
-const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
+import { getTelegramSecret, getAdventOfCodeSecret } from './secrets.js';
 
 const LEADERBOARD_ID = 380635;
 
-const getLeaderboard = async (year) => {
+export const getLeaderboard = async (year) => {
     console.log(`getLeaderboard: start, year ${year}`);
 
     const secret = await getAdventOfCodeSecret();
@@ -39,7 +37,7 @@ class SendTelegramError extends Error {
     }
 };
 
-const sendTelegram = async (api, data, contentType = 'application/json') => {
+export const sendTelegram = async (api, data, contentType = 'application/json') => {
     const secret = await getTelegramSecret();
     const url = `https://api.telegram.org/bot${secret}/${api}`;
 
@@ -72,6 +70,3 @@ const sendTelegram = async (api, data, contentType = 'application/json') => {
 
     return json;
 };
-
-exports.getLeaderboard = getLeaderboard;
-exports.sendTelegram = sendTelegram;

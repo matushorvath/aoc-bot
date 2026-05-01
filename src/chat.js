@@ -1,21 +1,19 @@
-'use strict';
+import { sendTelegram } from './network.js';
+import { updateLeaderboards } from './leaderboards.js';
+import { addYear } from './years.js';
+import { logActivity } from './logs.js';
 
-const { sendTelegram } = require('./network');
-const { updateLeaderboards } = require('./leaderboards');
-const { addYear } = require('./years');
-const { logActivity } = require('./logs');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
-
-const fs = require('fs/promises');
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 const createGroupDocsUrl = 'https://matushorvath.github.io/aoc-bot/create-group';
 
-const onMyChatMember = async (my_chat_member) => {
+export const onMyChatMember = async (my_chat_member) => {
     // Parse year and day from the chat title
     const { year, day } = parseChatTitle(my_chat_member?.chat?.title);
     if (year === undefined || day === undefined) {
@@ -204,7 +202,7 @@ const setChatDescription = async (chatId, year, day) => {
 const setChatPhoto = async (chatId, day) => {
     try {
         const photoName = `aoc${day.toString().padStart(2, '0')}.png`;
-        const photoPath = path.join(__dirname, '..', 'images', photoName);
+        const photoPath = path.join(import.meta.dirname, '..', 'images', photoName);
         const photoBlob = new Blob([await fs.readFile(photoPath)]);
 
         await sendTelegram('setChatPhoto', { chat_id: chatId, photo: photoBlob }, 'multipart/form-data');
@@ -253,5 +251,3 @@ const setChatPermissions = async (chatId) => {
 
     console.debug('setChatPermissions: done');
 };
-
-exports.onMyChatMember = onMyChatMember;

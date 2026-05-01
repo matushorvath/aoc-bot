@@ -8,10 +8,10 @@
         "yamllint": "yamllint .",
         "cfn-lint": "cfn-lint template.yml",
         "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
-        "jest": "jest",
-        "test": "npm run lint && npm run jest",
+        "vitest": "vitest run",
+        "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
-        "integration-tests": "AOC_BOT_INTEGRATION_TESTS=1 jest"
+        "integration-tests": "vitest run --mode=integration-tests"
     },
     "repository": {
         "type": "git",
@@ -22,7 +22,7 @@
     "engines": {
         "node": "^24"
     },
-    "type": "commonjs",
+    "type": "module",
     "files": [
         "images/aoc*.png",
         "src/*.js",
@@ -41,12 +41,13 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@vitest/coverage-v8": "^4.1.5",
+        "@vitest/eslint-plugin": "^1.6.16",
         "eslint": "^10.2.1",
-        "eslint-plugin-jest": "^29.15.2",
         "globals": "^17.5.0",
-        "jest": "^30.3.0",
         "prebuilt-tdlib": "=0.1008063.0",
         "tdl": "^8.1.0",
+        "vitest": "^4.1.5",
         "yaml": "^2.8.3"
     }
 }

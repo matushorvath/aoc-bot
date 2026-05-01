@@ -1,31 +1,34 @@
-'use strict';
+import { onMyChatMember } from '../src/chat.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { onMyChatMember } = require('../src/chat');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import { sendTelegram } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
-const network = require('../src/network');
-jest.mock('../src/network');
+import { updateLeaderboards } from '../src/leaderboards.js';
+vi.mock(import('../src/leaderboards.js'));
 
-const leaderboards = require('../src/leaderboards');
-jest.mock('../src/leaderboards');
+import { addYear } from '../src/years.js';
+vi.mock(import('../src/years.js'));
 
-const years = require('../src/years');
-jest.mock('../src/years');
+import { logActivity } from '../src/logs.js';
+vi.mock(import('../src/logs.js'));
 
-const logs = require('../src/logs');
-jest.mock('../src/logs');
+import { getLeaderboard } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
-const fs = require('fs/promises');
+import fs from 'fs/promises';
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
-    years.addYear.mockReset();
-    logs.logActivity.mockReset();
-    network.sendTelegram.mockReset();
-    leaderboards.updateLeaderboards.mockReset();
+
+    addYear.mockReset();
+    logActivity.mockReset();
+    sendTelegram.mockReset();
+    updateLeaderboards.mockReset();
 });
 
 describe('onMyChatMember', () => {
@@ -40,9 +43,9 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
     });
 
     test('ignores chats with invalid title', async () => {
@@ -56,9 +59,9 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
     });
 
     test.each(['member', 'restricted'])('warns about %s status in chat member update', async (status) => {
@@ -70,7 +73,7 @@ describe('onMyChatMember', () => {
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
             text: expect.stringMatching(
                 /^Additional setup[\s\S]*\[promote\]\(https:.*\) the bot to admin of this group$/)
@@ -80,8 +83,8 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
     });
 
     test('ignores unknown status in chat member update', async () => {
@@ -97,9 +100,9 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
     });
 
     test('warns about group membership', async () => {
@@ -111,7 +114,7 @@ describe('onMyChatMember', () => {
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
             text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
@@ -120,8 +123,8 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('fails to warn with missing user id', async () => {
@@ -136,9 +139,9 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('handles HTTP 400 while sending a warning', async () => {
@@ -148,11 +151,11 @@ describe('onMyChatMember', () => {
             chat: { type: 'group', title: 'AoC 1980 Day 13' }
         };
 
-        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
+        sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
             text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
@@ -161,8 +164,8 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('handles other errors while sending a warning', async () => {
@@ -172,11 +175,11 @@ describe('onMyChatMember', () => {
             chat: { type: 'group', title: 'AoC 1980 Day 13' }
         };
 
-        network.sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
+        sendTelegram.mockRejectedValueOnce('nOnAxIoSeRrOr');
 
         await expect(() => onMyChatMember(update)).rejects.toBe('nOnAxIoSeRrOr');
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
             text: expect.stringMatching(/^Additional setup[\s\S]*enable \[chat history\]\(https:.*\) for new members$/)
         });
@@ -185,8 +188,8 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('ignores non-group/non-supergroup membership', async () => {
@@ -202,9 +205,9 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     const allRights = {
@@ -233,7 +236,7 @@ describe('onMyChatMember', () => {
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 987654321, parse_mode: 'MarkdownV2', disable_notification: true,
             text: expect.stringMatching(new RegExp(`^Additional setup[\\s\\S]*${message}$`))
         });
@@ -242,8 +245,8 @@ describe('onMyChatMember', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
     });
 
     test('fails if dynamodb throws', async () => {
@@ -268,8 +271,8 @@ describe('onMyChatMember', () => {
             TableName: 'aoc-bot'
         });
 
-        expect(years.addYear).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(addYear).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('fails if addYear throws', async () => {
@@ -280,7 +283,7 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockRejectedValueOnce(new Error('aDdYeArErRoR'));
+        addYear.mockRejectedValueOnce(new Error('aDdYeArErRoR'));
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('aDdYeArErRoR');
 
@@ -295,8 +298,8 @@ describe('onMyChatMember', () => {
             TableName: 'aoc-bot'
         });
 
-        expect(years.addYear).toHaveBeenCalledWith(1980);
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(addYear).toHaveBeenCalledWith(1980);
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('succeeds if sendTelegram returns HTTP 400 for setChatDescription', async () => {
@@ -307,16 +310,16 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce({    // setChatDescription
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockRejectedValueOnce({    // setChatDescription
             isTelegramError: true,
             telegram_error_code: 400
         });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(4);
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
     });
 
     test('fails if sendTelegram throws for setChatDescription', async () => {
@@ -327,18 +330,18 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatDescription
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatDescription
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(1);
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', expect.anything());
     });
 
     test('succeeds if createReadStream throws ENOENT', async () => {
-        const mockReadFile = jest.spyOn(fs, 'readFile');
-        const mockConsoleWarn = jest.spyOn(console, 'warn');
+        const mockReadFile = vi.spyOn(fs, 'readFile');
+        const mockConsoleWarn = vi.spyOn(console, 'warn');
         try {
             const update = {
                 new_chat_member: { status: 'administrator', ...allRights },
@@ -347,8 +350,8 @@ describe('onMyChatMember', () => {
             };
 
             dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-            years.addYear.mockResolvedValueOnce(undefined);
-            network.sendTelegram.mockResolvedValue(undefined);
+            addYear.mockResolvedValueOnce(undefined);
+            sendTelegram.mockResolvedValue(undefined);
 
             mockReadFile.mockImplementation(() => { throw { message: 'fSeRrOr', code: 'ENOENT' }; });
 
@@ -370,14 +373,14 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-        network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPhoto
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+        sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPhoto
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(2);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(2);
+        expect(sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', expect.anything(), expect.anything());
     });
 
     test('succeeds if sendTelegram returns HTTP 400 for setChatPermissions', async () => {
@@ -388,18 +391,18 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatDescription
-        network.sendTelegram.mockResolvedValueOnce(undefined);      // setChatPhoto
-        network.sendTelegram.mockRejectedValueOnce({                // setChatPermissions
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);      // setChatDescription
+        sendTelegram.mockResolvedValueOnce(undefined);      // setChatPhoto
+        sendTelegram.mockRejectedValueOnce({                // setChatPermissions
             isTelegramError: true,
             telegram_error_code: 400
         });
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(4);
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
     });
 
     test('fails if sendTelegram throws for setChatPermissions', async () => {
@@ -410,15 +413,15 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
-        network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPermissions
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
+        sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // setChatPermissions
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(3);
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', expect.anything());
     });
 
     test('fails if sendTelegram throws for sendMessage', async () => {
@@ -429,16 +432,16 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
-        network.sendTelegram.mockResolvedValueOnce(undefined);     // setChatPermissions
-        network.sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // sendMessage
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatDescription
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatPhoto
+        sendTelegram.mockResolvedValueOnce(undefined);     // setChatPermissions
+        sendTelegram.mockRejectedValueOnce(new Error('tElEgRaMeRrOr'));     // sendMessage
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('tElEgRaMeRrOr');
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage', expect.anything());
+        expect(sendTelegram).toHaveBeenCalledTimes(4);
+        expect(sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage', expect.anything());
     });
 
     test('fails if updateLeaderboards throws', async () => {
@@ -448,9 +451,9 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        years.addYear.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValue(undefined);
-        leaderboards.updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
+        addYear.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValue(undefined);
+        updateLeaderboards.mockRejectedValueOnce(new Error('lEaDeRbOaRdSeRrOr'));
 
         await expect(() => onMyChatMember(update)).rejects.toThrow('lEaDeRbOaRdSeRrOr');
     });
@@ -463,7 +466,7 @@ describe('onMyChatMember', () => {
         };
 
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined);
-        network.sendTelegram.mockResolvedValue(undefined);
+        sendTelegram.mockResolvedValue(undefined);
 
         await expect(onMyChatMember(update)).resolves.toBeUndefined();
 
@@ -478,21 +481,21 @@ describe('onMyChatMember', () => {
             TableName: 'aoc-bot'
         });
 
-        expect(years.addYear).toHaveBeenCalledWith(1980);
+        expect(addYear).toHaveBeenCalledWith(1980);
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(4);
+        expect(sendTelegram).toHaveBeenCalledTimes(4);
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', {
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'setChatDescription', {
             chat_id: -4242,
             description: 'Advent of Code 1980 day 13 discussion'
         });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
+        expect(sendTelegram).toHaveBeenNthCalledWith(2, 'setChatPhoto', {
             chat_id: -4242,
             photo: expect.anything()
         }, 'multipart/form-data');
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', {
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'setChatPermissions', {
             chat_id: -4242,
             permissions: {
                 can_send_messages: true,
@@ -514,14 +517,14 @@ describe('onMyChatMember', () => {
             }
         });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage', {
+        expect(sendTelegram).toHaveBeenNthCalledWith(4, 'sendMessage', {
             chat_id: -4242,
             text: '@AocElfBot is online, AoC 1980 Day 13',
             disable_notification: true
         });
 
-        expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
+        expect(updateLeaderboards).toHaveBeenCalledWith({ year: 1980, day: 13 });
 
-        expect(logs.logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
+        expect(logActivity).toHaveBeenCalledWith("Added to chat 'AoC 1980 Day 13' (1980/13)");
     });
 });

@@ -1,8 +1,7 @@
-'use strict';
+import { register, main } from '../src/register.js';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const register = require('../src/register');
-
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 beforeEach(() => {
     fetch.mockReset();
@@ -44,7 +43,7 @@ describe('webhook registration', () => {
     test('fails when fetch throws from first getWebhookInfo', async () => {
         fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // getWebhookInfo
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
@@ -52,7 +51,7 @@ describe('webhook registration', () => {
     test('fails with a non-ok response from first getWebhookInfo', async () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // getWebhookInfo
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
     });
@@ -61,7 +60,7 @@ describe('webhook registration', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
         fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // setWebhook
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
         expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
@@ -71,7 +70,7 @@ describe('webhook registration', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result: {} }) }); // getWebhookInfo
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // setWebhook
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
         expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
@@ -82,7 +81,7 @@ describe('webhook registration', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
         fetch.mockRejectedValueOnce(Error('fEtChErRoR')); // getWebhookInfo
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('fEtChErRoR'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
         expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
@@ -94,7 +93,7 @@ describe('webhook registration', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: false }) }); // getWebhookInfo
 
-        await expect(() => register.register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
+        await expect(() => register(secrets, data)).rejects.toMatchObject(Error('Telegram request failed'));
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
         expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
@@ -116,7 +115,7 @@ describe('webhook registration', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).resolves.toBeUndefined();
+        await expect(register(secrets, data)).resolves.toBeUndefined();
 
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
         expect(fetch).toHaveBeenCalledWith(...setWebhookParams);
@@ -129,7 +128,7 @@ describe('webhook registration', () => {
     ])('skips registration with %s from telegram', async (_desc, result) => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, result }) }); // getWebhookInfo
 
-        await expect(register.register(secrets, data)).resolves.toBeUndefined();
+        await expect(register(secrets, data)).resolves.toBeUndefined();
 
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(fetch).toHaveBeenCalledWith(...getWebhookInfoParams);
@@ -157,20 +156,20 @@ describe('main function', () => {
     test('fails without a TELEGRAM_SECRET', async () => {
         process.env.WEBHOOK_SECRET = 'mAiNwEbHoOkSeCrEt';
         process.argv = ['node', 'register.js', 'mAiNuRl'];
-        await expect(() => register.main()).rejects.toMatchObject(Error('You need to set the TELEGRAM_SECRET environment variable'));
+        await expect(() => main()).rejects.toMatchObject(Error('You need to set the TELEGRAM_SECRET environment variable'));
     });
 
     test('fails without a WEBHOOK_SECRET', async () => {
         process.env.TELEGRAM_SECRET = 'mAiNtElEgRaMsEcReT';
         process.argv = ['node', 'register.js', 'mAiNuRl'];
-        await expect(() => register.main()).rejects.toMatchObject(Error('You need to set the WEBHOOK_SECRET environment variable'));
+        await expect(() => main()).rejects.toMatchObject(Error('You need to set the WEBHOOK_SECRET environment variable'));
     });
 
     test('fails without arguments', async () => {
         process.env.TELEGRAM_SECRET = 'mAiNtElEgRaMsEcReT';
         process.env.WEBHOOK_SECRET = 'mAiNwEbHoOkSeCrEt';
         process.argv = ['node', 'register.js'];
-        await expect(() => register.main()).rejects.toMatchObject(Error('Usage: node register.js <url>'));
+        await expect(() => main()).rejects.toMatchObject(Error('Usage: node register.js <url>'));
     });
 
     test('registers with correct arguments', async () => {
@@ -183,7 +182,7 @@ describe('main function', () => {
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // setWebhook
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // getWebhookInfo
 
-        await expect(register.main()).resolves.toBeUndefined();
+        await expect(main()).resolves.toBeUndefined();
 
         const payload = {
             allowed_updates: ['chat_member', 'message', 'my_chat_member'],

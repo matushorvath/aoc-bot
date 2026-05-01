@@ -1,6 +1,4 @@
-'use strict';
-
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
 const ssm = new SSMClient({ apiVersion: '2014-11-06' });
 
@@ -19,32 +17,27 @@ const getSecret = async (name) => {
     return result.Parameter.Value;
 };
 
-const getAdventOfCodeSecret = async () => {
+export const getAdventOfCodeSecret = async () => {
     if (adventOfCodeSecret === undefined) {
         adventOfCodeSecret = await getSecret('advent-of-code-secret');
     }
     return adventOfCodeSecret;
 };
 
-const getTelegramSecret = async () => {
+export const getTelegramSecret = async () => {
     if (telegramSecret === undefined) {
         telegramSecret = await getSecret('telegram-secret');
     }
     return telegramSecret;
 };
 
-const getWebhookSecret = async () => {
+export const getWebhookSecret = async () => {
     if (webhookSecret === undefined) {
         webhookSecret = await getSecret('webhook-secret');
     }
     return webhookSecret;
 };
 
-const resetCache = () => {
+export const resetCache = () => {
     adventOfCodeSecret = telegramSecret = webhookSecret = undefined;
 };
-
-exports.getAdventOfCodeSecret = getAdventOfCodeSecret;
-exports.getTelegramSecret = getTelegramSecret;
-exports.getWebhookSecret = getWebhookSecret;
-exports.resetCache = resetCache;

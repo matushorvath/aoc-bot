@@ -1,5 +1,3 @@
-'use strict';
-
 // TODO
 // - reg (invalid arguments, valid arguments)
 // - reg with new user, already known user
@@ -7,11 +5,10 @@
 // - logs (no params, invalid params, enable for user, disable for user, when enabled/disabled both
 // - somehow test sending invites
 
-const { TelegramClient } = require('./telegram-client');
-const { loadTelegramCredentials } = require('./telegram-credentials');
-const { loadTelegramDatabase } = require('./telegram-database');
-
-jest.setTimeout(90 * 1000);
+import { TelegramClient } from './telegram-client.js';
+import { loadTelegramCredentials } from './telegram-credentials.js';
+import { loadTelegramDatabase } from './telegram-database.js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 // Telegram ids to use for testing
 const botUserId = 5071613978;

@@ -1,14 +1,12 @@
-'use strict';
-
-const { sendTelegram } = require('./network');
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { sendTelegram } from './network.js';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 // TODO refactor to use individual records with different sort keys, not one record with an array
 
-const enableLogs = async (chat) => {
+export const enableLogs = async (chat) => {
     console.log(`enableLogs: start, chat ${chat}`);
 
     // Add chat to the set
@@ -29,7 +27,7 @@ const enableLogs = async (chat) => {
     console.log(`enableLogs: done, chats [${data.Attributes?.chats?.NS}]`);
 };
 
-const disableLogs = async (chat) => {
+export const disableLogs = async (chat) => {
     console.log(`disableLogs: start, chat ${chat}`);
 
     // Add chat to the set
@@ -50,7 +48,7 @@ const disableLogs = async (chat) => {
     console.log(`disableLogs: done, chats [${data.Attributes?.chats?.NS}]`);
 };
 
-const getLogsStatus = async (chat) => {
+export const getLogsStatus = async (chat) => {
     console.log(`getLogsStatus: start, chat ${chat}`);
 
     const chats = await getChats();
@@ -61,7 +59,7 @@ const getLogsStatus = async (chat) => {
     return status;
 };
 
-const logActivity = async (message) => {
+export const logActivity = async (message) => {
     const chats = await getChats();
 
     await Promise.all([...chats].map(async (chat) => {
@@ -100,8 +98,3 @@ const getChats = async () => {
     console.log(`getChats: done, found [${[...chats]}]`);
     return chats;
 };
-
-exports.enableLogs = enableLogs;
-exports.disableLogs = disableLogs;
-exports.getLogsStatus = getLogsStatus;
-exports.logActivity = logActivity;

@@ -1,4 +1,4 @@
-'use strict';
+import { expect } from 'vitest';
 
 function toEachMatchObject(received, expected) {
     const mismatched = [];

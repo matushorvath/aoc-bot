@@ -1,9 +1,7 @@
-'use strict';
-
 const LOCALE = 'sk';
 const pluginUrl = 'https://github.com/TrePe0/aoc-plugin';
 
-const formatBoard = (year, day, leaderboard, startTimes) => {
+export const formatBoard = (year, day, leaderboard, startTimes) => {
     // Make an array of results for this day
     const startTs = Math.floor(Date.UTC(year, 11, day, 5) / 1000);
     const results = sortResults(getResults(day, leaderboard, startTs, startTimes));
@@ -144,5 +142,3 @@ const escape = (text) => {
 const pre = (text) => `\`${text}\``;
 
 const code = (text) => `\`\`\`\n${text}\n\`\`\``;
-
-exports.formatBoard = formatBoard;

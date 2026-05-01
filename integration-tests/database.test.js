@@ -1,10 +1,9 @@
-'use strict';
+import './expect-each-match-object.js';
+import './expect-one-of.js';
+import './expect-each-pass-predicate.js';
 
-require('./expect-each-match-object');
-require('./expect-one-of');
-require('./expect-each-pass-predicate');
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { describe, expect, test } from 'vitest';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 
@@ -12,8 +11,6 @@ const db = new DynamoDB({
     apiVersion: '2012-08-10',
     region: 'eu-central-1'
 });
-
-jest.setTimeout(30 * 1000);
 
 const isValidYear = year => Number(year) === 1980 || Number(year) === 2000
     || (Number(year) >= 2015 && Number(year) <= 2050);

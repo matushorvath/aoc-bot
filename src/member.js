@@ -1,12 +1,10 @@
-'use strict';
-
-const { sendTelegram } = require('./network');
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { sendTelegram } from './network.js';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onChatMember = async (chat_member) => {
+export const onChatMember = async (chat_member) => {
     // Handle new members added to the supergroup, who are not administrators
     const isSuperGroup = chat_member.chat.type === 'supergroup';
     const wasNotInChat = chat_member.old_chat_member?.status === 'left'
@@ -78,5 +76,3 @@ const promote = async (chat, telegramUser) => {
         }
     }
 };
-
-exports.onChatMember = onChatMember;

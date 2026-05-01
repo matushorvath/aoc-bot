@@ -1,13 +1,11 @@
-'use strict';
+import { getWebhookSecret } from './secrets.js';
+import { onMyChatMember } from './chat.js';
+import { onChatMember } from './member.js';
+import { onMessage } from './message.js';
+import { onStart } from './times.js';
+import { onStop } from './leaderboards.js';
 
-const { getWebhookSecret } = require('./secrets');
-const { onMyChatMember } = require('./chat');
-const { onChatMember } = require('./member');
-const { onMessage } = require('./message');
-const { onStart } = require('./times');
-const { onStop } = require('./leaderboards');
-
-class ResultError extends Error {
+export class ResultError extends Error {
     constructor(status, message, details = undefined) {
         super(message);
         this.status = status;
@@ -20,7 +18,7 @@ class ResultError extends Error {
     }
 }
 
-const handler = async (event) => {
+export const handler = async (event) => {
     try {
         console.log('handler: start');
         const result = await processEvent(event);
@@ -218,6 +216,3 @@ const makeResponse = (result) => {
         body: result.body === undefined ? undefined : JSON.stringify(result.body)
     };
 };
-
-exports.handler = handler;
-exports.ResultError = ResultError;

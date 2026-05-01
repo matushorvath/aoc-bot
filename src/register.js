@@ -1,5 +1,3 @@
-'use strict';
-
 const loadSecrets = () => {
     const telegramSecret = process.env.TELEGRAM_SECRET;
     if (!telegramSecret) {
@@ -57,7 +55,7 @@ const isRegistrationCorrect = (result, data) => {
     return true;
 };
 
-const register = async (secrets, data) => {
+export const register = async (secrets, data) => {
     // Find out if the bot has a webhook registered
     const infoBefore = await sendTelegram(secrets.telegramSecret, 'getWebhookInfo', undefined);
     console.log('webhook info (before):', infoBefore);
@@ -82,7 +80,7 @@ const register = async (secrets, data) => {
     console.log('webhook info (after):', infoAfter);
 };
 
-const main = async () => {
+export const main = async () => {
     const args = parseCommandLine();
     const secrets = loadSecrets();
 
@@ -95,12 +93,9 @@ const main = async () => {
 };
 
 /* istanbul ignore next */
-if (process.env.JEST_WORKER_ID === undefined) {
+if (process.env.VITEST_WORKER_ID === undefined) {
     main().catch((error) => {
         console.log(error);
         process.exitCode = 1;
     });
 }
-
-module.exports.register = register;
-module.exports.main = main;

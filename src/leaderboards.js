@@ -1,19 +1,17 @@
-'use strict';
+import { processInvites } from './invites.js';
+import { getLeaderboard } from './network.js';
+import { publishBoards } from './publish.js';
+import { getYears } from './years.js';
+import { logActivity } from './logs.js';
+import { getTelegramSecret, getAdventOfCodeSecret } from './secrets.js';
 
-const { processInvites } = require('./invites');
-const { getLeaderboard } = require('./network');
-const { publishBoards } = require('./publish');
-const { getYears } = require('./years');
-const { logActivity } = require('./logs');
-const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
-
-const handler = async () => {
+export const handler = async () => {
     console.log('handler: start');
 
     await updateLeaderboards();
 };
 
-const onStop = async (year, day, part, name) => {
+export const onStop = async (year, day, part, name) => {
     console.log(`onStop: start ${year} ${day} ${part} ${name}`);
 
     // Use the year and day parameter to update a single leaderboard
@@ -25,7 +23,7 @@ const onStop = async (year, day, part, name) => {
     return result.sent.some(r => r.aocUser === name && r.year === year && r.day === day);
 };
 
-const updateLeaderboards = async (selection = {}) => {
+export const updateLeaderboards = async (selection = {}) => {
     console.log(`updateLeaderboards: start, selection ${JSON.stringify(selection)}`);
 
     const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
@@ -86,7 +84,3 @@ const selectYears = async (selection) => {
 
     return years;
 };
-
-exports.handler = handler;
-exports.onStop = onStop;
-exports.updateLeaderboards = updateLeaderboards;

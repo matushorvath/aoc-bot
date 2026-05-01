@@ -1,23 +1,20 @@
-'use strict';
+import { sendTelegram, getLeaderboard } from './network.js';
+import { updateLeaderboards } from './leaderboards.js';
+import { formatBoard } from './board.js';
+import { enableLogs, disableLogs, getLogsStatus, logActivity } from './logs.js';
+import { createUserData, deleteTelegramUserData, renameAocUser } from './user.js';
+import { loadStartTimes } from './times.js';
+import { forceInvite } from './invites.js';
 
-const { sendTelegram, getLeaderboard } = require('./network');
-const { updateLeaderboards } = require('./leaderboards');
-const { formatBoard } = require('./board');
-const { enableLogs, disableLogs, getLogsStatus, logActivity } = require('./logs');
-const { createUserData, deleteTelegramUserData, renameAocUser } = require('./user');
-const { loadStartTimes } = require('./times');
-const { forceInvite } = require('./invites');
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
-const luxon = require('luxon');
-
-const fsp = require('fs/promises');
-const path = require('path');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import * as luxon from 'luxon';
+import fs from 'fs/promises';
+import path from 'path';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onMessage = async (message) => {
+export const onMessage = async (message) => {
     // Only handle private messages
     if (message.chat.type !== 'private' || !message.text || !message.from) {
         return;
@@ -420,7 +417,7 @@ const onCommandHelp = async (chat) => {
     console.log('onCommandHelp: start');
 
     if (!helpText) {
-        helpText = await fsp.readFile(path.join(__dirname, 'help.txt'), 'utf-8');
+        helpText = await fs.readFile(path.join(import.meta.dirname, 'help.txt'), 'utf-8');
     }
 
     await sendTelegram('sendMessage', {
@@ -439,5 +436,3 @@ const onCommandUnknown = async (chat) => {
         disable_notification: true
     });
 };
-
-exports.onMessage = onMessage;
