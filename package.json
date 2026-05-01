@@ -8,10 +8,10 @@
         "yamllint": "yamllint .",
         "cfn-lint": "cfn-lint template.yml",
         "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
-        "vitest": "vitest run unit-tests --coverage.enabled true",
+        "vitest": "vitest run",
         "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
-        "integration-tests": "vitest run integration-tests --test-timeout=90000 --hook-timeout=90000"
+        "integration-tests": "vitest run --mode=integration-tests"
     },
     "repository": {
         "type": "git",
