@@ -1,6 +1,4 @@
-'use strict';
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -218,6 +216,6 @@ const renameOneStartTimeRecord = async (item, newAocUser) => {
     // TODO delete old item once putItem passes
 };
 
-exports.createUserData = createUserData;
-exports.deleteTelegramUserData = deleteTelegramUserData;
-exports.renameAocUser = renameAocUser;
+export { createUserData as createUserData };
+export { deleteTelegramUserData as deleteTelegramUserData };
+export { renameAocUser as renameAocUser };

@@ -1,11 +1,9 @@
-'use strict';
-
-const { processInvites } = require('./invites');
-const { getLeaderboard } = require('./network');
-const { publishBoards } = require('./publish');
-const { getYears } = require('./years');
-const { logActivity } = require('./logs');
-const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
+import { processInvites } from './invites.js';
+import { getLeaderboard } from './network.js';
+import { publishBoards } from './publish.js';
+import { getYears } from './years.js';
+import { logActivity } from './logs.js';
+import { getTelegramSecret, getAdventOfCodeSecret } from './secrets.js';
 
 const handler = async () => {
     console.log('handler: start');
@@ -87,6 +85,6 @@ const selectYears = async (selection) => {
     return years;
 };
 
-exports.handler = handler;
-exports.onStop = onStop;
-exports.updateLeaderboards = updateLeaderboards;
+export { handler as handler };
+export { onStop as onStop };
+export { updateLeaderboards as updateLeaderboards };

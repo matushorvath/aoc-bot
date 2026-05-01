@@ -1,5 +1,3 @@
-'use strict';
-
 const loadSecrets = () => {
     const telegramSecret = process.env.TELEGRAM_SECRET;
     if (!telegramSecret) {
@@ -102,5 +100,5 @@ if (process.env.JEST_WORKER_ID === undefined) {
     });
 }
 
-module.exports.register = register;
-module.exports.main = main;
+export { register as register };
+export { main as main };

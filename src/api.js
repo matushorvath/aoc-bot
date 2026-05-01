@@ -1,11 +1,9 @@
-'use strict';
-
-const { getWebhookSecret } = require('./secrets');
-const { onMyChatMember } = require('./chat');
-const { onChatMember } = require('./member');
-const { onMessage } = require('./message');
-const { onStart } = require('./times');
-const { onStop } = require('./leaderboards');
+import { getWebhookSecret } from './secrets.js';
+import { onMyChatMember } from './chat.js';
+import { onChatMember } from './member.js';
+import { onMessage } from './message.js';
+import { onStart } from './times.js';
+import { onStop } from './leaderboards.js';
 
 class ResultError extends Error {
     constructor(status, message, details = undefined) {
@@ -219,5 +217,5 @@ const makeResponse = (result) => {
     };
 };
 
-exports.handler = handler;
-exports.ResultError = ResultError;
+export { handler as handler };
+export { ResultError as ResultError };

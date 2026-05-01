@@ -1,7 +1,5 @@
-'use strict';
-
-const { sendTelegram } = require('./network');
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { sendTelegram } from './network.js';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -301,6 +299,6 @@ const forceInvite = async (telegramUser, year, day) => {
     return sent.length > 0;
 };
 
-exports.mapDaysToChats = mapDaysToChats;
-exports.processInvites = processInvites;
-exports.forceInvite = forceInvite;
+export { mapDaysToChats as mapDaysToChats };
+export { processInvites as processInvites };
+export { forceInvite as forceInvite };

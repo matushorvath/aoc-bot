@@ -1,5 +1,3 @@
-'use strict';
-
 const LOCALE = 'sk';
 const pluginUrl = 'https://github.com/TrePe0/aoc-plugin';
 
@@ -145,4 +143,4 @@ const pre = (text) => `\`${text}\``;
 
 const code = (text) => `\`\`\`\n${text}\n\`\`\``;
 
-exports.formatBoard = formatBoard;
+export { formatBoard as formatBoard };

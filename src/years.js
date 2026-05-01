@@ -46,5 +46,5 @@ const addYear = async (year) => {
     console.log(`addYear: done, years [${data.Attributes?.years?.NS}]`);
 };
 
-exports.getYears = getYears;
-exports.addYear = addYear;
+export { getYears as getYears };
+export { addYear as addYear };

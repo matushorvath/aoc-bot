@@ -1,7 +1,5 @@
-'use strict';
-
-const { sendTelegram } = require('./network');
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { sendTelegram } from './network.js';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -79,4 +77,4 @@ const promote = async (chat, telegramUser) => {
     }
 };
 
-exports.onChatMember = onChatMember;
+export { onChatMember as onChatMember };

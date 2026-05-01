@@ -1,12 +1,10 @@
-'use strict';
+import { formatBoard } from './board.js';
+import { sendTelegram } from './network.js';
+import { mapDaysToChats } from './invites.js';
+import { loadStartTimes } from './times.js';
 
-const { formatBoard } = require('./board');
-const { sendTelegram } = require('./network');
-const { mapDaysToChats } = require('./invites');
-const { loadStartTimes } = require('./times');
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
-const crypto = require('crypto');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import crypto from 'crypto';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -226,4 +224,4 @@ const publishBoards = async (leaderboard, selection = {}) => {
     return { created, updated };
 };
 
-exports.publishBoards = publishBoards;
+export { publishBoards as publishBoards };

@@ -1,6 +1,4 @@
-'use strict';
-
-const { getTelegramSecret, getAdventOfCodeSecret } = require('./secrets');
+import { getTelegramSecret, getAdventOfCodeSecret } from './secrets.js';
 
 const LEADERBOARD_ID = 380635;
 
@@ -73,5 +71,5 @@ const sendTelegram = async (api, data, contentType = 'application/json') => {
     return json;
 };
 
-exports.getLeaderboard = getLeaderboard;
-exports.sendTelegram = sendTelegram;
+export { getLeaderboard as getLeaderboard };
+export { sendTelegram as sendTelegram };

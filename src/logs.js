@@ -1,7 +1,5 @@
-'use strict';
-
-const { sendTelegram } = require('./network');
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { sendTelegram } from './network.js';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -101,7 +99,7 @@ const getChats = async () => {
     return chats;
 };
 
-exports.enableLogs = enableLogs;
-exports.disableLogs = disableLogs;
-exports.getLogsStatus = getLogsStatus;
-exports.logActivity = logActivity;
+export { enableLogs as enableLogs };
+export { disableLogs as disableLogs };
+export { getLogsStatus as getLogsStatus };
+export { logActivity as logActivity };

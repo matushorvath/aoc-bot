@@ -1,6 +1,4 @@
-'use strict';
-
-const { DynamoDB } = require('@aws-sdk/client-dynamodb');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
@@ -65,5 +63,5 @@ const loadStartTimes = async (year, day) => {
     return startTimes;
 };
 
-exports.loadStartTimes = loadStartTimes;
-exports.onStart = onStart;
+export { loadStartTimes as loadStartTimes };
+export { onStart as onStart };
