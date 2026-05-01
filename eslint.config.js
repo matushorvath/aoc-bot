@@ -6,7 +6,7 @@ export default [
     js.configs.recommended,
 
     {
-        files: ['unit-tests/**'],
+        files: ['unit-tests/**', 'integration-tests/**'],
         plugins: { vitest },
         rules: vitest.configs.recommended.rules
     },
