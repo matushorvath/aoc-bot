@@ -8,7 +8,7 @@
         "yamllint": "yamllint .",
         "cfn-lint": "cfn-lint template.yml",
         "lint": "npm run eslint && npm run yamllint && npm run cfn-lint",
-        "vitest": "vitest run unit-tests",
+        "vitest": "vitest run unit-tests --coverage.enabled true",
         "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
         "integration-tests": "vitest run integration-tests --test-timeout=90000 --hook-timeout=90000"
@@ -41,6 +41,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@vitest/coverage-v8": "^4.1.5",
         "@vitest/eslint-plugin": "^1.6.16",
         "eslint": "^10.2.1",
         "globals": "^17.5.0",
