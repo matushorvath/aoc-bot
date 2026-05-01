@@ -1,3 +1,5 @@
 TODO
 - convert integration tests
 - unit test coverage in PR (exclude integration tests)
+- verify that all imports use .js extension
+- verify that all vi.mock use an import()

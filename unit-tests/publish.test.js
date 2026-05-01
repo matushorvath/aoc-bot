@@ -1,21 +1,20 @@
-'use strict';
+import { publishBoards } from '../src/publish.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { publishBoards } = require('../src/publish');
+import { formatBoard } from '../src/board.js';
+vi.mock('../src/board.js');
 
-const boardFormat = require('../src/board');
-jest.mock('../src/board');
+import { sendTelegram } from '../src/network.js';
+vi.mock('../src/network.js');
 
-const network = require('../src/network');
-jest.mock('../src/network');
+import { mapDaysToChats } from '../src/invites.js';
+vi.mock('../src/invites.js');
 
-const invites = require('../src/invites');
-jest.mock('../src/invites');
+import { loadStartTimes } from '../src/times.js';
+vi.mock('../src/times.js');
 
-const times = require('../src/times');
-jest.mock('../src/times');
-
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock('@aws-sdk/client-dynamodb');
 
 describe('publishBoards', () => {
     // TODO board but no days, board days but no chats
@@ -23,10 +22,10 @@ describe('publishBoards', () => {
     // TODO dynamo errors (get, put); telegram error send/edit/pin
 
     beforeEach(() => {
-        invites.mapDaysToChats.mockReset();
-        boardFormat.formatBoard.mockReset();
-        network.sendTelegram.mockReset();
-        times.loadStartTimes.mockReset();
+        mapDaysToChats.mockReset();
+        formatBoard.mockReset();
+        sendTelegram.mockReset();
+        loadStartTimes.mockReset();
 
         dynamodb.DynamoDB.mockReset();
         dynamodb.DynamoDB.prototype.batchGetItem.mockReset();
@@ -58,15 +57,15 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444, 6: 666 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 4 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 6 });
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd444');    // 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI='
-        boardFormat.formatBoard.mockImplementationOnce(() => { throw new Error('fOrMaTeRrOr666'); });
+        mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 4: 444, 6: 666 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 4 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 6 });
+        formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
+        formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
+        formatBoard.mockReturnValueOnce('bOaRd444');    // 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI='
+        formatBoard.mockImplementationOnce(() => { throw new Error('fOrMaTeRrOr666'); });
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
@@ -88,26 +87,26 @@ describe('publishBoards', () => {
         });
 
         // Return message id of the message created in chat 111
-        network.sendTelegram.mockResolvedValueOnce({ result: { message_id: 999999 } });
+        sendTelegram.mockResolvedValueOnce({ result: { message_id: 999999 } });
 
         await expect(publishBoards(leaderboard)).resolves.toEqual({
             created: [{ year: 1918, day: 1 }],
             updated: [{ year: 1918, day: 4 }]
         });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 5, 4, 6]);
+        expect(mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 5, 4, 6]);
 
-        expect(times.loadStartTimes).toHaveBeenCalledTimes(4);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 4);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(4, 1918, 6);
+        expect(loadStartTimes).toHaveBeenCalledTimes(4);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 4);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(4, 1918, 6);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(4);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: 4 });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: 6 });
+        expect(formatBoard).toHaveBeenCalledTimes(4);
+        expect(formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
+        expect(formatBoard).toHaveBeenNthCalledWith(3, 1918, 4, leaderboard, { sTaRtTiMeS: 4 });
+        expect(formatBoard).toHaveBeenNthCalledWith(4, 1918, 6, leaderboard, { sTaRtTiMeS: 6 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -159,20 +158,20 @@ describe('publishBoards', () => {
             ExpressionAttributeValues: { ':sha256': { S: 'OdcQQdRmhfP2hAFgCekm9m4/jEDKouD9xFxBJEDJOWI=' } }
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledTimes(3);
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 111,
             parse_mode: 'MarkdownV2',
             text: 'bOaRd111',
             disable_notification: true,
             disable_web_page_preview: true
         });
-        expect(network.sendTelegram).toHaveBeenCalledWith('pinChatMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('pinChatMessage', {
             chat_id: 111,
             message_id: 999999,
             disable_notification: true
         });
-        expect(network.sendTelegram).toHaveBeenCalledWith('editMessageText', {
+        expect(sendTelegram).toHaveBeenCalledWith('editMessageText', {
             chat_id: 444,
             message_id: 888888,
             parse_mode: 'MarkdownV2',
@@ -195,15 +194,15 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 3: 333 });
+        mapDaysToChats.mockResolvedValueOnce({ 1: 111, 2: 222, 3: 333 });
 
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 3 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 2 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 3 });
 
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd333');    // ''
+        formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
+        formatBoard.mockReturnValueOnce('bOaRd222');    // 'IJo6Pb5KToujTV2uAhd2duw7iNgraffUcMDHYfvmzws='
+        formatBoard.mockReturnValueOnce('bOaRd333');    // ''
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
@@ -233,17 +232,17 @@ describe('publishBoards', () => {
             updated: []
         });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 3]);
+        expect(mapDaysToChats).toHaveBeenCalledWith(1918, [1, 2, 3]);
 
-        expect(times.loadStartTimes).toHaveBeenCalledTimes(3);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 3);
+        expect(loadStartTimes).toHaveBeenCalledTimes(3);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(2, 1918, 2);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(3, 1918, 3);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(3);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(3, 1918, 3, leaderboard, { sTaRtTiMeS: 3 });
+        expect(formatBoard).toHaveBeenCalledTimes(3);
+        expect(formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(formatBoard).toHaveBeenNthCalledWith(2, 1918, 2, leaderboard, { sTaRtTiMeS: 2 });
+        expect(formatBoard).toHaveBeenNthCalledWith(3, 1918, 3, leaderboard, { sTaRtTiMeS: 3 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -291,7 +290,7 @@ describe('publishBoards', () => {
             ConditionExpression: 'attribute_not_exists(id)'
         });
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('handles error in lockBoardMessage', async () => {
@@ -306,9 +305,9 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
+        mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
@@ -325,13 +324,13 @@ describe('publishBoards', () => {
             updated: []
         });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
+        expect(mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
 
-        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(formatBoard).toHaveBeenCalledTimes(1);
+        expect(formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -357,7 +356,7 @@ describe('publishBoards', () => {
             ConditionExpression: 'attribute_not_exists(id)'
         });
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('handles error in saveBoardMessage', async () => {
@@ -372,9 +371,9 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
+        mapDaysToChats.mockResolvedValueOnce({ 1: 111 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 1 });
+        formatBoard.mockReturnValueOnce('bOaRd111');    // 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE='
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
@@ -396,13 +395,13 @@ describe('publishBoards', () => {
             updated: []
         });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
+        expect(mapDaysToChats).toHaveBeenCalledWith(1918, [1]);
 
-        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
+        expect(loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 1);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
+        expect(formatBoard).toHaveBeenCalledTimes(1);
+        expect(formatBoard).toHaveBeenNthCalledWith(1, 1918, 1, leaderboard, { sTaRtTiMeS: 1 });
 
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
         expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
@@ -431,7 +430,7 @@ describe('publishBoards', () => {
             ExpressionAttributeValues: { ':sha256': { S: 'e9HOtOs9fRo24Vk4SjUb0pxmuoSQBEz9gHOYxwgrByE=' } }
         });
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     test('selected day is applied', async () => {
@@ -447,9 +446,9 @@ describe('publishBoards', () => {
             event: '1918'
         };
 
-        invites.mapDaysToChats.mockResolvedValueOnce({ 9: 999 });
-        times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 9 });
-        boardFormat.formatBoard.mockReturnValueOnce('bOaRd999');
+        mapDaysToChats.mockResolvedValueOnce({ 9: 999 });
+        loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: 9 });
+        formatBoard.mockReturnValueOnce('bOaRd999');
 
         dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
             Responses: {
@@ -469,16 +468,16 @@ describe('publishBoards', () => {
             updated: [{ year: 1918, day: 9 }]
         });
 
-        expect(invites.mapDaysToChats).toHaveBeenCalledWith(1918, [9]);
+        expect(mapDaysToChats).toHaveBeenCalledWith(1918, [9]);
 
-        expect(times.loadStartTimes).toHaveBeenCalledTimes(1);
-        expect(times.loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 9);
+        expect(loadStartTimes).toHaveBeenCalledTimes(1);
+        expect(loadStartTimes).toHaveBeenNthCalledWith(1, 1918, 9);
 
-        expect(boardFormat.formatBoard).toHaveBeenCalledTimes(1);
-        expect(boardFormat.formatBoard).toHaveBeenNthCalledWith(1, 1918, 9, leaderboard, { sTaRtTiMeS: 9 });
+        expect(formatBoard).toHaveBeenCalledTimes(1);
+        expect(formatBoard).toHaveBeenNthCalledWith(1, 1918, 9, leaderboard, { sTaRtTiMeS: 9 });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
-        expect(network.sendTelegram).toHaveBeenCalledWith('editMessageText', {
+        expect(sendTelegram).toHaveBeenCalledTimes(1);
+        expect(sendTelegram).toHaveBeenCalledWith('editMessageText', {
             chat_id: 999,
             message_id: 777777,
             parse_mode: 'MarkdownV2',
@@ -507,8 +506,8 @@ describe('publishBoards', () => {
             updated: []
         });
 
-        expect(invites.mapDaysToChats).not.toHaveBeenCalled();
-        expect(boardFormat.formatBoard).not.toHaveBeenCalled();
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(mapDaysToChats).not.toHaveBeenCalled();
+        expect(formatBoard).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 });

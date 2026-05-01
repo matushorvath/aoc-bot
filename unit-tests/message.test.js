@@ -23,7 +23,7 @@ jest.mock('../src/logs');
 const user = require('../src/user');
 jest.mock('../src/user');
 
-const fsp = require('fs/promises');
+const fs = require('fs/promises');
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
@@ -700,7 +700,7 @@ describe('onMessage /help', () => {
     let readFileSpy;
 
     beforeEach(() => {
-        readFileSpy = jest.spyOn(fsp, 'readFile');
+        readFileSpy = jest.spyOn(fs, 'readFile');
     });
 
     afterEach(() => {

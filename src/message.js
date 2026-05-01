@@ -8,7 +8,7 @@ import { forceInvite } from './invites.js';
 
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import * as luxon from 'luxon';
-import fsp from 'fs/promises';
+import fs from 'fs/promises';
 import path from 'path';
 
 const DB_TABLE = 'aoc-bot';
@@ -417,7 +417,7 @@ const onCommandHelp = async (chat) => {
     console.log('onCommandHelp: start');
 
     if (!helpText) {
-        helpText = await fsp.readFile(path.join(import.meta.dirname, 'help.txt'), 'utf-8');
+        helpText = await fs.readFile(path.join(import.meta.dirname, 'help.txt'), 'utf-8');
     }
 
     await sendTelegram('sendMessage', {

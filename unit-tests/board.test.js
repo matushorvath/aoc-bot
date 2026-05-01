@@ -1,6 +1,6 @@
 import { formatBoard } from '../src/board.js';
-import fsp from 'fs/promises';
-import { beforeAll, describe, expect, setSystemTime, test, useFakeTimers, vi } from 'vitest';
+import fs from 'fs/promises';
+import { beforeAll, describe, expect, test, vi } from 'vitest';
 
 vi.useFakeTimers();
 vi.setSystemTime(Date.UTC(2021, 11, 13, 12));  // Dec 13, 12:00 UTC
@@ -9,7 +9,7 @@ describe('formatBoard', () => {
     let jsonLeaderboard;
 
     beforeAll(async () => {
-        jsonLeaderboard = JSON.parse(await fsp.readFile('./unit-tests/board.json', 'utf8'));
+        jsonLeaderboard = JSON.parse(await fs.readFile('./unit-tests/board.json', 'utf8'));
     });
 
     test('day 1: person one part1, person two part2', async () => {
