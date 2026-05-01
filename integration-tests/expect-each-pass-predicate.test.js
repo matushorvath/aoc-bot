@@ -1,6 +1,5 @@
-'use strict';
-
-require('./expect-each-pass-predicate');
+import './expect-each-pass-predicate';
+import { expect } from 'vitest';
 
 describe('expect.toEachMatchObject', () => {
     test('works for positive case', () => {

@@ -1,6 +1,5 @@
-'use strict';
-
-require('./expect-one-of');
+import './expect-one-of';
+import { expect } from 'vitest';
 
 describe('expect.oneOf', () => {
     test('works for positive case', () => {

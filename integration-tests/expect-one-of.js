@@ -1,4 +1,4 @@
-'use strict';
+import { expect } from 'vitest';
 
 function oneOf(received, ...expected) {
     const pass = expected.includes(received);

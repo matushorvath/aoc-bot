@@ -1,8 +1,6 @@
-'use strict';
-
-const { TelegramClient } = require('./telegram-client');
-const { loadTelegramCredentials } = require('./telegram-credentials');
-const { createTelegramDatabase, saveTelegramDatabase } = require('./telegram-database');
+import { TelegramClient } from './telegram-client.js';
+import { loadTelegramCredentials } from './telegram-credentials.js';
+import { createTelegramDatabase, saveTelegramDatabase } from './telegram-database.js';
 
 const main = async () => {
     const { apiId, apiHash, aesKey } = await loadTelegramCredentials();

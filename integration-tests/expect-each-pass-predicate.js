@@ -1,4 +1,4 @@
-'use strict';
+import { expect } from 'vitest';
 
 function toEachPassPredicate(received, predicate) {
     const mismatched = [];
