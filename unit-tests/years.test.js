@@ -1,4 +1,4 @@
-import { getYears, addYear } from '../src/years';
+import { getYears, addYear } from '../src/years.js';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import dynamodb from '@aws-sdk/client-dynamodb';
