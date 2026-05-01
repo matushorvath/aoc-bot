@@ -22,6 +22,9 @@ vi.mock(import('../src/logs.js'));
 import { createUserData, deleteTelegramUserData, renameAocUser } from '../src/user.js';
 vi.mock(import('../src/user.js'));
 
+import { forceInvite } from '../src/invites.js';
+vi.mock(import('../src/invites.js'));
+
 import fs from 'fs/promises';
 
 beforeEach(() => {
@@ -740,6 +743,81 @@ describe('onMessage /help', () => {
             chat_id: 2323, parse_mode: 'MarkdownV2',
             disable_notification: true, disable_web_page_preview: true,
             text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\n$/)
+        });
+    });
+});
+
+describe('onMessage /invite', () => {
+    test('with invalid parameters', async () => {
+        const update = {
+            text: '/invite xyz abc 123',
+            from: { id: 7878 },
+            chat: { id: 2323, type: 'private', title: 'tItLe' }
+        };
+
+        await expect(onMessage(update)).resolves.toBeUndefined();
+
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            chat_id: 2323, disable_notification: true,
+            text: 'Invalid parameters (see /help)'
+        });
+    });
+
+    describe.each([
+        ['no parameters', '/invite', { year: 1980, day: 13 }],
+        ['the "today" parameter', '/invite today', { year: 1980, day: 13 }],
+        ['specific date selection, year first', '/invite 2001 11', { year: 2001, day: 11 }],
+        ['specific date selection, day first', '/invite 11 2001', { year: 2001, day: 11 }],
+        ['specific date selection, without a year', '/invite 19', { year: 1980, day: 19 }]
+    ])('with %s', (_description, command, selection) => {
+        beforeEach(() => {
+            vi.useFakeTimers('modern');
+            // Intentionally use time that falls into different dates in UTC and in EST
+            vi.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
+        });
+
+        afterAll(() => {
+            vi.useRealTimers();
+        });
+
+        test('sends an invite', async () => {
+            const update = {
+                text: command,
+                from: { id: 7878 },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
+            };
+
+            forceInvite.mockResolvedValueOnce(true);
+
+            await expect(onMessage(update)).resolves.toBeUndefined();
+
+            expect(sendTelegram).toHaveBeenCalledWith('sendChatAction', { chat_id: 2323, action: 'upload_document' });
+
+            expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323,
+                text: 'Invite was sent',
+                disable_notification: true
+            });
+        });
+
+        test('does not send an invite', async () => {
+            const update = {
+                text: command,
+                from: { id: 7878 },
+                chat: { id: 2323, type: 'private', title: 'tItLe' }
+            };
+
+            forceInvite.mockResolvedValueOnce(false);
+
+            await expect(onMessage(update)).resolves.toBeUndefined();
+
+            expect(sendTelegram).toHaveBeenCalledWith('sendChatAction', { chat_id: 2323, action: 'upload_document' });
+
+            expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
+                chat_id: 2323,
+                text: `Could not invite you to chat ${selection.year} day ${selection.day}`,
+                disable_notification: true
+            });
         });
     });
 });
