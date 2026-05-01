@@ -1,4 +1,4 @@
-import { processInvites } from '../src/invites.js';
+import { forceInvite, processInvites } from '../src/invites.js';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import dynamodb from '@aws-sdk/client-dynamodb';
@@ -607,4 +607,94 @@ describe('processInvites', () => {
     });
 
     // TODO get more than 100 invites (test windowing in dynamodb)
+});
+
+describe('forceInvite', () => {
+    test('works with missing chat', async () => {
+        // mapDaysToChats
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [] }
+        });
+
+        // forceInvite under test
+        await expect(forceInvite(3131, 1945, 9)).resolves.toEqual(false);
+
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(1);
+
+        // mapDaysToChats
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
+            RequestItems: {
+                'aoc-bot': {
+                    Keys: [{
+                        id: { S: 'chat' },
+                        sk: { S: '1945:9' }
+                    }],
+                    ProjectionExpression: 'd, chat'
+                }
+            }
+        });
+
+        expect(sendTelegram).not.toHaveBeenCalled();
+    });
+
+    test('invites a user', async () => {
+        // mapDaysToChats
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [{ d: { N: '9' }, chat: { N: 10101 } }] }
+        });
+
+        // filterSentInvites
+        dynamodb.DynamoDB.prototype.batchGetItem.mockResolvedValueOnce({
+            Responses: { 'aoc-bot': [] }
+        });
+
+        // filterUsersInChat
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+
+        // sendInvites
+        sendTelegram.mockResolvedValueOnce(
+            { ok: true, result: { name: 'iNvItE99_1', invite_link: 'InViTeLiNk99_1' } });
+
+        // forceInvite under test
+        await expect(forceInvite(3131, 1945, 9)).resolves.toEqual(true);
+
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenCalledTimes(2);
+
+        // mapDaysToChats
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(1, {
+            RequestItems: {
+                'aoc-bot': {
+                    Keys: [{
+                        id: { S: 'chat' },
+                        sk: { S: '1945:9' }
+                    }],
+                    ProjectionExpression: 'd, chat'
+                }
+            }
+        });
+
+        // filterSentInvites
+        expect(dynamodb.DynamoDB.prototype.batchGetItem).toHaveBeenNthCalledWith(2, {
+            RequestItems: {
+                'aoc-bot': {
+                    Keys: [{
+                        id: { S: 'invite' },
+                        sk: { S: '3131:1945:9:10101' }
+                    }],
+                    ProjectionExpression: 'sk'
+                }
+            }
+        });
+
+        expect(sendTelegram).toHaveBeenCalledTimes(3);
+
+        // filterUsersInChat
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'getChatMember', { chat_id: 10101, user_id: 3131 });
+
+        // sendInvites
+        expect(sendTelegram).toHaveBeenNthCalledWith(2, 'createChatInviteLink',
+            { chat_id: 10101, name: 'AoC 1945 Day 9', member_limit: 1, creates_join_request: false });
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
+            { chat_id: 3131, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
+    });
 });
