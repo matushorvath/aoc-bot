@@ -1,22 +1,20 @@
 import js from '@eslint/js';
-import jest from 'eslint-plugin-jest';
+import vitest from '@vitest/eslint-plugin';
 import globals from 'globals';
 
 export default [
     js.configs.recommended,
-    jest.configs['flat/recommended'],
 
     {
-        files: ['**/*.js'],
-        languageOptions: {
-            sourceType: 'commonjs'
-        }
+        files: ['unit-tests/**'],
+        plugins: { vitest },
+        rules: vitest.configs.recommended.rules
     },
 
     {
         languageOptions: {
-            ecmaVersion: 2024,
-            globals: { ...globals.node, ...globals.commonjs, ...globals.es2024 }
+            ecmaVersion: 2025,
+            globals: { ...globals.nodeBuiltin, ...globals.es2025 }
         },
 
         rules: {
