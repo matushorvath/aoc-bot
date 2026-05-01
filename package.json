@@ -11,7 +11,7 @@
         "vitest": "vitest run unit-tests",
         "test": "npm run lint && npm run vitest",
         "deploy": "./deploy.sh",
-        "integration-tests": "vitest run integration-tests"
+        "integration-tests": "vitest run integration-tests --test-timeout=90000 --hook-timeout=90000"
     },
     "repository": {
         "type": "git",

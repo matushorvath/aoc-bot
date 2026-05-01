@@ -2,22 +2,22 @@ import { handler, onStop, updateLeaderboards } from '../src/leaderboards.js';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { processInvites } from '../src/invites.js';
-vi.mock('../src/invites.js');
+vi.mock(import('../src/invites.js'));
 
 import { getLeaderboard } from '../src/network.js';
-vi.mock('../src/network.js');
+vi.mock(import('../src/network.js'));
 
 import { publishBoards } from '../src/publish.js';
-vi.mock('../src/publish.js');
+vi.mock(import('../src/publish.js'));
 
 import { getYears } from '../src/years.js';
-vi.mock('../src/years.js');
+vi.mock(import('../src/years.js'));
 
 import { logActivity } from '../src/logs.js';
-vi.mock('../src/logs.js');
+vi.mock(import('../src/logs.js'));
 
 import { getAdventOfCodeSecret, getTelegramSecret } from '../src/secrets.js';
-vi.mock('../src/secrets.js');
+vi.mock(import('../src/secrets.js'));
 
 beforeEach(() => {
     getLeaderboard.mockReset();

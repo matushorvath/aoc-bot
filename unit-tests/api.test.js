@@ -2,22 +2,22 @@ import { handler, ResultError } from '../src/api.js';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { getWebhookSecret } from '../src/secrets.js';
-vi.mock('../src/secrets.js');
+vi.mock(import('../src/secrets.js'));
 
 import { onMyChatMember } from '../src/chat.js';
-vi.mock('../src/chat.js');
+vi.mock(import('../src/chat.js'));
 
 import { onChatMember } from '../src/member.js';
-vi.mock('../src/member.js');
+vi.mock(import('../src/member.js'));
 
 import { onMessage } from '../src/message.js';
-vi.mock('../src/message.js');
+vi.mock(import('../src/message.js'));
 
 import { onStart } from '../src/times.js';
-vi.mock('../src/times.js');
+vi.mock(import('../src/times.js'));
 
 import { onStop } from '../src/leaderboards.js';
-vi.mock('../src/leaderboards.js');
+vi.mock(import('../src/leaderboards.js'));
 
 beforeEach(() => {
     getWebhookSecret.mockReset();

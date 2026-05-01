@@ -1,4 +1,4 @@
-import { onMessage } from '../src/message';
+import { onMessage } from '../src/message.js';
 import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import dynamodb from '@aws-sdk/client-dynamodb';

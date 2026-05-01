@@ -2,7 +2,7 @@ import { createUserData, deleteTelegramUserData, renameAocUser } from '../src/us
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import dynamodb from '@aws-sdk/client-dynamodb';
-vi.mock('@aws-sdk/client-dynamodb');
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();

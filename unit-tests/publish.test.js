@@ -2,19 +2,19 @@ import { publishBoards } from '../src/publish.js';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { formatBoard } from '../src/board.js';
-vi.mock('../src/board.js');
+vi.mock(import('../src/board.js'));
 
 import { sendTelegram } from '../src/network.js';
-vi.mock('../src/network.js');
+vi.mock(import('../src/network.js'));
 
 import { mapDaysToChats } from '../src/invites.js';
-vi.mock('../src/invites.js');
+vi.mock(import('../src/invites.js'));
 
 import { loadStartTimes } from '../src/times.js';
-vi.mock('../src/times.js');
+vi.mock(import('../src/times.js'));
 
 import dynamodb from '@aws-sdk/client-dynamodb';
-vi.mock('@aws-sdk/client-dynamodb');
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
 describe('publishBoards', () => {
     // TODO board but no days, board days but no chats
