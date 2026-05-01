@@ -5,7 +5,7 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 // TODO refactor to use individual records with different sort keys, not one record with an array
 
-const getYears = async () => {
+export const getYears = async () => {
     console.log('getYears: start');
 
     // Load list of years from db
@@ -25,7 +25,7 @@ const getYears = async () => {
     return years;
 };
 
-const addYear = async (year) => {
+export const addYear = async (year) => {
     console.log(`addYear: start, year ${year}`);
 
     // Add year to the set
@@ -45,6 +45,3 @@ const addYear = async (year) => {
 
     console.log(`addYear: done, years [${data.Attributes?.years?.NS}]`);
 };
-
-export { getYears as getYears };
-export { addYear as addYear };

@@ -13,7 +13,7 @@ const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
 const createGroupDocsUrl = 'https://matushorvath.github.io/aoc-bot/create-group';
 
-const onMyChatMember = async (my_chat_member) => {
+export const onMyChatMember = async (my_chat_member) => {
     // Parse year and day from the chat title
     const { year, day } = parseChatTitle(my_chat_member?.chat?.title);
     if (year === undefined || day === undefined) {
@@ -251,5 +251,3 @@ const setChatPermissions = async (chatId) => {
 
     console.debug('setChatPermissions: done');
 };
-
-export { onMyChatMember as onMyChatMember };

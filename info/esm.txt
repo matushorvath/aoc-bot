@@ -1,4 +1,3 @@
 TODO
 - convert integration tests
-- export directly next to the exported item, not at the end of file
 - unit test coverage in PR (exclude integration tests)

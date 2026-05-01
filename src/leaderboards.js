@@ -5,13 +5,13 @@ import { getYears } from './years.js';
 import { logActivity } from './logs.js';
 import { getTelegramSecret, getAdventOfCodeSecret } from './secrets.js';
 
-const handler = async () => {
+export const handler = async () => {
     console.log('handler: start');
 
     await updateLeaderboards();
 };
 
-const onStop = async (year, day, part, name) => {
+export const onStop = async (year, day, part, name) => {
     console.log(`onStop: start ${year} ${day} ${part} ${name}`);
 
     // Use the year and day parameter to update a single leaderboard
@@ -23,7 +23,7 @@ const onStop = async (year, day, part, name) => {
     return result.sent.some(r => r.aocUser === name && r.year === year && r.day === day);
 };
 
-const updateLeaderboards = async (selection = {}) => {
+export const updateLeaderboards = async (selection = {}) => {
     console.log(`updateLeaderboards: start, selection ${JSON.stringify(selection)}`);
 
     const result = { unretrieved: [], sent: [], failed: [], created: [], updated: [] };
@@ -84,7 +84,3 @@ const selectYears = async (selection) => {
 
     return years;
 };
-
-export { handler as handler };
-export { onStop as onStop };
-export { updateLeaderboards as updateLeaderboards };

@@ -174,7 +174,7 @@ const saveBoardMessage = async (chat, message, hash) => {
     return true;
 };
 
-const publishBoards = async (leaderboard, selection = {}) => {
+export const publishBoards = async (leaderboard, selection = {}) => {
     console.log('publishBoards: start');
 
     const year = Number(leaderboard.event);
@@ -223,5 +223,3 @@ const publishBoards = async (leaderboard, selection = {}) => {
     console.log('publishBoards: done');
     return { created, updated };
 };
-
-export { publishBoards as publishBoards };

@@ -14,7 +14,7 @@ import path from 'path';
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const onMessage = async (message) => {
+export const onMessage = async (message) => {
     // Only handle private messages
     if (message.chat.type !== 'private' || !message.text || !message.from) {
         return;
@@ -436,5 +436,3 @@ const onCommandUnknown = async (chat) => {
         disable_notification: true
     });
 };
-
-export { onMessage as onMessage };

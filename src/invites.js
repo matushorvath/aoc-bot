@@ -70,7 +70,7 @@ const mapUsers = async (aocUsers) => {
     return map;
 };
 
-const mapDaysToChats = async (year, days) => {
+export const mapDaysToChats = async (year, days) => {
     console.log(`mapDaysToChats: start ${year} ${days}`);
 
     const map = {};
@@ -246,7 +246,7 @@ const sendInvites = async (changes) => {
     return { sent, failed };
 };
 
-const processInvites = async (leaderboard, selection = {}) => {
+export const processInvites = async (leaderboard, selection = {}) => {
     // Parse the leaderboard, select which dates we process
     const year = Number(leaderboard.event);
     if (selection.year !== undefined && selection.year !== year) {
@@ -272,7 +272,7 @@ const processInvites = async (leaderboard, selection = {}) => {
     return { sent, failed };
 };
 
-const forceInvite = async (telegramUser, year, day) => {
+export const forceInvite = async (telegramUser, year, day) => {
     // Find a chat for requested day
     const dayMap = await mapDaysToChats(year, [day]);
     if (dayMap[day] === undefined) {
@@ -298,7 +298,3 @@ const forceInvite = async (telegramUser, year, day) => {
 
     return sent.length > 0;
 };
-
-export { mapDaysToChats as mapDaysToChats };
-export { processInvites as processInvites };
-export { forceInvite as forceInvite };

@@ -55,7 +55,7 @@ const isRegistrationCorrect = (result, data) => {
     return true;
 };
 
-const register = async (secrets, data) => {
+export const register = async (secrets, data) => {
     // Find out if the bot has a webhook registered
     const infoBefore = await sendTelegram(secrets.telegramSecret, 'getWebhookInfo', undefined);
     console.log('webhook info (before):', infoBefore);
@@ -80,7 +80,7 @@ const register = async (secrets, data) => {
     console.log('webhook info (after):', infoAfter);
 };
 
-const main = async () => {
+export const main = async () => {
     const args = parseCommandLine();
     const secrets = loadSecrets();
 
@@ -99,6 +99,3 @@ if (process.env.JEST_WORKER_ID === undefined) {
         process.exitCode = 1;
     });
 }
-
-export { register as register };
-export { main as main };

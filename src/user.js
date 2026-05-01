@@ -3,7 +3,7 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 const DB_TABLE = 'aoc-bot';
 const db = new DynamoDB({ apiVersion: '2012-08-10' });
 
-const createUserData = async (aocUser, telegramUser) => {
+export const createUserData = async (aocUser, telegramUser) => {
     // Store user mapping in db
     const aocParams = {
         Item: {
@@ -28,7 +28,7 @@ const createUserData = async (aocUser, telegramUser) => {
     await db.putItem(telegramParams);
 };
 
-const deleteTelegramUserData = async (telegramUser) => {
+export const deleteTelegramUserData = async (telegramUser) => {
     // Find AoC record in database
     const getParams = {
         TableName: DB_TABLE,
@@ -83,7 +83,7 @@ const deleteUserData = async (aocUser, telegramUser) => {
     console.log(`deleteUserData: user telegramUser ${telegramUser} aocUser ${aocUser} deleted from db`);
 };
 
-const renameAocUser = async (oldAocUser, newAocUser) => {
+export const renameAocUser = async (oldAocUser, newAocUser) => {
     console.log(`renameAocUser: renaming '${oldAocUser}' to '${newAocUser}'`);
 
     const telegramUser = await renameAocUserRecord(oldAocUser, newAocUser);
@@ -215,7 +215,3 @@ const renameOneStartTimeRecord = async (item, newAocUser) => {
 
     // TODO delete old item once putItem passes
 };
-
-export { createUserData as createUserData };
-export { deleteTelegramUserData as deleteTelegramUserData };
-export { renameAocUser as renameAocUser };
