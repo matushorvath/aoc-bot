@@ -11,6 +11,7 @@ beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.updateItem.mockReset();
+
     sendTelegram.mockReset();
 });
 

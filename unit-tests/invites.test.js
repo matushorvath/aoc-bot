@@ -1,17 +1,17 @@
-'use strict';
+import { processInvites } from '../src/invites.js';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { processInvites } = require('../src/invites');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
-
-const network = require('../src/network');
-jest.mock('../src/network');
+import { sendTelegram } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.batchGetItem.mockReset();
-    network.sendTelegram.mockReset();
+
+    sendTelegram.mockReset();
 });
 
 describe('processInvites', () => {
@@ -139,18 +139,18 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE31
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE32
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE33
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE31
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE32
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE33
         // nAmE32 is already member of the chat for day 13
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'member' } });
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'member' } });
         // nAmE52 has a telegram account in db, but it no longer exists
-        network.sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
-        network.sendTelegram.mockResolvedValueOnce({ ok: false }); // nAmE53, telegram error state
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE55
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE56
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE57
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE58
+        sendTelegram.mockRejectedValueOnce({ isTelegramError: true, telegram_error_code: 400 });
+        sendTelegram.mockResolvedValueOnce({ ok: false }); // nAmE53, telegram error state
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE55
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE56
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE57
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } }); // nAmE58
 
         // markAsSent
         dynamodb.DynamoDB.prototype.putItem.mockResolvedValueOnce(undefined); // nAmE31
@@ -162,31 +162,31 @@ describe('processInvites', () => {
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce({ name: 'ConditionalCheckFailedException' }); // nAmE58, simulates a detected race condition
 
         // sendInvites
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE31_5', invite_link: 'InViTeLiNk31_5' } });
-        network.sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);
 
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE31_11', invite_link: 'InViTeLiNk31_11' } });
-        network.sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);
 
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE32_7', invite_link: 'InViTeLiNk32_7' } });
-        network.sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(undefined);
 
         // aoc_user nAmE55, could not create an invite
-        network.sendTelegram.mockResolvedValueOnce({ ok: false });
+        sendTelegram.mockResolvedValueOnce({ ok: false });
 
         // aoc_user nAmE56, could not send an invite
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE56_5', invite_link: 'InViTeLiNk56_5' } });
-        network.sendTelegram.mockRejectedValueOnce(
+        sendTelegram.mockRejectedValueOnce(
             { isTelegramError: true, telegram_error_code: 403 });
 
         // aoc_user nAmE57, successful sending
         const invite = { ok: true, result: { name: 'iNvItE57_25', invite_link: 'InViTeLiNk57_25' } };
-        network.sendTelegram.mockResolvedValueOnce(invite);
-        network.sendTelegram.mockResolvedValueOnce(undefined);
+        sendTelegram.mockResolvedValueOnce(invite);
+        sendTelegram.mockResolvedValueOnce(undefined);
 
         // aoc_user nAmE58, will detect a race condition and not attempt to send an invite
         // aoc_user nAmE59, could not mark in dynamo
@@ -271,19 +271,19 @@ describe('processInvites', () => {
 
         // filterUsersInChat
         let st = 1;
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 3131 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 3131 });
         // { chat_id: 70707, user_id: 3131 } is missing, part 2 was not solved
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 111111, user_id: 3131 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 70707, user_id: 3232 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 131313, user_id: 3232 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 111111, user_id: 3131 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 70707, user_id: 3232 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 131313, user_id: 3232 });
         // { chat_id: 171717, user_id: 3232 } is missing, part 2 was not solved
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5252 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5353 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5252 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5353 });
         // { chat_id: 50505, user_id: 5454 } is missing, user already has an invite
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5555 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5656 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 252525, user_id: 5757 });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5858 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5555 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5656 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 252525, user_id: 5757 });
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'getChatMember', { chat_id: 50505, user_id: 5858 });
 
         // markAsSent
         expect(dynamodb.DynamoDB.prototype.putItem).toHaveBeenCalledTimes(7);
@@ -366,35 +366,35 @@ describe('processInvites', () => {
         });
 
         // sendInvites
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
             { chat_id: 3131, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk31_5/) });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 111111, name: 'AoC 2021 Day 11', member_limit: 1, creates_join_request: false });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
             { chat_id: 3131, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk31_11/) });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 70707, name: 'AoC 2021 Day 7', member_limit: 1, creates_join_request: false });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
             { chat_id: 3232, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk32_7/) });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 50505, name: 'AoC 2021 Day 5', member_limit: 1, creates_join_request: false });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
             { chat_id: 5656, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk56_5/) });
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'createChatInviteLink',
             { chat_id: 252525, name: 'AoC 2021 Day 25', member_limit: 1, creates_join_request: false });
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
+        expect(sendTelegram).toHaveBeenNthCalledWith(st++, 'sendMessage',
             { chat_id: 5757, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk57_25/) });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(st - 1);
+        expect(sendTelegram).toHaveBeenCalledTimes(st - 1);
     });
 
     test('handles error in getChatMembers', async () => {
@@ -421,13 +421,13 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        network.sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
+        sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
 
         await expect(() => processInvites(leaderboard)).rejects.toThrow('eRrOr');
 
         // filterUsersInChat
-        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'getChatMember', { chat_id: 10101, user_id: 9999 });
+        expect(sendTelegram).toHaveBeenCalledTimes(1);
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'getChatMember', { chat_id: 10101, user_id: 9999 });
     });
 
     test('handles error in sendMessage', async () => {
@@ -454,18 +454,18 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
 
         // sendInvites
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE99_1', invite_link: 'InViTeLiNk99_1' } });
-        network.sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
+        sendTelegram.mockRejectedValueOnce(new Error('eRrOr'));
 
         await expect(() => processInvites(leaderboard)).rejects.toThrow('eRrOr');
 
         // filterUsersInChat
-        expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
+        expect(sendTelegram).toHaveBeenCalledTimes(3);
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
             { chat_id: 9999, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
     });
 
@@ -493,7 +493,7 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
 
         // markAsSent
         dynamodb.DynamoDB.prototype.putItem.mockRejectedValueOnce(new Error('dYnAmOfAiLeD'));
@@ -501,7 +501,7 @@ describe('processInvites', () => {
         await expect(() => processInvites(leaderboard)).rejects.toThrow('dYnAmOfAiLeD');
 
         // sendInvites
-        expect(network.sendTelegram).toHaveBeenCalledTimes(1);
+        expect(sendTelegram).toHaveBeenCalledTimes(1);
     });
 
     test('works with no chats', async () => {
@@ -562,10 +562,10 @@ describe('processInvites', () => {
         });
 
         // filterUsersInChat
-        network.sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
+        sendTelegram.mockResolvedValueOnce({ ok: true, result: { status: 'left' } });
 
         // sendInvites
-        network.sendTelegram.mockResolvedValueOnce(
+        sendTelegram.mockResolvedValueOnce(
             { ok: true, result: { name: 'iNvItE99_1', invite_link: 'InViTeLiNk99_1' } });
 
         await expect(processInvites(leaderboard, { year: 1945, day: 9 })).resolves.toEqual({
@@ -575,8 +575,8 @@ describe('processInvites', () => {
             failed: []
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledTimes(3);
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
+        expect(sendTelegram).toHaveBeenCalledTimes(3);
+        expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage',
             { chat_id: 9999, parse_mode: 'MarkdownV2', text: expect.stringMatching(/InViTeLiNk99_1/) });
     });
 
@@ -603,7 +603,7 @@ describe('processInvites', () => {
 
         await expect(processInvites(leaderboard, selection)).resolves.toEqual({ sent: [], failed: [] });
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
     });
 
     // TODO get more than 100 invites (test windowing in dynamodb)

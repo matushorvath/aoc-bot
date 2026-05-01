@@ -1,42 +1,42 @@
-'use strict';
+import { onMessage } from '../src/message';
+import { afterAll, afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const { onMessage } = require('../src/message');
+import dynamodb from '@aws-sdk/client-dynamodb';
+vi.mock(import('@aws-sdk/client-dynamodb'));
 
-const dynamodb = require('@aws-sdk/client-dynamodb');
-jest.mock('@aws-sdk/client-dynamodb');
+import { getLeaderboard, sendTelegram } from '../src/network.js';
+vi.mock(import('../src/network.js'));
 
-const network = require('../src/network');
-jest.mock('../src/network');
+import { loadStartTimes } from '../src/times.js';
+vi.mock(import('../src/times.js'));
 
-const times = require('../src/times');
-jest.mock('../src/times');
+import { formatBoard } from '../src/board.js';
+vi.mock(import('../src/board.js'));
 
-const boardFormat = require('../src/board');
-jest.mock('../src/board');
+import { updateLeaderboards } from '../src/leaderboards.js';
+vi.mock(import('../src/leaderboards.js'));
 
-const leaderboards = require('../src/leaderboards');
-jest.mock('../src/leaderboards');
+import { disableLogs, enableLogs, getLogsStatus, logActivity } from '../src/logs.js';
+vi.mock(import('../src/logs.js'));
 
-const logs = require('../src/logs');
-jest.mock('../src/logs');
+import { createUserData, deleteTelegramUserData, renameAocUser } from '../src/user.js';
+vi.mock(import('../src/user.js'));
 
-const user = require('../src/user');
-jest.mock('../src/user');
-
-const fs = require('fs/promises');
+import fs from 'fs/promises';
 
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
-    logs.enableLogs.mockReset();
-    logs.disableLogs.mockReset();
-    logs.logActivity.mockReset();
-    network.sendTelegram.mockReset();
-    leaderboards.updateLeaderboards.mockReset();
-    user.createUserData.mockReset();
-    user.deleteTelegramUserData.mockReset();
-    user.renameAocUser.mockReset();
+
+    enableLogs.mockReset();
+    disableLogs.mockReset();
+    logActivity.mockReset();
+    sendTelegram.mockReset();
+    updateLeaderboards.mockReset();
+    createUserData.mockReset();
+    deleteTelegramUserData.mockReset();
+    renameAocUser.mockReset();
 });
 
 describe('onMessage generic', () => {
@@ -52,9 +52,9 @@ describe('onMessage generic', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
-        expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
+        expect(loadStartTimes).not.toHaveBeenCalled();
     });
 
     test('ignores message with no text', async () => {
@@ -68,9 +68,9 @@ describe('onMessage generic', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
-        expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
+        expect(loadStartTimes).not.toHaveBeenCalled();
     });
 
     test('ignores message with no sender', async () => {
@@ -84,9 +84,9 @@ describe('onMessage generic', () => {
         expect(dynamodb.DynamoDB.prototype.getItem).not.toHaveBeenCalled();
         expect(dynamodb.DynamoDB.prototype.putItem).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).not.toHaveBeenCalled();
-        expect(network.getLeaderboard).not.toHaveBeenCalled();
-        expect(times.loadStartTimes).not.toHaveBeenCalled();
+        expect(sendTelegram).not.toHaveBeenCalled();
+        expect(getLeaderboard).not.toHaveBeenCalled();
+        expect(loadStartTimes).not.toHaveBeenCalled();
     });
 
     test('handles message with unknown command', async () => {
@@ -98,7 +98,7 @@ describe('onMessage generic', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "Sorry, I don't understand that command"
         });
@@ -115,9 +115,9 @@ describe('onMessage /reg', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.createUserData).not.toHaveBeenCalled();
+        expect(createUserData).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "Sorry, I don't understand that command"
         });
@@ -132,12 +132,12 @@ describe('onMessage /reg', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
-        expect(user.createUserData).toHaveBeenCalledWith('Some User', 7878);
+        expect(deleteTelegramUserData).toHaveBeenCalledWith(7878);
+        expect(createUserData).toHaveBeenCalledWith('Some User', 7878);
 
-        expect(logs.logActivity).toHaveBeenCalledWith("Registered user 'Some User'");
+        expect(logActivity).toHaveBeenCalledWith("Registered user 'Some User'");
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: "You are now registered as AoC user 'Some User'", disable_notification: true
         });
     });
@@ -153,10 +153,10 @@ describe('onMessage /unreg', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
-        expect(logs.logActivity).not.toHaveBeenCalled();
+        expect(deleteTelegramUserData).toHaveBeenCalledWith(7878);
+        expect(logActivity).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: 'You are not registered', disable_notification: true
         });
     });
@@ -168,14 +168,14 @@ describe('onMessage /unreg', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        user.deleteTelegramUserData.mockResolvedValueOnce('OlDaOcUsEr');
+        deleteTelegramUserData.mockResolvedValueOnce('OlDaOcUsEr');
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.deleteTelegramUserData).toHaveBeenCalledWith(7878);
-        expect(logs.logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
+        expect(deleteTelegramUserData).toHaveBeenCalledWith(7878);
+        expect(logActivity).toHaveBeenCalledWith("Unregistered user 'OlDaOcUsEr'");
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "You are no longer registered (your AoC name was 'OlDaOcUsEr')"
         });
@@ -192,9 +192,9 @@ describe('onMessage /rename', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.renameAocUser).not.toHaveBeenCalled();
+        expect(renameAocUser).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Invalid parameters (see /help)'
         });
@@ -209,9 +209,9 @@ describe('onMessage /rename', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.renameAocUser).not.toHaveBeenCalled();
+        expect(renameAocUser).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Invalid parameters (see /help)'
         });
@@ -224,14 +224,14 @@ describe('onMessage /rename', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        user.renameAocUser.mockResolvedValueOnce(false);
+        renameAocUser.mockResolvedValueOnce(false);
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
-        expect(logs.logActivity).not.toHaveBeenCalled();
+        expect(renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logActivity).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: "AoC user 'Old User' not found", disable_notification: true
         });
     });
@@ -243,14 +243,14 @@ describe('onMessage /rename', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        user.renameAocUser.mockResolvedValueOnce(true);
+        renameAocUser.mockResolvedValueOnce(true);
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(user.renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
-        expect(logs.logActivity).toHaveBeenCalledWith("Renamed AoC user 'Old User' to 'New User'");
+        expect(renameAocUser).toHaveBeenCalledWith('Old User', 'New User');
+        expect(logActivity).toHaveBeenCalledWith("Renamed AoC user 'Old User' to 'New User'");
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: "Renamed AoC user 'Old User' to 'New User'", disable_notification: true
         });
     });
@@ -266,11 +266,11 @@ describe('onMessage /logs', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.enableLogs).not.toHaveBeenCalled();
-        expect(logs.disableLogs).not.toHaveBeenCalled();
-        expect(logs.getLogsStatus).not.toHaveBeenCalled();
+        expect(enableLogs).not.toHaveBeenCalled();
+        expect(disableLogs).not.toHaveBeenCalled();
+        expect(getLogsStatus).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "Use '/logs on' to start sending activity logs to you, use '/logs off' to stop. To find out your current setting, use '/logs' without a parameter."
         });
@@ -285,11 +285,11 @@ describe('onMessage /logs', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.enableLogs).toHaveBeenCalledWith(2323);
-        expect(logs.disableLogs).not.toHaveBeenCalled();
-        expect(logs.getLogsStatus).not.toHaveBeenCalled();
+        expect(enableLogs).toHaveBeenCalledWith(2323);
+        expect(disableLogs).not.toHaveBeenCalled();
+        expect(getLogsStatus).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Activity logs will now be sent to this chat'
         });
@@ -304,11 +304,11 @@ describe('onMessage /logs', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.enableLogs).not.toHaveBeenCalled();
-        expect(logs.disableLogs).toHaveBeenCalledWith(2323);
-        expect(logs.getLogsStatus).not.toHaveBeenCalled();
+        expect(enableLogs).not.toHaveBeenCalled();
+        expect(disableLogs).toHaveBeenCalledWith(2323);
+        expect(getLogsStatus).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Activity logs will now be no longer sent to this chat'
         });
@@ -324,15 +324,15 @@ describe('onMessage /logs', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        logs.getLogsStatus.mockResolvedValueOnce(value);
+        getLogsStatus.mockResolvedValueOnce(value);
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.enableLogs).not.toHaveBeenCalled();
-        expect(logs.disableLogs).not.toHaveBeenCalled();
-        expect(logs.getLogsStatus).toHaveBeenCalledWith(2323);
+        expect(enableLogs).not.toHaveBeenCalled();
+        expect(disableLogs).not.toHaveBeenCalled();
+        expect(getLogsStatus).toHaveBeenCalledWith(2323);
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: `Activity logs are ${status} for this chat`
         });
@@ -349,7 +349,7 @@ describe('onMessage /board', () => {
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Invalid parameters (see /help)'
         });
@@ -362,15 +362,15 @@ describe('onMessage /board', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        network.getLeaderboard.mockResolvedValueOnce(undefined);
+        getLeaderboard.mockResolvedValueOnce(undefined);
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(network.getLeaderboard).toHaveBeenCalledWith(1980);
-        expect(times.loadStartTimes).not.toHaveBeenCalled();
-        expect(boardFormat.formatBoard).not.toHaveBeenCalled();
+        expect(getLeaderboard).toHaveBeenCalledWith(1980);
+        expect(loadStartTimes).not.toHaveBeenCalled();
+        expect(formatBoard).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, parse_mode: 'MarkdownV2', disable_notification: true,
             text: 'Could not retrieve leaderboard data'
         });
@@ -384,13 +384,13 @@ describe('onMessage /board', () => {
         ['specific date selection, without a year', '/board 19', { year: 1980, day: 19 }]
     ])('with %s', (_description, command, expectedSelection) => {
         beforeEach(() => {
-            jest.useFakeTimers('modern');
+            vi.useFakeTimers('modern');
             // Intentionally use time that falls into different dates in UTC and in EST
-            jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
+            vi.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
         });
 
         afterAll(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         test('generates the board', async () => {
@@ -400,18 +400,18 @@ describe('onMessage /board', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            network.getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
-            times.loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
-            boardFormat.formatBoard.mockReturnValueOnce('bOaRd');
+            getLeaderboard.mockResolvedValueOnce({ lEaDeRbOaRd: true });
+            loadStartTimes.mockResolvedValueOnce({ sTaRtTiMeS: true });
+            formatBoard.mockReturnValueOnce('bOaRd');
 
             await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
-            expect(times.loadStartTimes).toHaveBeenCalledWith(expectedSelection.year, expectedSelection.day);
-            expect(boardFormat.formatBoard).toHaveBeenCalledWith(
+            expect(getLeaderboard).toHaveBeenCalledWith(expectedSelection.year);
+            expect(loadStartTimes).toHaveBeenCalledWith(expectedSelection.year, expectedSelection.day);
+            expect(formatBoard).toHaveBeenCalledWith(
                 expectedSelection.year, expectedSelection.day, { lEaDeRbOaRd: true }, { sTaRtTiMeS: true });
 
-            expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+            expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
                 chat_id: 2323, parse_mode: 'MarkdownV2',
                 disable_notification: true, disable_web_page_preview: true,
                 text: 'bOaRd'
@@ -443,7 +443,7 @@ describe('onMessage /status', () => {
             ProjectionExpression: 'aoc_user'
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, text: 'You are not registered', disable_notification: true
         });
     });
@@ -465,7 +465,7 @@ describe('onMessage /status', () => {
             ProjectionExpression: 'aoc_user'
         });
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: "You are registered as AoC user 'Existing User'"
         });
@@ -478,12 +478,12 @@ describe('onMessage /update', () => {
         ['the "year" parameter', '/update year']
     ])('with %s', (_description, command) => {
         beforeEach(() => {
-            jest.useFakeTimers('modern');
-            jest.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
+            vi.useFakeTimers('modern');
+            vi.setSystemTime(Date.UTC(1980, 8, 17, 8, 0, 0));
         });
 
         afterAll(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         test('with no updates', async () => {
@@ -493,27 +493,27 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            leaderboards.updateLeaderboards.mockResolvedValueOnce({
+            updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [], sent: [], created: [], updated: []
             });
 
             await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Processing leaderboards and invites (year 1979)'
             });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
                 chat_id: 2323,
                 action: 'typing'
             });
 
-            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
+            expect(updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (year 1979)");
+            expect(logActivity).toHaveBeenCalledWith("Update triggered by user 'OnLyFiRsTnAmE' (year 1979)");
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Leaderboards updated\n(no changes)\n'
             });
@@ -526,7 +526,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            leaderboards.updateLeaderboards.mockResolvedValueOnce({
+            updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [{ year: 1984 }, { year: 2345 }],
                 sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }, { aocUser: 'AoCu2', year: 1995, day: 4 }],
                 created: [{ year: 1945, day: 2 }, { year: 1815, day: 7 }],
@@ -535,21 +535,21 @@ describe('onMessage /update', () => {
 
             await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Processing leaderboards and invites (year 1979)'
             });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
                 chat_id: 2323,
                 action: 'typing'
             });
 
-            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
+            expect(updateLeaderboards).toHaveBeenCalledWith({ year: 1979 });
 
-            expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (year 1979)");
+            expect(logActivity).toHaveBeenCalledWith("Update triggered by user 'FiRsTnAmE LaStNaMe' (year 1979)");
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Leaderboards updated
 • could not retrieve data for year 1984
@@ -573,13 +573,13 @@ describe('onMessage /update', () => {
         ['specific year selection', '/update 1968', { year: 1968 }, 'year 1968']
     ])('with %s', (_description, command, expectedSelection, selectionString) => {
         beforeEach(() => {
-            jest.useFakeTimers('modern');
+            vi.useFakeTimers('modern');
             // Intentionally use time that falls into different dates in UTC and in EST
-            jest.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
+            vi.setSystemTime(Date.UTC(1980, 11, 14, 4, 0, 0));
         });
 
         afterAll(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         test('with no updates', async () => {
@@ -589,27 +589,27 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            leaderboards.updateLeaderboards.mockResolvedValueOnce({
+            updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [], sent: [], created: [], updated: []
             });
 
             await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Processing leaderboards and invites (${selectionString})`
             });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
                 chat_id: 2323,
                 action: 'typing'
             });
 
-            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+            expect(updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-            expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
+            expect(logActivity).toHaveBeenCalledWith(`Update triggered by user 'OnLyFiRsTnAmE' (${selectionString})`);
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: 'Leaderboards updated\n(no changes)\n'
             });
@@ -622,7 +622,7 @@ describe('onMessage /update', () => {
                 chat: { id: 2323, type: 'private', title: 'tItLe' }
             };
 
-            leaderboards.updateLeaderboards.mockResolvedValueOnce({
+            updateLeaderboards.mockResolvedValueOnce({
                 unretrieved: [],
                 sent: [{ aocUser: 'AoCu1', year: 1980, day: 13 }],
                 created: [{ year: 1980, day: 13 }],
@@ -631,21 +631,21 @@ describe('onMessage /update', () => {
 
             await expect(onMessage(update)).resolves.toBeUndefined();
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Processing leaderboards and invites (${selectionString})`
             });
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(2, 'sendChatAction', {
                 chat_id: 2323,
                 action: 'typing'
             });
 
-            expect(leaderboards.updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
+            expect(updateLeaderboards).toHaveBeenCalledWith(expectedSelection);
 
-            expect(logs.logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
+            expect(logActivity).toHaveBeenCalledWith(`Update triggered by user 'FiRsTnAmE LaStNaMe' (${selectionString})`);
 
-            expect(network.sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
+            expect(sendTelegram).toHaveBeenNthCalledWith(3, 'sendMessage', {
                 chat_id: 2323, disable_notification: true,
                 text: `Leaderboards updated
 • invited AoCu1 to 1980 day 13
@@ -664,19 +664,19 @@ describe('onMessage /update', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        leaderboards.updateLeaderboards.mockResolvedValueOnce({
+        updateLeaderboards.mockResolvedValueOnce({
             unretrieved: [], sent: [], created: [], updated: []
         });
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(network.sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
+        expect(sendTelegram).toHaveBeenNthCalledWith(1, 'sendMessage', {
             chat_id: 2323, disable_notification: true,
             text: 'Invalid parameters (see /help)'
         });
 
-        expect(leaderboards.updateLeaderboards).not.toHaveBeenCalled();
-        expect(logs.logActivity).not.toHaveBeenCalled();
+        expect(updateLeaderboards).not.toHaveBeenCalled();
+        expect(logActivity).not.toHaveBeenCalled();
     });
 
     test('with no first or last name', async () => {
@@ -686,13 +686,13 @@ describe('onMessage /update', () => {
             chat: { id: 2323, type: 'private', title: 'tItLe' }
         };
 
-        leaderboards.updateLeaderboards.mockResolvedValueOnce({
+        updateLeaderboards.mockResolvedValueOnce({
             unretrieved: [], sent: [], created: [], updated: []
         });
 
         await expect(onMessage(update)).resolves.toBeUndefined();
 
-        expect(logs.logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (year 1993)");
+        expect(logActivity).toHaveBeenCalledWith("Update triggered by user '(id 7878)' (year 1993)");
     });
 });
 
@@ -700,7 +700,7 @@ describe('onMessage /help', () => {
     let readFileSpy;
 
     beforeEach(() => {
-        readFileSpy = jest.spyOn(fs, 'readFile');
+        readFileSpy = vi.spyOn(fs, 'readFile');
     });
 
     afterEach(() => {
@@ -718,7 +718,7 @@ describe('onMessage /help', () => {
 
         expect(readFileSpy).toHaveBeenCalledWith(expect.stringMatching(/\/help\.txt$/), 'utf-8');
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, parse_mode: 'MarkdownV2',
             disable_notification: true, disable_web_page_preview: true,
             text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\n$/)
@@ -736,7 +736,7 @@ describe('onMessage /help', () => {
 
         expect(readFileSpy).not.toHaveBeenCalled();
 
-        expect(network.sendTelegram).toHaveBeenCalledWith('sendMessage', {
+        expect(sendTelegram).toHaveBeenCalledWith('sendMessage', {
             chat_id: 2323, parse_mode: 'MarkdownV2',
             disable_notification: true, disable_web_page_preview: true,
             text: expect.stringMatching(/^I can register[^]*matushorvath\/aoc-bot\)\n$/)

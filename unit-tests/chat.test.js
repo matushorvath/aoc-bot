@@ -24,6 +24,7 @@ import fs from 'fs/promises';
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.putItem.mockReset();
+
     addYear.mockReset();
     logActivity.mockReset();
     sendTelegram.mockReset();

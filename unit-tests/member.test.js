@@ -10,6 +10,7 @@ vi.mock(import('../src/network.js'));
 beforeEach(() => {
     dynamodb.DynamoDB.mockReset();
     dynamodb.DynamoDB.prototype.getItem.mockReset();
+
     sendTelegram.mockReset();
 });
 
