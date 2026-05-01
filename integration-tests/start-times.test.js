@@ -1,5 +1,5 @@
 import './expect-one-of.js';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 const url = 'https://7b79gj2si4.execute-api.eu-central-1.amazonaws.com/Prod/start';
 

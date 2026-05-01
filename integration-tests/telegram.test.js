@@ -8,7 +8,7 @@
 import { TelegramClient } from './telegram-client.js';
 import { loadTelegramCredentials } from './telegram-credentials.js';
 import { loadTelegramDatabase } from './telegram-database.js';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 // Telegram ids to use for testing
 const botUserId = 5071613978;

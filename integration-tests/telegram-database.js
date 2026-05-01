@@ -22,7 +22,7 @@ export const createTelegramDatabase = async () => {
 export const loadTelegramDatabase = async (aesKey) => {
     const { databaseDirectory, filesDirectory } = await createTelegramDatabase();
 
-    const encryptedName = path.join(__dirname, 'td.binlog.aes');
+    const encryptedName = path.join(import.meta.dirname, 'td.binlog.aes');
     const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
     // Create td.binlog unless it already exists
@@ -50,7 +50,7 @@ export const loadTelegramDatabase = async (aesKey) => {
 };
 
 export const saveTelegramDatabase = async (databaseDirectory, aesKey) => {
-    const encryptedName = path.join(__dirname, 'td.binlog.aes');
+    const encryptedName = path.join(import.meta.dirname, 'td.binlog.aes');
     const decryptedName = path.join(databaseDirectory, 'td.binlog');
 
     // Encrypt td.binlog.aes

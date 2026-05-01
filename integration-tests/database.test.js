@@ -2,7 +2,7 @@ import './expect-each-match-object.js';
 import './expect-one-of.js';
 import './expect-each-pass-predicate.js';
 
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 const DB_TABLE = 'aoc-bot';

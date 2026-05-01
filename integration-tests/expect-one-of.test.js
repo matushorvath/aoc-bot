@@ -1,5 +1,5 @@
 import './expect-one-of.js';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 describe('expect.oneOf', () => {
     test('works for positive case', () => {
