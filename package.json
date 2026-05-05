@@ -44,7 +44,7 @@
         "@vitest/coverage-v8": "^4.1.5",
         "@vitest/eslint-plugin": "^1.6.16",
         "eslint": "^10.3.0",
-        "globals": "^17.5.0",
+        "globals": "^17.6.0",
         "prebuilt-tdlib": "=0.1008063.0",
         "tdl": "^8.1.0",
         "vitest": "^4.1.5",
