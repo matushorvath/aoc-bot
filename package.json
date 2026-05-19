@@ -45,7 +45,7 @@
         "@vitest/eslint-plugin": "^1.6.17",
         "eslint": "^10.4.0",
         "globals": "^17.6.0",
-        "prebuilt-tdlib": "=0.1008063.0",
+        "prebuilt-tdlib": "=0.1008064.0",
         "tdl": "^8.1.0",
         "vitest": "^4.1.5",
         "yaml": "^2.9.0"
