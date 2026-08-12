@@ -17,8 +17,6 @@ Resources:
   # Scheduled function to processes leaderboards and invites
   AocBotScheduleFunction:
     Type: AWS::Serverless::Function
-    DependsOn:
-      - AocBotTable
     Properties:
       FunctionName: !Sub ${AWS::StackName}_AocBotSchedule
       Description: !Ref Version
@@ -45,8 +43,6 @@ Resources:
   # API function to process HTTP requests
   AocBotApiFunction:
     Type: AWS::Serverless::Function
-    DependsOn:
-      - AocBotTable
     Properties:
       FunctionName: !Sub ${AWS::StackName}_AocBotApi
       Description: !Ref Version
@@ -163,8 +159,6 @@ Resources:
   # API Gateway to handle HTTP requests
   AocBotApi:
     Type: AWS::Serverless::Api
-    DependsOn:
-      - AocBotApiFunction
     Properties:
       StageName: Prod
       MethodSettings:
