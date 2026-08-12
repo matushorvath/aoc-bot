@@ -49,5 +49,8 @@
         "tdl": "^8.1.0",
         "vitest": "^4.1.10",
         "yaml": "^2.9.0"
+    },
+    "allowScripts": {
+        "tdl@8.1.0": true
     }
 }
