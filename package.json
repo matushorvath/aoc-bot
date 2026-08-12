@@ -43,7 +43,7 @@
         "@eslint/js": "^10.0.1",
         "@vitest/coverage-v8": "^4.1.10",
         "@vitest/eslint-plugin": "^1.6.26",
-        "eslint": "^10.8.0",
+        "eslint": "^10.8.1",
         "globals": "^17.9.0",
         "prebuilt-tdlib": "=0.1008066.0",
         "tdl": "^8.1.0",
